@@ -69,9 +69,13 @@ if main_menu == "📦 자사 재고 현황":
         df_item_limit.rename(columns={excess_col_name: '과다기준주'}, inplace=True)
         df_item_limit['과다기준주'] = pd.to_numeric(df_item_limit['과다기준주'], errors='coerce')
 
-        # 2. 사이드바 필터: 브랜드 & 분석 기간
+        # 2. 사이드바 필터: 브랜드 & 상태 & 분석 기간
         brand_list = ["전체보기"] + sorted(list(df_own['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("🔍 브랜드 필터", brand_list)
+        
+        # 🚀 [추가됨] 상태 필터 UI
+        status_list = ["전체보기", "품절", "재고 부족", "과다 재고", "적정"]
+        selected_status = st.sidebar.selectbox("⚠️ 상태 필터", status_list)
         
         months_to_look_back = st.sidebar.slider("📅 판매 평균 산출 기준 (개월)", min_value=1, max_value=12, value=1)
         
@@ -90,7 +94,7 @@ if main_menu == "📦 자사 재고 현황":
         total_sales_by_item = recent_sales.groupby('품목코드')['수량'].sum().reset_index()
         total_sales_by_item.rename(columns={'수량': '기간내_총판매량'}, inplace=True)
         
-        # 🚀 [핵심] 월평균을 4로 나누어 '주 평균 판매량' 산출
+        # 월평균을 4로 나누어 '주 평균 판매량' 산출
         total_sales_by_item['월평균판매량'] = total_sales_by_item['기간내_총판매량'] / months_to_look_back
         total_sales_by_item['주평균판매량'] = (total_sales_by_item['월평균판매량'] / 4).round(1)
         
@@ -107,12 +111,11 @@ if main_menu == "📦 자사 재고 현황":
                                        999.0)
         df_merged['예상소진주'] = df_merged['예상소진주'].round(1)
         
-        # 🚀 [핵심] E열 데이터 기반 상태 판별 로직
+        # E열 데이터 기반 상태 판별 로직
         def check_status(row):
             if row['현재재고'] <= 0: return "🔴 품절"
             elif row['예상소진주'] < 4.0: return "🟠 재고 부족 (4주 미만)"
             else:
-                # E열에 설정해둔 기준값이 있으면 그 값을, 없거나 빈칸이면 기본 24주(6개월)를 과다 기준으로 적용
                 limit = row['과다기준주'] if pd.notna(row['과다기준주']) and row['과다기준주'] > 0 else 24.0
                 if row['예상소진주'] > limit:
                     return f"🔵 과다 재고 ({int(limit)}주 초과)"
@@ -122,14 +125,20 @@ if main_menu == "📦 자사 재고 현황":
         df_merged['재고상태'] = df_merged.apply(check_status, axis=1)
 
         # 6. 화면 출력
+        # 🚀 [추가됨] 1차 필터: 브랜드
         if selected_brand != "전체보기":
             df_merged = df_merged[df_merged['브랜드'] == selected_brand]
             
-        # 메인 화면 컬럼 순서 업데이트 ('월'을 '주'로 변경)
+        # 🚀 [추가됨] 2차 필터: 재고 상태 (특정 단어가 포함되어 있는지 확인)
+        if selected_status != "전체보기":
+            df_merged = df_merged[df_merged['재고상태'].str.contains(selected_status, na=False)]
+            
+        # 메인 화면 컬럼 순서 업데이트
         final_display_df = df_merged[['브랜드', '품목명', '현재재고', '주평균판매량', '예상소진주', '재고상태']]
         
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
-        st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표")
+        # 🚀 [수정됨] 제목에 현재 보고 있는 필터 상태 표시
+        st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표 (필터: {selected_status})")
         st.caption(f"💡 산출 기준: {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산했습니다.)")
         
         st.dataframe(final_display_df, use_container_width=True)
@@ -172,6 +181,7 @@ elif main_menu == "📈 판매 현황":
         
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
 
 
