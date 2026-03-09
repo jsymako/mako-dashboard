@@ -49,71 +49,75 @@ st.sidebar.markdown("---")
 # [메뉴 1] 자사 재고 현황 (이카운트)
 # ------------------------------------------
 if main_menu == "📦 자사 재고 현황":
-    st.title("📦 자사 재고 현황 및 소진 예측")
+    st.title("📦 자사 재고 현황 및 소진 예측 (주 단위)")
     
     try:
-        # 1. 재고 데이터와 판매 데이터 모두 불러오기
+        # 1. 시트 데이터 모두 불러오기 (ecount_item_data 추가)
         df_own = load_sheet_data("ecount_stock")
         df_sales = load_sheet_data("sales_record")
+        df_item = load_sheet_data("ecount_item_data") # 💡 기준값이 있는 시트 호출
         
-        # 숫자형 변환 (현재재고)
+        # 숫자형/날짜형 데이터 전처리
         df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0)
-        
-        # 수량에 들어간 콤마(,) 강제 제거 및 숫자 변환
         df_sales['수량'] = df_sales['수량'].astype(str).str.replace(',', '')
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
-        
-        # 날짜형 변환
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
 
-        # 2. 사이드바 필터: 브랜드 & 분석 기간 선택
+        # ecount_item_data의 E열(5번째 열, 인덱스 4)을 '과다기준주'로 추출
+        excess_col_name = df_item.columns[4]
+        df_item_limit = df_item[['품목코드', excess_col_name]].copy()
+        df_item_limit.rename(columns={excess_col_name: '과다기준주'}, inplace=True)
+        df_item_limit['과다기준주'] = pd.to_numeric(df_item_limit['과다기준주'], errors='coerce')
+
+        # 2. 사이드바 필터: 브랜드 & 분석 기간
         brand_list = ["전체보기"] + sorted(list(df_own['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("🔍 브랜드 필터", brand_list)
         
         months_to_look_back = st.sidebar.slider("📅 판매 평균 산출 기준 (개월)", min_value=1, max_value=12, value=1)
         
-        # 3. 판매량 기반 '월 평균 판매량' 계산 로직 (당월 제외, 전월 기준 꽉 찬 달만 계산)
+        # 3. 판매량 기반 평균 계산 로직 (당월 제외, 전월 기준)
         from dateutil.relativedelta import relativedelta
         import datetime
         
-        # 오늘 날짜에서 시간을 00:00:00으로 초기화
         today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        # 종료일: 저번 달 말일 (이번 달 1일에서 하루 빼기)
         end_date = today.replace(day=1) - datetime.timedelta(days=1)
-        
-        # 시작일: 종료일의 달에서 (선택한 개월 수 - 1)만큼 빼고 1일로 맞춤
         start_date = (end_date - relativedelta(months=months_to_look_back - 1)).replace(day=1)
         
-        # 선택한 기간 내의 판매 데이터만 필터링 (시작일 ~ 종료일)
+        # 선택 기간 내 데이터 필터링
         recent_sales = df_sales[(df_sales['일자'] >= pd.Timestamp(start_date)) & (df_sales['일자'] <= pd.Timestamp(end_date))]
         
-        # 품목코드별로 기간 내 총 판매량 합산
+        # 품목코드별 총 판매량 계산
         total_sales_by_item = recent_sales.groupby('품목코드')['수량'].sum().reset_index()
         total_sales_by_item.rename(columns={'수량': '기간내_총판매량'}, inplace=True)
         
-        # 월 평균 판매량 계산
+        # 🚀 [핵심] 월평균을 4로 나누어 '주 평균 판매량' 산출
         total_sales_by_item['월평균판매량'] = total_sales_by_item['기간내_총판매량'] / months_to_look_back
-        total_sales_by_item['월평균판매량'] = total_sales_by_item['월평균판매량'].round(1) # 소수점 1자리까지
+        total_sales_by_item['주평균판매량'] = (total_sales_by_item['월평균판매량'] / 4).round(1)
         
-        # 4. 재고 데이터와 판매 데이터 병합
-        df_merged = pd.merge(df_own, total_sales_by_item, on='품목코드', how='left')
-        df_merged['월평균판매량'] = df_merged['월평균판매량'].fillna(0)
+        # 4. 3개의 데이터 병합 (자사재고 + 주평균판매량 + 과다기준주)
+        df_merged = pd.merge(df_own, total_sales_by_item[['품목코드', '주평균판매량']], on='품목코드', how='left')
+        df_merged['주평균판매량'] = df_merged['주평균판매량'].fillna(0)
         
-        # 5. 소진 가능 개월 수 계산 & 상태 판별
+        df_merged = pd.merge(df_merged, df_item_limit, on='품목코드', how='left')
+        
+        # 5. 소진 가능 주(Week) 계산 & 상태 판별
         import numpy as np
-        # 0으로 나누는 에러 방지 (판매량이 0이면 999.0 개월로 임의 표시)
-        df_merged['예상소진개월'] = np.where(df_merged['월평균판매량'] > 0, 
-                                       df_merged['현재재고'] / df_merged['월평균판매량'], 
+        df_merged['예상소진주'] = np.where(df_merged['주평균판매량'] > 0, 
+                                       df_merged['현재재고'] / df_merged['주평균판매량'], 
                                        999.0)
-        df_merged['예상소진개월'] = df_merged['예상소진개월'].round(1)
+        df_merged['예상소진주'] = df_merged['예상소진주'].round(1)
         
-        # 상태 판별 로직
+        # 🚀 [핵심] E열 데이터 기반 상태 판별 로직
         def check_status(row):
             if row['현재재고'] <= 0: return "🔴 품절"
-            elif row['예상소진개월'] < 1.0: return "🟠 재고 부족 (1개월 미만)"
-            elif row['예상소진개월'] > 6.0: return "🔵 과다 재고 (6개월 이상)"
-            else: return "🟢 적정"
+            elif row['예상소진주'] < 4.0: return "🟠 재고 부족 (4주 미만)"
+            else:
+                # E열에 설정해둔 기준값이 있으면 그 값을, 없거나 빈칸이면 기본 24주(6개월)를 과다 기준으로 적용
+                limit = row['과다기준주'] if pd.notna(row['과다기준주']) and row['과다기준주'] > 0 else 24.0
+                if row['예상소진주'] > limit:
+                    return f"🔵 과다 재고 ({int(limit)}주 초과)"
+                else:
+                    return "🟢 적정"
             
         df_merged['재고상태'] = df_merged.apply(check_status, axis=1)
 
@@ -121,13 +125,12 @@ if main_menu == "📦 자사 재고 현황":
         if selected_brand != "전체보기":
             df_merged = df_merged[df_merged['브랜드'] == selected_brand]
             
-        # 메인 화면에 띄울 핵심 컬럼만 정리 (품목코드 제외)
-        final_display_df = df_merged[['브랜드', '품목명', '현재재고', '월평균판매량', '예상소진개월', '재고상태']]
+        # 메인 화면 컬럼 순서 업데이트 ('월'을 '주'로 변경)
+        final_display_df = df_merged[['브랜드', '품목명', '현재재고', '주평균판매량', '예상소진주', '재고상태']]
         
-        # 동적 제목 생성 (YYYY년 M월 ~ YYYY년 M월)
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
         st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표")
-        st.caption(f"💡 산출 기준: {date_range_str} ({months_to_look_back}개월간의 판매 데이터를 기반으로 계산되었습니다.)")
+        st.caption(f"💡 산출 기준: {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산했습니다.)")
         
         st.dataframe(final_display_df, use_container_width=True)
         
@@ -169,6 +172,7 @@ elif main_menu == "📈 판매 현황":
         
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
 
 
