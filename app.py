@@ -63,7 +63,7 @@ if main_menu == "📦 자사 재고 현황":
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
 
-        # 🚀 [추가됨] ecount_item_data의 D열(4번째 열, 인덱스 3)을 '박스입수'로 추출
+        # ecount_item_data의 D열(4번째 열, 인덱스 3)을 '박스입수'로 추출
         box_col_name = df_item.columns[3] 
         df_item_box = df_item[['품목코드', box_col_name]].copy()
         df_item_box.rename(columns={box_col_name: '박스입수'}, inplace=True)
@@ -113,6 +113,7 @@ if main_menu == "📦 자사 재고 현황":
         
         # 5. 로직 계산 (소진주, 상태 판별)
         import numpy as np
+        # 문자열로 변환하기 전에 숫자 상태에서 소진주 먼저 계산!
         df_merged['예상소진주'] = np.where(df_merged['주평균판매량'] > 0, 
                                        df_merged['현재재고'] / df_merged['주평균판매량'], 
                                        999.0)
@@ -131,24 +132,24 @@ if main_menu == "📦 자사 재고 현황":
             
         df_merged['재고상태'] = df_merged.apply(check_status, axis=1)
 
-        # 🚀 [핵심] 박스 환산 표시 로직
-        def format_stock_display(row):
-            qty = row['현재재고']
-            box_unit = row['박스입수']
-            
-            # 박스입수가 1개이거나 없으면 낱개로 표시
+        # 🚀 [핵심] 박스 환산 표시 공통 로직 (재고 및 평균판매량에 모두 적용)
+        def format_stock_display(qty, box_unit):
             if box_unit <= 1:
-                return f"{int(qty):,} 개"
+                # 낱개일 때, 딱 떨어지는 정수면 정수 표현, 아니면 소수점 1자리 표현
+                if qty == int(qty):
+                    return f"{int(qty):,} 개"
+                else:
+                    return f"{qty:.1f} 개"
             else:
                 boxes = qty / box_unit
-                # 10박스 미만은 소수점 1자리까지 표시
                 if boxes < 10:
                     return f"{boxes:.1f} 박스"
-                # 10박스 이상은 깔끔하게 정수로 표시
                 else:
                     return f"{int(boxes):,} 박스"
 
-        df_merged['환산재고'] = df_merged.apply(format_stock_display, axis=1)
+        # 현재재고와 주평균판매량을 각각 박스 단위로 변환
+        df_merged['환산재고'] = df_merged.apply(lambda row: format_stock_display(row['현재재고'], row['박스입수']), axis=1)
+        df_merged['환산주평균'] = df_merged.apply(lambda row: format_stock_display(row['주평균판매량'], row['박스입수']), axis=1)
 
         # 6. 화면 출력
         if selected_brand != "전체보기":
@@ -157,8 +158,12 @@ if main_menu == "📦 자사 재고 현황":
         if selected_status != "전체보기":
             df_merged = df_merged[df_merged['재고상태'].str.contains(selected_status, na=False)]
             
-        # 메인 화면 컬럼 순서 업데이트 ('현재재고' 대신 '환산재고' 출력)
-        final_display_df = df_merged[['브랜드', '품목명', '환산재고', '주평균판매량', '예상소진주', '재고상태']]
+        # 메인 화면 컬럼 순서 업데이트 및 깔끔한 제목으로 변경
+        final_display_df = df_merged[['브랜드', '품목명', '환산재고', '환산주평균', '예상소진주', '재고상태']]
+        final_display_df = final_display_df.rename(columns={
+            '환산재고': '현재재고',
+            '환산주평균': '주평균판매량'
+        })
         
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
         st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표 (필터: {selected_status})")
@@ -204,6 +209,7 @@ elif main_menu == "📈 판매 현황":
         
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
 
 
