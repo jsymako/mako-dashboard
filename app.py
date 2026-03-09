@@ -52,16 +52,23 @@ if main_menu == "📦 자사 재고 현황":
     st.title("📦 자사 재고 현황 및 소진 예측 (주 단위)")
     
     try:
-        # 1. 시트 데이터 모두 불러오기 (ecount_item_data 추가)
+        # 1. 시트 데이터 모두 불러오기
         df_own = load_sheet_data("ecount_stock")
         df_sales = load_sheet_data("sales_record")
-        df_item = load_sheet_data("ecount_item_data") # 💡 기준값이 있는 시트 호출
+        df_item = load_sheet_data("ecount_item_data") # 💡 기준값 및 박스입수 시트
         
         # 숫자형/날짜형 데이터 전처리
         df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0)
         df_sales['수량'] = df_sales['수량'].astype(str).str.replace(',', '')
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
+
+        # 🚀 [추가됨] ecount_item_data의 D열(4번째 열, 인덱스 3)을 '박스입수'로 추출
+        box_col_name = df_item.columns[3] 
+        df_item_box = df_item[['품목코드', box_col_name]].copy()
+        df_item_box.rename(columns={box_col_name: '박스입수'}, inplace=True)
+        # 빈칸이거나 문자가 있으면 기본값 1(낱개)로 처리
+        df_item_box['박스입수'] = pd.to_numeric(df_item_box['박스입수'], errors='coerce').fillna(1)
 
         # ecount_item_data의 E열(5번째 열, 인덱스 4)을 '과다기준주'로 추출
         excess_col_name = df_item.columns[4]
@@ -73,7 +80,6 @@ if main_menu == "📦 자사 재고 현황":
         brand_list = ["전체보기"] + sorted(list(df_own['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("🔍 브랜드 필터", brand_list)
         
-        # 🚀 [추가됨] 상태 필터 UI
         status_list = ["전체보기", "품절", "재고 부족", "과다 재고", "적정"]
         selected_status = st.sidebar.selectbox("⚠️ 상태 필터", status_list)
         
@@ -98,13 +104,14 @@ if main_menu == "📦 자사 재고 현황":
         total_sales_by_item['월평균판매량'] = total_sales_by_item['기간내_총판매량'] / months_to_look_back
         total_sales_by_item['주평균판매량'] = (total_sales_by_item['월평균판매량'] / 4).round(1)
         
-        # 4. 3개의 데이터 병합 (자사재고 + 주평균판매량 + 과다기준주)
+        # 4. 데이터 4개 병합 (자사재고 + 주평균판매량 + 과다기준주 + 박스입수)
         df_merged = pd.merge(df_own, total_sales_by_item[['품목코드', '주평균판매량']], on='품목코드', how='left')
         df_merged['주평균판매량'] = df_merged['주평균판매량'].fillna(0)
         
         df_merged = pd.merge(df_merged, df_item_limit, on='품목코드', how='left')
+        df_merged = pd.merge(df_merged, df_item_box, on='품목코드', how='left')
         
-        # 5. 소진 가능 주(Week) 계산 & 상태 판별
+        # 5. 로직 계산 (소진주, 상태 판별)
         import numpy as np
         df_merged['예상소진주'] = np.where(df_merged['주평균판매량'] > 0, 
                                        df_merged['현재재고'] / df_merged['주평균판매량'], 
@@ -124,20 +131,36 @@ if main_menu == "📦 자사 재고 현황":
             
         df_merged['재고상태'] = df_merged.apply(check_status, axis=1)
 
+        # 🚀 [핵심] 박스 환산 표시 로직
+        def format_stock_display(row):
+            qty = row['현재재고']
+            box_unit = row['박스입수']
+            
+            # 박스입수가 1개이거나 없으면 낱개로 표시
+            if box_unit <= 1:
+                return f"{int(qty):,} 개"
+            else:
+                boxes = qty / box_unit
+                # 10박스 미만은 소수점 1자리까지 표시
+                if boxes < 10:
+                    return f"{boxes:.1f} 박스"
+                # 10박스 이상은 깔끔하게 정수로 표시
+                else:
+                    return f"{int(boxes):,} 박스"
+
+        df_merged['환산재고'] = df_merged.apply(format_stock_display, axis=1)
+
         # 6. 화면 출력
-        # 🚀 [추가됨] 1차 필터: 브랜드
         if selected_brand != "전체보기":
             df_merged = df_merged[df_merged['브랜드'] == selected_brand]
             
-        # 🚀 [추가됨] 2차 필터: 재고 상태 (특정 단어가 포함되어 있는지 확인)
         if selected_status != "전체보기":
             df_merged = df_merged[df_merged['재고상태'].str.contains(selected_status, na=False)]
             
-        # 메인 화면 컬럼 순서 업데이트
-        final_display_df = df_merged[['브랜드', '품목명', '현재재고', '주평균판매량', '예상소진주', '재고상태']]
+        # 메인 화면 컬럼 순서 업데이트 ('현재재고' 대신 '환산재고' 출력)
+        final_display_df = df_merged[['브랜드', '품목명', '환산재고', '주평균판매량', '예상소진주', '재고상태']]
         
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
-        # 🚀 [수정됨] 제목에 현재 보고 있는 필터 상태 표시
         st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표 (필터: {selected_status})")
         st.caption(f"💡 산출 기준: {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산했습니다.)")
         
@@ -181,6 +204,7 @@ elif main_menu == "📈 판매 현황":
         
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
 
 
