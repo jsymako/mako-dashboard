@@ -58,8 +58,13 @@ if main_menu == "📦 자사 재고 현황":
         
         # 숫자형 변환 (현재재고, 판매수량)
         df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0)
-        # 💡 주의: sales_record 시트의 수량 컬럼 이름이 '수량' 또는 '판매수량'일 경우 아래 이름을 맞춰주세요.
+        
+        # 🚀 [여기 수정!] 수량에 들어간 콤마(,)를 강제로 지우고 숫자로 바꿉니다.
+        df_sales['수량'] = df_sales['수량'].astype(str).str.replace(',', '')
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
+        
+        # 🚀 [여기 수정!] 26/01/02 형태든 2026-03-09 형태든 똑똑하게 날짜로 통일시킵니다.
+        df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
         
         # 날짜형 변환 (sales_record의 날짜 컬럼 이름이 '일자' 또는 '판매일자'일 경우 맞춰주세요)
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce')
@@ -158,4 +163,5 @@ elif main_menu == "📈 판매 현황":
         
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
