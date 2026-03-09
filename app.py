@@ -56,35 +56,37 @@ if main_menu == "📦 자사 재고 현황":
         df_own = load_sheet_data("ecount_stock")
         df_sales = load_sheet_data("sales_record")
         
-        # 숫자형 변환 (현재재고, 판매수량)
+        # 숫자형 변환 (현재재고)
         df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0)
         
-        # 🚀 [여기 수정!] 수량에 들어간 콤마(,)를 강제로 지우고 숫자로 바꿉니다.
+        # 수량에 들어간 콤마(,) 강제 제거 및 숫자 변환
         df_sales['수량'] = df_sales['수량'].astype(str).str.replace(',', '')
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
         
-        # 🚀 [여기 수정!] 26/01/02 형태든 2026-03-09 형태든 똑똑하게 날짜로 통일시킵니다.
+        # 날짜형 변환
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
-        
-        # 날짜형 변환 (sales_record의 날짜 컬럼 이름이 '일자' 또는 '판매일자'일 경우 맞춰주세요)
-        df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce')
 
         # 2. 사이드바 필터: 브랜드 & 분석 기간 선택
         brand_list = ["전체보기"] + sorted(list(df_own['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("🔍 브랜드 필터", brand_list)
         
-        months_to_look_back = st.sidebar.slider("📅 판매 평균 산출 기준 (개월)", min_value=1, max_value=12, value=3)
+        months_to_look_back = st.sidebar.slider("📅 판매 평균 산출 기준 (개월)", min_value=1, max_value=12, value=1)
         
-        # 3. 판매량 기반 '월 평균 판매량' 계산 로직
-        # 기준 날짜 계산 (오늘부터 선택한 개월 수 이전)
+        # 3. 판매량 기반 '월 평균 판매량' 계산 로직 (당월 제외, 전월 기준 꽉 찬 달만 계산)
         from dateutil.relativedelta import relativedelta
         import datetime
         
-        today = datetime.datetime.now()
-        start_date = today - relativedelta(months=months_to_look_back)
+        # 오늘 날짜에서 시간을 00:00:00으로 초기화
+        today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # 선택한 기간 내의 판매 데이터만 필터링
-        recent_sales = df_sales[df_sales['일자'] >= start_date]
+        # 종료일: 저번 달 말일 (이번 달 1일에서 하루 빼기)
+        end_date = today.replace(day=1) - datetime.timedelta(days=1)
+        
+        # 시작일: 종료일의 달에서 (선택한 개월 수 - 1)만큼 빼고 1일로 맞춤
+        start_date = (end_date - relativedelta(months=months_to_look_back - 1)).replace(day=1)
+        
+        # 선택한 기간 내의 판매 데이터만 필터링 (시작일 ~ 종료일)
+        recent_sales = df_sales[(df_sales['일자'] >= pd.Timestamp(start_date)) & (df_sales['일자'] <= pd.Timestamp(end_date))]
         
         # 품목코드별로 기간 내 총 판매량 합산
         total_sales_by_item = recent_sales.groupby('품목코드')['수량'].sum().reset_index()
@@ -94,19 +96,19 @@ if main_menu == "📦 자사 재고 현황":
         total_sales_by_item['월평균판매량'] = total_sales_by_item['기간내_총판매량'] / months_to_look_back
         total_sales_by_item['월평균판매량'] = total_sales_by_item['월평균판매량'].round(1) # 소수점 1자리까지
         
-        # 4. 재고 데이터와 판매 데이터 병합 (Merge)
+        # 4. 재고 데이터와 판매 데이터 병합
         df_merged = pd.merge(df_own, total_sales_by_item, on='품목코드', how='left')
         df_merged['월평균판매량'] = df_merged['월평균판매량'].fillna(0)
         
         # 5. 소진 가능 개월 수 계산 & 상태 판별
         import numpy as np
-        # 0으로 나누는 에러 방지
+        # 0으로 나누는 에러 방지 (판매량이 0이면 999.0 개월로 임의 표시)
         df_merged['예상소진개월'] = np.where(df_merged['월평균판매량'] > 0, 
                                        df_merged['현재재고'] / df_merged['월평균판매량'], 
-                                       999) # 판매량이 0이면 999(무한대)로 임의 표시
+                                       999.0)
         df_merged['예상소진개월'] = df_merged['예상소진개월'].round(1)
         
-        # 상태 판별 로직 (기준은 대표님 입맛에 맞게 수정 가능합니다)
+        # 상태 판별 로직
         def check_status(row):
             if row['현재재고'] <= 0: return "🔴 품절"
             elif row['예상소진개월'] < 1.0: return "🟠 재고 부족 (1개월 미만)"
@@ -115,14 +117,18 @@ if main_menu == "📦 자사 재고 현황":
             
         df_merged['재고상태'] = df_merged.apply(check_status, axis=1)
 
-        # 6. 화면 출력 (필터 적용)
+        # 6. 화면 출력
         if selected_brand != "전체보기":
             df_merged = df_merged[df_merged['브랜드'] == selected_brand]
             
-        # 메인 화면에 띄울 핵심 컬럼만 정리
-        final_display_df = df_merged[['브랜드', '품목코드', '품목명', '현재재고', '월평균판매량', '예상소진개월', '재고상태']]
+        # 메인 화면에 띄울 핵심 컬럼만 정리 (품목코드 제외)
+        final_display_df = df_merged[['브랜드', '품목명', '현재재고', '월평균판매량', '예상소진개월', '재고상태']]
         
-        st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표 (최근 {months_to_look_back}개월 판매 추이 반영)")
+        # 동적 제목 생성 (YYYY년 M월 ~ YYYY년 M월)
+        date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
+        st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표")
+        st.caption(f"💡 산출 기준: {date_range_str} ({months_to_look_back}개월간의 판매 데이터를 기반으로 계산되었습니다.)")
+        
         st.dataframe(final_display_df, use_container_width=True)
         
     except Exception as e:
@@ -163,5 +169,6 @@ elif main_menu == "📈 판매 현황":
         
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
 
