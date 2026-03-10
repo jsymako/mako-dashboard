@@ -1,4 +1,4 @@
-/* 브랜드별 그룹을 묶어주는 바탕색 박스 */
+/* 브랜드별 그룹 박스 */
 .brand-section {
     background-color: rgba(150, 150, 150, 0.05);
     border-radius: 12px;
@@ -7,72 +7,96 @@
 }
 
 .brand-title {
-    font-size: 1.6rem; /* 브랜드명 크기 확대 */
+    font-size: 1.5rem;
     font-weight: bold;
-    color: var(--text-color);
     margin-bottom: 15px;
     border-bottom: 2px solid rgba(150, 150, 150, 0.2);
     padding-bottom: 10px;
 }
 
-/* 화면 크기에 맞춰 가로 갯수가 변하는 CSS Grid */
+/* 그리드 컨테이너 */
 .grid-container {
     display: grid;
-    /* 카드의 최소 크기를 220px로 줄여 더 콤팩트하게 배치 */
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 15px;
 }
 
-/* 개별 품목 카드 디자인 */
+/* 개별 품목 카드 */
 .item-card {
     background-color: var(--background-color);
     border: 1px solid rgba(150, 150, 150, 0.2);
-    border-radius: 10px;
-    padding: 20px; /* 여백 증가 */
+    border-radius: 12px;
+    padding: 20px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
 }
 
-.item-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+/* 상부: 품목명과 현재 재고 */
+.card-header {
+    margin-bottom: 15px;
 }
 
 .item-title {
-    font-size: 1.3rem; /* 품목명 크기 대폭 확대 */
-    font-weight: 800; /* 더 두껍게 */
-    margin-bottom: 15px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
     line-height: 1.4;
-    min-height: 60px; /* 폰트가 커짐에 따라 높이 조정 */
     color: var(--text-color);
+}
+
+.stock-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 10px;
+}
+
+.stock-label {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.stock-val {
+    font-size: 1.6rem; /* 현재 재고 강조 */
+    font-weight: 900;
+    color: #2e7d32; /* 기본적으로 녹색 계열 강조 */
+}
+
+/* 중간 구분 점선 */
+.card-divider {
+    border-top: 2px dashed rgba(150, 150, 150, 0.3);
+    margin: 5px 0 15px 0;
+}
+
+/* 하부: 주평균 및 예상 소진 */
+.card-body {
+    flex-grow: 1;
 }
 
 .info-row {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
-    font-size: 1.1rem; /* 일반 정보 글자 크기 확대 */
+    font-size: 1rem;
 }
 
-.info-label { 
-    color: #777; 
-    font-weight: 500; 
+.info-label {
+    color: #777;
 }
 
-.info-val { 
-    font-weight: bold; 
-    color: var(--text-color); 
+.info-val {
+    font-weight: 600;
 }
 
-/* 상태별 뱃지 색상 */
+/* 상태 뱃지 */
 .badge {
-    display: block;
     text-align: center;
-    padding: 10px; /* 뱃지 크기 확대 */
+    padding: 8px;
     border-radius: 6px;
     font-weight: bold;
-    font-size: 1.05rem; /* 뱃지 텍스트 확대 */
-    margin-top: 15px;
+    font-size: 1rem;
+    margin-top: 10px;
 }
 
 .badge-out { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2;}
