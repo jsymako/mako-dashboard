@@ -50,12 +50,11 @@ if main_menu == "📦 자사 재고 현황":
     st.title("📦 자사 재고 현황 및 소진 예측 (주 단위)")
     
     try:
-        # 데이터 불러오기
+        # 1. 시트 데이터 모두 불러오기
         df_own = load_sheet_data("ecount_stock")
         df_sales = load_sheet_data("sales_record")
         df_item = load_sheet_data("ecount_item_data")
         
-        # 🚀 [추가됨] 업데이트 시간 추출 (ecount_stock의 '업데이트 시간' 첫 번째 행)
         update_time = df_own['업데이트 시간'].iloc[0] if '업데이트 시간' in df_own.columns and not df_own.empty else '정보 없음'
 
         # 전처리
@@ -151,7 +150,6 @@ if main_menu == "📦 자사 재고 현황":
             '환산주평균': '주평균판매량'
         })
         
-        # 🚀 [핵심 UI 수정] 가독성을 확 높인 파란색 정보 알림창 배치
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
         
         st.info(f"""
@@ -159,9 +157,120 @@ if main_menu == "📦 자사 재고 현황":
         **💡 산출 기준 :** {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산)
         """)
         
-        st.subheader(f"📋 [{selected_brand}] 재고 상태 종합표 (필터: {selected_status})")
-        st.dataframe(final_display_df, use_container_width=True)
+        # ==========================================
+        # 🚀 [핵심 추가] 반응형 CSS 박스 레이아웃 주입
+        # ==========================================
+        custom_css = """
+        <style>
+        /* 브랜드별 그룹을 묶어주는 바탕색 박스 */
+        .brand-section {
+            background-color: rgba(150, 150, 150, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .brand-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(150, 150, 150, 0.2);
+            padding-bottom: 10px;
+        }
+        /* 화면 크기에 맞춰 가로 갯수가 변하는 CSS Grid */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        /* 개별 품목 카드 디자인 */
+        .item-card {
+            background-color: var(--background-color);
+            border: 1px solid rgba(150, 150, 150, 0.2);
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .item-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            min-height: 45px; /* 제목이 두 줄일 때 카드 높이 맞춤 */
+            color: var(--text-color);
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+        .info-label { color: #888; font-weight: 500; }
+        .info-val { font-weight: bold; color: var(--text-color); }
         
+        /* 상태별 뱃지 색상 */
+        .badge {
+            display: block;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+        .badge-out { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2;}
+        .badge-short { background-color: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2;}
+        .badge-over { background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;}
+        .badge-good { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;}
+        </style>
+        """
+        st.markdown(custom_css, unsafe_allow_html=True)
+
+        if final_display_df.empty:
+            st.warning("조건에 맞는 품목이 없습니다.")
+        else:
+            # 브랜드를 가나다순으로 정렬하여 그룹별 렌더링
+            unique_brands = sorted(final_display_df['브랜드'].unique())
+            
+            for br in unique_brands:
+                br_df = final_display_df[final_display_df['브랜드'] == br]
+                
+                # 브랜드 섹션 시작 (바탕색 박스)
+                html_content = f'<div class="brand-section">'
+                html_content += f'<div class="brand-title">🏢 {br} ({len(br_df)}개 품목)</div>'
+                html_content += '<div class="grid-container">'
+                
+                # 박스 생성
+                for _, row in br_df.iterrows():
+                    # 상태에 따른 뱃지 클래스 지정
+                    status_class = "badge-good"
+                    if "품절" in row['재고상태']: status_class = "badge-out"
+                    elif "부족" in row['재고상태']: status_class = "badge-short"
+                    elif "과다" in row['재고상태']: status_class = "badge-over"
+                    
+                    # 999주인 경우 무한대 표시 처리
+                    weeks_val = "자료 없음" if row['예상소진주'] >= 999 else f"{row['예상소진주']} 주"
+                    
+                    html_content += f"""
+                    <div class="item-card">
+                        <div class="item-title">{row['품목명']}</div>
+                        <div class="info-row"><span class="info-label">현재 재고</span><span class="info-val">{row['현재재고']}</span></div>
+                        <div class="info-row"><span class="info-label">주평균 판매</span><span class="info-val">{row['주평균판매량']}</span></div>
+                        <div class="info-row"><span class="info-label">예상 소진</span><span class="info-val">{weeks_val}</span></div>
+                        <div class="badge {status_class}">{row['재고상태']}</div>
+                    </div>
+                    """
+                
+                html_content += '</div></div>' # grid-container & brand-section 닫기
+                
+                # HTML 렌더링
+                st.markdown(html_content, unsafe_allow_html=True)
+                
     except Exception as e:
         st.error(f"데이터 분석 중 오류가 발생했습니다: {e}")
 
@@ -194,3 +303,4 @@ elif main_menu == "📈 판매 현황":
         st.dataframe(df_sales.tail(100), use_container_width=True)
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
