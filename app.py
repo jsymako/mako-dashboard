@@ -48,6 +48,20 @@ st.sidebar.markdown("---")
 # ------------------------------------------
 if main_menu == "📦 자사 재고 현황":
     st.title("📦 자사 재고 현황 및 소진 예측 (주 단위)")
+
+    # 🚀 [위치 이동 및 개선] CSS 주입을 최상단에서 실행
+    def local_css(file_name):
+        import os
+        if os.path.exists(file_name):
+            with open(file_name, "r", encoding="utf-8") as f:
+                # 텍스트로 보이지 않게 감싸는 확실한 방법
+                css_content = f.read()
+                st.markdown(f" <style>{css_content}</style> ", unsafe_allow_html=True)
+        else:
+            # 파일이 없을 때만 경고를 띄워 확인을 돕습니다.
+            st.sidebar.error(f"⚠️ {file_name} 파일을 찾을 수 없습니다.")
+
+    local_css("style.css")
     
     try:
         # 1. 시트 데이터 모두 불러오기
@@ -156,19 +170,6 @@ if main_menu == "📦 자사 재고 현황":
         **🕒 데이터 업데이트 :** {update_time}  
         **💡 산출 기준 :** {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산)
         """)
-        
-        # ==========================================
-        # 🚀 [수정됨] 외부 CSS 파일(style.css) 불러와서 적용하기
-        # ==========================================
-        def local_css(file_name):
-            try:
-                with open(file_name, "r", encoding="utf-8") as f:
-                    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-            except Exception as e:
-                pass # 파일이 없어도 에러를 띄우지 않고 그냥 넘어갑니다
-
-        # CSS 파일 실행!
-        local_css("style.css")
 
         if final_display_df.empty:
             st.warning("조건에 맞는 품목이 없습니다.")
@@ -242,6 +243,7 @@ elif main_menu == "📈 판매 현황":
         st.dataframe(df_sales.tail(100), use_container_width=True)
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
 
 
