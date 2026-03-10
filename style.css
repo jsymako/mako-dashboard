@@ -5,60 +5,76 @@
     padding: 20px;
     margin-bottom: 30px;
 }
+
 .brand-title {
-    font-size: 1.4rem;
+    font-size: 1.6rem; /* 브랜드명 크기 확대 */
     font-weight: bold;
     color: var(--text-color);
     margin-bottom: 15px;
     border-bottom: 2px solid rgba(150, 150, 150, 0.2);
     padding-bottom: 10px;
 }
+
 /* 화면 크기에 맞춰 가로 갯수가 변하는 CSS Grid */
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    /* 카드의 최소 크기를 220px로 줄여 더 콤팩트하게 배치 */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 15px;
 }
+
 /* 개별 품목 카드 디자인 */
 .item-card {
     background-color: var(--background-color);
     border: 1px solid rgba(150, 150, 150, 0.2);
     border-radius: 10px;
-    padding: 18px;
+    padding: 20px; /* 여백 증가 */
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .item-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
+
 .item-title {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-bottom: 12px;
-    line-height: 1.3;
-    min-height: 45px;
+    font-size: 1.3rem; /* 품목명 크기 대폭 확대 */
+    font-weight: 800; /* 더 두껍게 */
+    margin-bottom: 15px;
+    line-height: 1.4;
+    min-height: 60px; /* 폰트가 커짐에 따라 높이 조정 */
     color: var(--text-color);
 }
+
 .info-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 6px;
-    font-size: 0.95rem;
+    margin-bottom: 8px;
+    font-size: 1.1rem; /* 일반 정보 글자 크기 확대 */
 }
-.info-label { color: #888; font-weight: 500; }
-.info-val { font-weight: bold; color: var(--text-color); }
+
+.info-label { 
+    color: #777; 
+    font-weight: 500; 
+}
+
+.info-val { 
+    font-weight: bold; 
+    color: var(--text-color); 
+}
 
 /* 상태별 뱃지 색상 */
 .badge {
     display: block;
     text-align: center;
-    padding: 8px;
+    padding: 10px; /* 뱃지 크기 확대 */
     border-radius: 6px;
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 1.05rem; /* 뱃지 텍스트 확대 */
     margin-top: 15px;
 }
+
 .badge-out { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2;}
 .badge-short { background-color: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2;}
 .badge-over { background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;}
