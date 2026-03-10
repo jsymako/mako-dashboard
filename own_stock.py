@@ -124,10 +124,24 @@ def run(load_data_func):
                     # 🚀 [수정 포인트] HTML 코드 내 줄바꿈과 공백을 완전히 제거하여 한 줄로 합칩니다.
                     card_html = f"""
                     <div class="item-card">
-                        <div class="item-title">{row['품목명']}</div>
-                        <div class="info-row"><span class="info-label">현재 재고</span><span class="info-val">{row['환산재고']}</span></div>
-                        <div class="info-row"><span class="info-label">주평균 판매</span><span class="info-val">{row['환산주평균']}</span></div>
-                        <div class="info-row"><span class="info-label">예상 소진</span><span class="info-val">{combined_val}</span></div>
+                        <div class="card-header">
+                            <div class="item-title">{row['품목명']}</div>
+                            <div class="stock-main">
+                                <span class="stock-label">현재 재고</span>
+                                <span class="stock-val">{row['환산재고']}</span>
+                            </div>
+                        </div>
+                        <div class="card-divider"></div>
+                        <div class="card-body">
+                            <div class="info-row">
+                                <span class="info-label">주평균 판매</span>
+                                <span class="info-val">{row['환산주평균']}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">예상 소진</span>
+                                <span class="info-val">{combined_val}</span>
+                            </div>
+                        </div>
                         <div class="badge {s_class}">{row['재고상태']}</div>
                     </div>
                     """
