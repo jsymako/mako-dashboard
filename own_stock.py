@@ -98,7 +98,6 @@ def run(load_data_func):
         # 6. 상단 정보 박스 출력
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
         st.info(f"**🕒 데이터 업데이트 :** {update_time}  \n**💡 산출 기준 :** {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산)")
-
         # 7. 카드 렌더링 루프
         if df_merged.empty:
             st.warning("조건에 맞는 품목이 없습니다.")
@@ -106,9 +105,8 @@ def run(load_data_func):
             for br in sorted(df_merged['브랜드'].unique()):
                 br_df = df_merged[df_merged['브랜드'] == br]
                 
-                html_content = f'<div class="brand-section">'
-                html_content += f'<div class="brand-title">🏢 {br} ({len(br_df)}개 품목)</div>'
-                html_content += '<div class="grid-container">'
+                # 브랜드 섹션 시작
+                html_content = f'<div class="brand-section"><div class="brand-title">🏢 {br} ({len(br_df)}개 품목)</div><div class="grid-container">'
                 
                 for _, row in br_df.iterrows():
                     s_class = "badge-good"
@@ -123,7 +121,8 @@ def run(load_data_func):
                         months = round(weeks / 4, 1)
                         combined_val = f"{weeks}주 · {months}개월"
                     
-                    html_content += f'''
+                    # 🚀 [수정 포인트] HTML 코드 내 줄바꿈과 공백을 완전히 제거하여 한 줄로 합칩니다.
+                    card_html = f"""
                     <div class="item-card">
                         <div class="item-title">{row['품목명']}</div>
                         <div class="info-row"><span class="info-label">현재 재고</span><span class="info-val">{row['환산재고']}</span></div>
@@ -131,7 +130,9 @@ def run(load_data_func):
                         <div class="info-row"><span class="info-label">예상 소진</span><span class="info-val">{combined_val}</span></div>
                         <div class="badge {s_class}">{row['재고상태']}</div>
                     </div>
-                    '''
+                    """
+                    # 줄바꿈과 들여쓰기를 공백으로 치환하여 텍스트 노출 방지
+                    html_content += card_html.replace('\n', '').strip()
                 
                 html_content += '</div></div>' 
                 st.markdown(html_content, unsafe_allow_html=True)
