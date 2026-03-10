@@ -9,7 +9,7 @@ import own_stock
 import coupang_stock
 import sales_trend
 
-st.set_page_config(page_title="통합재고관리", page_icon="📊", layout="wide")
+st.set_page_config(page_title="통합재고관리", page_icon="", layout="wide")
 
 # 🚀 공통 데이터 로드 함수
 @st.cache_data(ttl=600)
@@ -35,4 +35,5 @@ elif main_menu == "🚀 쿠팡 재고 현황":
     coupang_stock.run(load_sheet_data)
 elif main_menu == "📈 판매 현황":
     sales_trend.run(load_sheet_data)
+
 
