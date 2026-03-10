@@ -158,78 +158,17 @@ if main_menu == "📦 자사 재고 현황":
         """)
         
         # ==========================================
-        # 🚀 [핵심 추가] 반응형 CSS 박스 레이아웃 주입
+        # 🚀 [수정됨] 외부 CSS 파일(style.css) 불러와서 적용하기
         # ==========================================
-        custom_css = """
-<style>
-/* 브랜드별 그룹을 묶어주는 바탕색 박스 */
-.brand-section {
-    background-color: rgba(150, 150, 150, 0.05);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 30px;
-}
-.brand-title {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: var(--text-color);
-    margin-bottom: 15px;
-    border-bottom: 2px solid rgba(150, 150, 150, 0.2);
-    padding-bottom: 10px;
-}
-/* 화면 크기에 맞춰 가로 갯수가 변하는 CSS Grid */
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 15px;
-}
-/* 개별 품목 카드 디자인 */
-.item-card {
-    background-color: var(--background-color);
-    border: 1px solid rgba(150, 150, 150, 0.2);
-    border-radius: 10px;
-    padding: 18px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.item-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-}
-.item-title {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-bottom: 12px;
-    line-height: 1.3;
-    min-height: 45px; /* 제목이 두 줄일 때 카드 높이 맞춤 */
-    color: var(--text-color);
-}
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-    font-size: 0.95rem;
-}
-.info-label { color: #888; font-weight: 500; }
-.info-val { font-weight: bold; color: var(--text-color); }
+        def local_css(file_name):
+            try:
+                with open(file_name, "r", encoding="utf-8") as f:
+                    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+            except Exception as e:
+                pass # 파일이 없어도 에러를 띄우지 않고 그냥 넘어갑니다
 
-/* 상태별 뱃지 색상 */
-.badge {
-    display: block;
-    text-align: center;
-    padding: 8px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    margin-top: 15px;
-}
-.badge-out { background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2;}
-.badge-short { background-color: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2;}
-.badge-over { background-color: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb;}
-.badge-good { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;}
-</style>
-        """
-        st.markdown(custom_css, unsafe_allow_html=True)
+        # CSS 파일 실행!
+        local_css("style.css")
 
         if final_display_df.empty:
             st.warning("조건에 맞는 품목이 없습니다.")
@@ -303,5 +242,6 @@ elif main_menu == "📈 판매 현황":
         st.dataframe(df_sales.tail(100), use_container_width=True)
     except Exception as e:
         st.error(f"판매 데이터를 불러오지 못했습니다: {e}")
+
 
 
