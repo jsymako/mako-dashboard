@@ -24,7 +24,7 @@ def load_sheet_data(worksheet_name):
     df = pd.DataFrame(data[1:], columns=data[0])
     return df
 
-st.sidebar.title("마코펫 통합재고관리시스템")
+st.sidebar.title("마코펫 통합재고관리")
 main_menu = st.sidebar.radio("▶ 메뉴 이동", ["📦 자사 재고 현황", "🚀 쿠팡 재고 현황", "📈 판매 현황"])
 st.sidebar.markdown("---")
 
@@ -35,6 +35,7 @@ elif main_menu == "🚀 쿠팡 재고 현황":
     coupang_stock.run(load_sheet_data)
 elif main_menu == "📈 판매 현황":
     sales_trend.run(load_sheet_data)
+
 
 
 
