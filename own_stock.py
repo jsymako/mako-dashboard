@@ -121,14 +121,23 @@ def run(load_data_func):
                         months = round(weeks / 4, 1)
                         combined_val = f"{weeks}주 · {months}개월"
                     
-                    # 🚀 [수정 포인트] HTML 코드 내 줄바꿈과 공백을 완전히 제거하여 한 줄로 합칩니다.
+                    # 🚀 [수정] 숫자와 단위를 분리하여 렌더링
+                    stock_text = row['환산재고'] # 예: "15.0 박스" 또는 "120 개"
+                    # 공백을 기준으로 숫자와 단위를 분리합니다.
+                    stock_parts = stock_text.split(' ')
+                    stock_num = stock_parts[0]
+                    stock_unit = stock_parts[1] if len(stock_parts) > 1 else ""
+
                     card_html = f"""
                     <div class="item-card">
                         <div class="card-header">
                             <div class="item-title">{row['품목명']}</div>
                             <div class="stock-main">
                                 <span class="stock-label">현재 재고</span>
-                                <span class="stock-val">{row['환산재고']}</span>
+                                <div>
+                                    <span class="stock-val">{stock_num}</span>
+                                    <span class="stock-unit">{stock_unit}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="card-divider"></div>
