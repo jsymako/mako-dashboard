@@ -6,23 +6,24 @@ from dateutil.relativedelta import relativedelta
 import altair as alt
 
 def run(load_data_func):
-    # 🚀 [스타일 안정화] CSS 주입 방식을 더 안전하게 변경
+    # 🚀 [스타일 최종 보정] 레이아웃 깨짐 방지 및 글자 크기 극대화
     st.markdown("""
         <style>
-            /* 전체 본문 폰트 상향 */
+            /* 전체 본문 폰트 크기 상향 */
             .main .block-container { font-size: 1.1rem; }
             
-            /* Metric(지표) 영역 스타일 강제 고정 */
+            /* Metric(지표) 상단 제목 (날짜, 분석항목) */
             [data-testid="stMetricLabel"] > div { 
                 font-size: 1.6rem !important; 
                 font-weight: 800 !important; 
                 color: #1E1E1E !important; 
             }
+            /* Metric 메인 수치 (박스 수량 및 금액) */
             [data-testid="stMetricValue"] > div { 
                 font-size: 2.8rem !important; 
                 font-weight: 700 !important;
             }
-            /* Metric 하단 캡션 스타일 (박스 수량 등) */
+            /* Metric 하단 캡션 (낱개 수량 설명 등) */
             .stCaption, [data-testid="stCaptionContainer"] { 
                 font-size: 1.6rem !important; 
                 line-height: 1.6 !important; 
@@ -35,17 +36,17 @@ def run(load_data_func):
                 display: inline-block;
                 margin-top: 5px;
             }
-            /* 경고/성공 메시지 크기 */
-            .stAlert p { font-size: 1.5rem !important; font-weight: 700 !important; }
-            /* 탭 글자 크기 */
+            /* 탭 메뉴 글자 크기 */
             button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !important; }
+            /* 경고/성공 메시지 */
+            .stAlert p { font-size: 1.5rem !important; font-weight: 700 !important; }
         </style>
     """, unsafe_allow_html=True)
 
     st.title("📈 판매 현황 및 수요 예측")
 
     try:
-        # 1. 데이터 불러오기
+        # 1. 데이터 로드 및 마스터 결합
         df_sales_raw = load_data_func("sales_record")
         df_item = load_data_func("ecount_item_data") 
         
@@ -63,7 +64,7 @@ def run(load_data_func):
         df_sales['월_dt'] = df_sales['일자'].dt.to_period('M').dt.to_timestamp()
         df_sales['월'] = df_sales['일자'].dt.strftime('%Y년 %m월')
 
-        # 2. 사이드바 필터
+        # 2. 사이드바 필터 (브랜드-품목 연동)
         st.sidebar.markdown("### 🔍 조회 조건")
         brand_list = ["전체보기"] + sorted(list(df_sales['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
@@ -75,6 +76,7 @@ def run(load_data_func):
         st.sidebar.markdown("---")
         view_mode = st.sidebar.radio("3. 분석 모드", ["월별 현황", "일별 현황", "🔮 수요 예측"], index=0)
 
+        # 공통 필터 적용
         filtered_df = df_sales.copy()
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
@@ -100,22 +102,35 @@ def run(load_data_func):
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
 
         if view_mode in ["월별 현황", "일별 현황"]:
+            # (1) 추이 차트 탭 복구
             st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
-            t1, t2 = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
+            t_line1, t_line2 = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
             grp = '월' if view_mode == "월별 현황" else '일자'
             trend = filtered_df.groupby(grp)[['공급가액', '수량']].sum().reset_index()
-            with t1: st.line_chart(trend.set_index(grp)['공급가액'], color="#2E86C1")
-            with t2: st.line_chart(trend.set_index(grp)['수량'], color="#28B463")
+            with t_line1: st.line_chart(trend.set_index(grp)['공급가액'], color="#2E86C1")
+            with t_line2: st.line_chart(trend.set_index(grp)['수량'], color="#28B463")
 
-            # 순위 차트
+            # (2) 상세 순위 3개 탭 복구 (이름순, 매출순, 박스순)
             group_field = '브랜드' if selected_brand == "전체보기" else '공식품목명'
-            st.subheader(f"📊 {selected_brand if selected_brand != '전체보기' else '전체'} 순위")
+            st.subheader(f"📊 {selected_brand if selected_brand != '전체보기' else '전체'} 순위 현황")
+            tab_n, tab_a, tab_q = st.tabs(["📋 이름 순", "💰 매출액 순", "📦 박스 순"])
+            
             sum_df = filtered_df.groupby([group_field])[['공급가액', '환산수량']].sum().reset_index()
             y_ax = alt.Axis(labelLimit=500, labelFontSize=16, title='', labelPadding=20)
-            
-            st.altair_chart(alt.Chart(sum_df).mark_bar(color="#E74C3C").encode(
-                x='공급가액:Q', y=alt.Y(f'{group_field}:N', sort='-x', axis=y_ax)
-            ).properties(height=max(400, len(sum_df)*45)), use_container_width=True)
+            chart_h = max(400, len(sum_df) * 45)
+
+            with tab_n:
+                st.altair_chart(alt.Chart(sum_df).mark_bar(color="#95A5A6").encode(
+                    x='공급가액:Q', y=alt.Y(f'{group_field}:N', sort='ascending', axis=y_ax)
+                ).properties(height=chart_h), use_container_width=True)
+            with tab_a:
+                st.altair_chart(alt.Chart(sum_df).mark_bar(color="#E74C3C").encode(
+                    x='공급가액:Q', y=alt.Y(f'{group_field}:N', sort='-x', axis=y_ax)
+                ).properties(height=chart_h), use_container_width=True)
+            with tab_q:
+                st.altair_chart(alt.Chart(sum_df).mark_bar(color="#F39C12").encode(
+                    x='환산수량:Q', y=alt.Y(f'{group_field}:N', sort='-x', axis=y_ax)
+                ).properties(height=chart_h), use_container_width=True)
 
         elif view_mode == "🔮 수요 예측":
             st.subheader("🔮 향후 3개월 수요 예측 분석")
@@ -144,7 +159,7 @@ def run(load_data_func):
 
                 for i, row in enumerate(f_df.itertuples()):
                     with cols[i]:
-                        # 🚀 박스 수량을 메인으로, 개수를 보조로 표시
+                        # 🚀 [핵심] 박스 수량을 메인으로, 개수를 보조로 표시
                         main_v = f"{row.예측수량/b_unit:.1f} 박스" if b_unit > 1 else f"{int(row.예측수량):,} 개"
                         sub_v = f"낱개: {int(row.예측수량):,} 개" if b_unit > 1 else ""
                         st.metric(f"{row.월_dt.strftime('%m월')}", main_v)
