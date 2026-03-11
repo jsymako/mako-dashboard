@@ -6,15 +6,55 @@ from dateutil.relativedelta import relativedelta
 import altair as alt
 
 def run(load_data_func):
-    # 🚀 CSS 주입: 전반적인 글자 크기 상향 및 Metric 가독성 강화
+    # 🚀 [글자 크기 대폭 상향] CSS 주입
     st.markdown("""
         <style>
-            html, body, [class*="css"]  { font-size: 1.1rem; }
-            [data-testid="stMetricLabel"] { font-size: 1.3rem !important; font-weight: bold !important; color: #31333F !important; }
-            [data-testid="stMetricValue"] { font-size: 2.2rem !important; }
-            [data-testid="stMetricDelta"] { font-size: 1.1rem !important; font-weight: 500 !important; }
-            .stCaption { font-size: 1.1rem !important; line-height: 1.5 !important; color: #555 !important; }
-            button[data-baseweb="tab"] { font-size: 1.2rem !important; }
+            /* 1. 전체 기본 글자 크기 (메뉴, 버튼 등) */
+            html, body, [class*="css"]  { 
+                font-size: 1.2rem !important; 
+            }
+            
+            /* 2. Metric 상단 제목 (날짜, 분석항목명 등) */
+            [data-testid="stMetricLabel"] { 
+                font-size: 1.6rem !important; 
+                font-weight: 800 !important; 
+                color: #1E1E1E !important; 
+                margin-bottom: 8px !important;
+            }
+            
+            /* 3. Metric 메인 숫자 */
+            [data-testid="stMetricValue"] { 
+                font-size: 2.8rem !important; 
+            }
+            
+            /* 4. Metric 하단 설명/변동폭 */
+            [data-testid="stMetricDelta"] { 
+                font-size: 1.4rem !important; 
+                font-weight: 600 !important; 
+            }
+            
+            /* 5. 캡션 (박스 계산량, 필요량 설명 등) */
+            .stCaption { 
+                font-size: 1.5rem !important; 
+                line-height: 1.8 !important; 
+                color: #222 !important; 
+                font-weight: 700 !important; 
+                background-color: #f0f2f6;
+                padding: 5px 10px;
+                border-radius: 5px;
+            }
+            
+            /* 6. 알림창 (성공, 정보 메시지 글자 크기) */
+            .stAlert p {
+                font-size: 1.6rem !important;
+                font-weight: 800 !important;
+            }
+            
+            /* 7. 탭 메뉴 글자 */
+            button[data-baseweb="tab"] { 
+                font-size: 1.4rem !important; 
+                font-weight: 600 !important;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -58,7 +98,6 @@ def run(load_data_func):
         st.sidebar.markdown("---")
         view_mode = st.sidebar.radio("3. 분석 모드", ["월별 현황", "일별 현황", "🔮 수요 예측"], index=0)
 
-        # 공통 필터링
         filtered_df = df_sales.copy()
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
@@ -66,7 +105,7 @@ def run(load_data_func):
             filtered_df = filtered_df[filtered_df['공식품목명'] == selected_product]
 
         # ==========================================
-        # 3. 날짜 설정 및 필터
+        # 3. 날짜 설정
         # ==========================================
         today = datetime.date.today()
         if view_mode == "일별 현황":
@@ -139,17 +178,14 @@ def run(load_data_func):
                 ).properties(height=350)
                 st.altair_chart(chart_l2, use_container_width=True)
 
-            # 🚀 [로직 변경 핵심] 브랜드가 '전체보기'일 때는 브랜드별로 집계
             if selected_brand == "전체보기":
                 st.subheader("📊 브랜드별 판매 현황")
                 group_field = '브랜드'
-                tab_names = ["📋 브랜드명 순", "💰 매출액 순위", "📦 박스 순위"]
             else:
                 st.subheader(f"📊 {selected_brand} 품목별 상세 순위")
                 group_field = '공식품목명'
-                tab_names = ["📋 제품명 순", "💰 매출액 순위", "📦 박스 순위"]
 
-            tab_name, tab_amt, tab_qty = st.tabs(tab_names)
+            tab_name, tab_amt, tab_qty = st.tabs(["📋 이름 순", "💰 매출액 순위", "📦 박스 순위"])
             prod_summary = display_df.groupby([group_field])[['공급가액', '환산수량']].sum().reset_index()
             chart_height = max(400, len(prod_summary) * 45)
             y_axis_large = alt.Axis(labelLimit=500, labelFontSize=17, title='', labelPadding=20, offset=0)
@@ -174,7 +210,6 @@ def run(load_data_func):
                 st.altair_chart(c, use_container_width=True)
 
         elif view_mode == "🔮 수요 예측":
-            # (수요 예측 부분 유지)
             st.subheader("🔮 향후 3개월 수요 예측 분석")
             monthly_data = filtered_df.groupby('월_dt')['수량'].sum().reset_index()
             monthly_data = monthly_data.set_index('월_dt').asfreq('MS').fillna(0)
@@ -210,11 +245,12 @@ def run(load_data_func):
                 cols = st.columns(3)
                 for i, row in enumerate(forecast_df.itertuples()):
                     with cols[i]:
+                        # 🚀 [집중 수정] 날짜와 박스 설명글을 매우 크게 설정
                         st.metric(f"📅 {row.월_dt.strftime('%m월 %d일')}", f"{int(row.예측수량):,} 개")
-                        st.caption(f"📦 약 **{row.예측수량/avg_box_unit:.1f} 박스** (필요량)")
+                        st.caption(f"📦 약 {row.예측수량/avg_box_unit:.1f} 박스 (필요량)")
                 
                 total_est = sum(forecast_df['예측수량'])
-                st.success(f"✅ 3개월 총 예상 필요량: 약 **{int(total_est):,}** 개 (**약 {total_est/avg_box_unit:.1f} 박스**)")
+                st.success(f"✅ 3개월 총 예상 필요량: 약 {int(total_est):,} 개 (약 {total_est/avg_box_unit:.1f} 박스)")
 
         with st.expander("🔍 상세 판매 기록 보기"):
             def format_qty_display(qty, box_unit):
