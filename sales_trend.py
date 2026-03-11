@@ -6,23 +6,21 @@ import altair as alt
 
 def run(load_data_func):
     st.title("📈 판매 현황 및 트렌드 분석")
-    st.markdown("매출액과 판매량을 브랜드 및 품목코드별로 정확하게 분석합니다.")
+    st.markdown("매출액과 판매량을 브랜드 및 개별 품목별로 심도 있게 분석합니다.")
 
     try:
         # 1. 데이터 불러오기
         df_sales_raw = load_data_func("sales_record")
         df_item = load_data_func("ecount_item_data") 
         
-        # --- [데이터 전처리: 품목 정보 (Master Data)] ---
-        # ecount_item_data에서 공식 이름, 브랜드, 박스입수(D열) 가져오기
+        # --- [데이터 전처리: 품목 정보] ---
         box_col_name = df_item.columns[3] 
         df_item_master = df_item[['품목코드', '이름', '브랜드', box_col_name]].copy()
         df_item_master.rename(columns={'이름': '공식품목명', box_col_name: '박스입수'}, inplace=True)
         df_item_master['박스입수'] = pd.to_numeric(df_item_master['박스입수'], errors='coerce').fillna(1)
         
-        # --- [데이터 전처리: 판매 기록 (Raw Data)] ---
+        # --- [데이터 전처리: 판매 기록] ---
         df_sales_raw.columns = df_sales_raw.columns.str.strip()
-        
         if '일자' not in df_sales_raw.columns or '품목코드' not in df_sales_raw.columns:
             st.error("🚨 시트 제목('일자', '품목코드')을 확인해주세요.")
             return
@@ -30,19 +28,14 @@ def run(load_data_func):
         df_sales_raw['일자'] = pd.to_datetime(df_sales_raw['일자'], errors='coerce')
         df_sales_raw['수량'] = pd.to_numeric(df_sales_raw['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_sales_raw['공급가액'] = pd.to_numeric(df_sales_raw['공급가액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-        
         df_sales_raw = df_sales_raw.dropna(subset=['일자'])
         df_sales_raw = df_sales_raw[df_sales_raw['수량'] > 0] 
 
-        # 판매기록의 품목명은 버리고, 품목코드 기준으로 공식 정보 매칭
         if '품목명' in df_sales_raw.columns:
             df_sales_raw = df_sales_raw.drop(columns=['품목명'])
             
-        # 🚀 [핵심 수정] how='inner'로 변경하여 ecount_item_data에 없는 품목은 무시합니다.
+        # ecount_item_data에 등록된 품목만 분석 (inner join)
         df_sales = pd.merge(df_sales_raw, df_item_master, on='품목코드', how='inner')
-        
-        # 기초 데이터 가공
-        df_sales['박스입수'] = df_sales['박스입수'].fillna(1)
         df_sales['환산수량'] = df_sales['수량'] / df_sales['박스입수']
         df_sales['월'] = df_sales['일자'].dt.strftime('%Y-%m')
 
@@ -52,15 +45,29 @@ def run(load_data_func):
             return f"{boxes:.1f} 박스" if boxes < 10 else f"{int(boxes):,} 박스"
 
         # ==========================================
-        # 2. 사이드바 설정
+        # 2. 사이드바: 브랜드 & 품목 연동 필터
         # ==========================================
         st.sidebar.markdown("### 🔍 조회 조건")
+        
+        # (1) 브랜드 선택
         brand_list = ["전체보기"] + sorted(list(df_sales['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
         
+        # (2) 품목 선택 (브랜드에 따라 목록 자동 변경)
+        if selected_brand == "전체보기":
+            product_df = df_sales
+        else:
+            product_df = df_sales[df_sales['브랜드'] == selected_brand]
+        
+        product_list = ["전체보기"] + sorted(list(product_df['공식품목명'].unique()))
+        selected_product = st.sidebar.selectbox("2. 품목 선택", product_list)
+        
         st.sidebar.markdown("---")
-        view_mode = st.sidebar.radio("2. 보기 방식", ["일별 현황", "월별 현황"])
+        view_mode = st.sidebar.radio("3. 보기 방식", ["일별 현황", "월별 현황"])
 
+        # ==========================================
+        # 3. 사이드바: 날짜 조건
+        # ==========================================
         today = datetime.date.today()
         if view_mode == "일별 현황":
             if "trend_start_date" not in st.session_state: st.session_state.trend_start_date = today - relativedelta(months=3)
@@ -81,14 +88,20 @@ def run(load_data_func):
             mask = (df_sales['일자'].dt.date >= start_date_m) & (df_sales['일자'].dt.date <= end_date_m)
 
         # ==========================================
-        # 3. 데이터 필터링 및 KPI
+        # 4. 필터 적용 및 KPI
         # ==========================================
         filtered_df = df_sales.loc[mask].copy()
+        
+        # 브랜드 필터 적용
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
+        
+        # 🚀 [추가] 품목 필터 적용
+        if selected_product != "전체보기":
+            filtered_df = filtered_df[filtered_df['공식품목명'] == selected_product]
 
         if filtered_df.empty:
-            st.warning("데이터가 없습니다.")
+            st.warning("선택하신 조건에 맞는 데이터가 없습니다.")
             return
 
         total_amount = filtered_df['공급가액'].sum()
@@ -110,8 +123,9 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 4. 추이 및 막대 차트
+        # 5. 추이 차트
         # ==========================================
+        st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
         if view_mode == "일별 현황":
             daily_trend = filtered_df.groupby('일자')[['공급가액', '수량']].sum()
             st.line_chart(daily_trend['공급가액'], color="#2E86C1")
@@ -119,13 +133,15 @@ def run(load_data_func):
             monthly_trend = filtered_df.groupby('월')[['공급가액', '수량']].sum()
             st.line_chart(monthly_trend['공급가액'], color="#2E86C1")
 
-        # 품목코드 기준 통합 집계
+        # ==========================================
+        # 6. 품목별 상세 현황 (가로 막대 그래프)
+        # ==========================================
+        st.subheader(f"📊 상세 분석 리스트")
+        tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 환산수량(박스) 순위"])
+        
         prod_summary = filtered_df.groupby(['품목코드', '공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
         chart_height = max(400, len(prod_summary) * 40)
         y_axis_config = alt.Axis(labelLimit=500, labelFontSize=14, title='')
-
-        st.subheader(f"📊 {selected_brand} 상세 현황")
-        tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 환산수량(박스) 순위"])
 
         with tab_name:
             c = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
@@ -148,7 +164,7 @@ def run(load_data_func):
             ).properties(height=chart_height)
             st.altair_chart(c, use_container_width=True)
 
-        # 5. 상세 데이터
+        # 7. 상세 데이터
         with st.expander("🔍 상세 판매 기록 보기"):
             display_df = filtered_df[['일자', '브랜드', '공식품목명', '수량', '박스입수', '공급가액']].copy()
             display_df['환산수량'] = display_df.apply(lambda r: format_qty_display(r['수량'], r['박스입수']), axis=1)
