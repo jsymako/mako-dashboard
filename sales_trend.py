@@ -8,14 +8,15 @@ def run(load_data_func):
     st.markdown("매출액과 판매량을 브랜드 및 품목별로 심도 있게 분석합니다.")
 
     try:
-        # 1. 데이터 로드 및 전처리
+        # 1. 데이터 불러오기 (판매기록 + 품목기본정보)
         df_sales = load_data_func("sales_record")
         df_item = load_data_func("ecount_item_data") 
         
+        # --- [데이터 전처리: 판매 기록] ---
         df_sales.columns = df_sales.columns.str.strip()
         
         if '일자' not in df_sales.columns:
-            st.error("🚨 시트 첫 줄에 '일자' 열을 찾을 수 없습니다.")
+            st.error("🚨 시트 첫 줄에 '일자' 열을 찾을 수 없습니다. 시트를 확인해주세요.")
             return
 
         if '공급가액' not in df_sales.columns:
@@ -34,7 +35,7 @@ def run(load_data_func):
             st.warning("표시할 판매 데이터가 없습니다.")
             return
 
-        # 품목 정보(브랜드, 박스입수) 병합
+        # --- [데이터 전처리: 품목 정보 매칭] ---
         box_col_name = df_item.columns[3] 
         df_item_info = df_item[['품목코드', '브랜드', box_col_name]].copy()
         df_item_info.rename(columns={box_col_name: '박스입수'}, inplace=True)
@@ -43,6 +44,7 @@ def run(load_data_func):
         df_sales = pd.merge(df_sales, df_item_info, on='품목코드', how='left')
         df_sales['브랜드'] = df_sales['브랜드'].fillna('기타')
         df_sales['박스입수'] = df_sales['박스입수'].fillna(1)
+        
         df_sales['환산수량'] = df_sales['수량'] / df_sales['박스입수']
 
         def format_qty_display(qty, box_unit):
@@ -51,9 +53,10 @@ def run(load_data_func):
             boxes = qty / box_unit
             return f"{boxes:.1f} 박스" if boxes < 10 else f"{int(boxes):,} 박스"
 
-        # 2. 사이드바: 기간 설정 (단축키 포함)
+        # 2. 사이드바: 기간 및 필터
         today = datetime.date.today()
         
+        # 🚀 [추가] 세션 상태(Session State)를 이용한 날짜 기본값 저장
         if "trend_start_date" not in st.session_state:
             st.session_state.trend_start_date = today - relativedelta(months=3)
         if "trend_end_date" not in st.session_state:
@@ -62,6 +65,7 @@ def run(load_data_func):
         st.sidebar.markdown("### ⚡ 빠른 기간 선택")
         col1, col2 = st.sidebar.columns(2)
         
+        # 단축키 버튼: 이번 달 / 지난 달
         if col1.button("이번 달"):
             st.session_state.trend_start_date = today.replace(day=1)
             st.session_state.trend_end_date = today
@@ -71,6 +75,7 @@ def run(load_data_func):
             st.session_state.trend_start_date = last_day_last_month.replace(day=1)
             st.session_state.trend_end_date = last_day_last_month
             
+        # 단축키: 최근 N개월 드롭다운
         col3, col4 = st.sidebar.columns([2, 1])
         with col3:
             quick_months = st.selectbox("과거 기간", [1, 2, 3, 6, 12, 24], index=1, format_func=lambda x: f"최근 {x}개월", label_visibility="collapsed")
@@ -80,7 +85,7 @@ def run(load_data_func):
                 st.session_state.trend_end_date = today
 
         st.sidebar.markdown("### 📅 상세 기간 설정")
-        # YYYY-MM-DD 포맷 적용으로 숫자 달력 표시, 미래 날짜 제한 해제
+        # 🚀 [수정] format="YYYY-MM-DD" 추가로 영문 달 대신 숫자 달(03) 표시, max_value 제한 삭제!
         start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY-MM-DD")
         end_date = st.sidebar.date_input("종료일", key="trend_end_date", format="YYYY-MM-DD")
 
@@ -112,7 +117,7 @@ def run(load_data_func):
         
         st.markdown("---")
 
-        # 4. 차트: 일별 판매 추이
+        # 4. 차트 1: 일별 판매 추이
         st.subheader("📉 일별 판매 추이")
         tab1, tab2 = st.tabs(["💰 매출액 흐름보기", "📦 판매수량 흐름보기"])
         
@@ -124,7 +129,7 @@ def run(load_data_func):
         with tab2:
             st.line_chart(daily_trend['수량'], color="#28B463")
 
-        # 5. 차트: 베스트셀러 TOP 10
+        # 5. 차트 2: 베스트셀러
         st.subheader("🏆 베스트셀러 TOP 10")
         tab3, tab4 = st.tabs(["💰 매출액 기준 TOP 10", "📦 환산수량(박스/개) 기준 TOP 10"])
         
@@ -136,7 +141,7 @@ def run(load_data_func):
             top_qty = filtered_df.groupby('품목명')['환산수량'].sum().sort_values(ascending=False).head(10)
             st.bar_chart(top_qty, color="#F39C12")
 
-        # 6. 표: 데이터 상세
+        # 6. 표: 원본 데이터 상세
         with st.expander("🔍 선택된 기간의 상세 판매 기록 보기"):
             display_df = filtered_df[['일자', '브랜드', '품목명', '수량', '박스입수', '공급가액']].copy()
             display_df['일자'] = display_df['일자'].dt.strftime('%Y-%m-%d')
