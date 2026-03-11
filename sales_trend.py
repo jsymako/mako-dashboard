@@ -10,17 +10,26 @@ def run(load_data_func):
         # 1. 데이터 불러오기
         df_sales = load_data_func("sales_record")
         
-        # 데이터 전처리 (일자를 날짜 형식으로, 수량을 숫자로)
+        # 🚀 [방어 로직] 제목 줄에 섞인 보이지 않는 공백(스페이스)을 싹 지워줍니다.
+        df_sales.columns = df_sales.columns.str.strip()
+        
+        # 만약 진짜로 '일자' 기둥이 없다면 친절하게 알려줍니다.
+        if '일자' not in df_sales.columns:
+            st.error(f"🚨 구글 시트 첫 줄에 '일자'라는 제목이 없습니다! 현재 시트의 제목들: {list(df_sales.columns)}")
+            st.info("구글 시트의 A1 셀이 '일자'로 되어 있는지 확인해 주세요.")
+            return
+
+        # 데이터 전처리
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce')
         df_sales['수량'] = df_sales['수량'].astype(str).str.replace(',', '')
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
         
         # 빈 날짜나 수량이 0인 행 제거
         df_sales = df_sales.dropna(subset=['일자'])
-        df_sales = df_sales[df_sales['수량'] > 0] # 반품(마이너스) 제외하고 순수 판매만 우선 보기
+        df_sales = df_sales[df_sales['수량'] > 0] # 순수 판매만 보기
 
         if df_sales.empty:
-            st.warning("표시할 판매 데이터가 없습니다.")
+            st.warning("선택된 기간에 표시할 판매 데이터가 없습니다.")
             return
 
         # 2. 사이드바: 기간 필터 설정
@@ -28,21 +37,21 @@ def run(load_data_func):
         min_date = df_sales['일자'].min().date()
         max_date = df_sales['일자'].max().date()
 
-        # 기본값: 최근 3개월 (또는 데이터가 짧으면 전체 기간)
         default_start = max(min_date, max_date - datetime.timedelta(days=90))
         
-        start_date, end_date = st.sidebar.date_input(
-            "기간을 선택하세요",
-            [default_start, max_date],
-            min_value=min_date,
-            max_value=max_date
-        )
+        start_date = st.sidebar.date_input("시작일", default_start, min_value=min_date, max_value=max_date)
+        end_date = st.sidebar.date_input("종료일", max_date, min_value=min_date, max_value=max_date)
 
         # 선택한 기간으로 데이터 자르기
         mask = (df_sales['일자'].dt.date >= start_date) & (df_sales['일자'].dt.date <= end_date)
         filtered_df = df_sales.loc[mask]
 
-        # 3. 화면 상단 요약 요약 (KPI)
+        # 데이터가 비어있을 경우 방어
+        if filtered_df.empty:
+            st.warning("선택하신 기간에는 판매 데이터가 없습니다.")
+            return
+
+        # 3. 화면 상단 KPI 요약
         total_qty = filtered_df['수량'].sum()
         total_days = (end_date - start_date).days + 1
         daily_avg = total_qty / total_days if total_days > 0 else 0
@@ -55,25 +64,18 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 📊 [차트 1] 일별 판매 트렌드 (꺾은선 그래프)
+        # 📊 [차트 1] 일별 판매 트렌드
         # ==========================================
         st.subheader("📉 일별 총 판매 추이")
-        # 날짜별로 수량 합치기
         daily_trend = filtered_df.groupby('일자')['수량'].sum().reset_index()
-        # 스트림릿 내장 라인 차트를 위해 인덱스를 날짜로 설정
         daily_trend.set_index('일자', inplace=True)
-        
-        # 차트 그리기
         st.line_chart(daily_trend)
 
         # ==========================================
-        # 📊 [차트 2] 판매량 TOP 10 품목 (막대 그래프)
+        # 📊 [차트 2] 베스트셀러 TOP 10
         # ==========================================
         st.subheader("🏆 베스트셀러 TOP 10")
-        # 품목명별로 수량 합치기 후 내림차순 정렬, 상위 10개만 추출
         top_items = filtered_df.groupby('품목명')['수량'].sum().sort_values(ascending=False).head(10)
-        
-        # 차트 그리기
         st.bar_chart(top_items)
 
         # ==========================================
