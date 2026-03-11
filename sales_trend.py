@@ -14,7 +14,7 @@ def run(load_data_func):
         df_item = load_data_func("ecount_item_data") 
         
         # --- [데이터 전처리: 품목 정보 (Master Data)] ---
-        # 🚀 [수정] '품목명' 대신 '이름' 컬럼을 사용합니다.
+        # ecount_item_data에서 공식 이름, 브랜드, 박스입수(D열) 가져오기
         box_col_name = df_item.columns[3] 
         df_item_master = df_item[['품목코드', '이름', '브랜드', box_col_name]].copy()
         df_item_master.rename(columns={'이름': '공식품목명', box_col_name: '박스입수'}, inplace=True)
@@ -38,11 +38,10 @@ def run(load_data_func):
         if '품목명' in df_sales_raw.columns:
             df_sales_raw = df_sales_raw.drop(columns=['품목명'])
             
-        df_sales = pd.merge(df_sales_raw, df_item_master, on='품목코드', how='left')
+        # 🚀 [핵심 수정] how='inner'로 변경하여 ecount_item_data에 없는 품목은 무시합니다.
+        df_sales = pd.merge(df_sales_raw, df_item_master, on='품목코드', how='inner')
         
-        # 정보가 없는 품목(기타) 처리
-        df_sales['공식품목명'] = df_sales['공식품목명'].fillna(df_sales['품목코드'])
-        df_sales['브랜드'] = df_sales['브랜드'].fillna('기타')
+        # 기초 데이터 가공
         df_sales['박스입수'] = df_sales['박스입수'].fillna(1)
         df_sales['환산수량'] = df_sales['수량'] / df_sales['박스입수']
         df_sales['월'] = df_sales['일자'].dt.strftime('%Y-%m')
@@ -125,7 +124,7 @@ def run(load_data_func):
         chart_height = max(400, len(prod_summary) * 40)
         y_axis_config = alt.Axis(labelLimit=500, labelFontSize=14, title='')
 
-        st.subheader(f"📊 {selected_brand} 상세 현황 (코드별 합산)")
+        st.subheader(f"📊 {selected_brand} 상세 현황")
         tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 환산수량(박스) 순위"])
 
         with tab_name:
