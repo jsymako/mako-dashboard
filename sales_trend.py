@@ -7,7 +7,7 @@ import altair as alt
 
 def run(load_data_func):
     st.title("📈 판매 현황 및 수요 예측")
-    st.markdown("과거 데이터를 **계절성 지수 평활법(Seasonal Exponential Smoothing)**으로 분석하여 성과를 확인하고 향후 수요를 예측합니다.")
+    st.markdown("과거 데이터를 **계절성 지수 평활법**으로 분석하여 성과를 확인하고 향후 수요를 예측합니다.")
 
     try:
         # 1. 데이터 불러오기
@@ -27,11 +27,10 @@ def run(load_data_func):
         df_sales_raw['공급가액'] = pd.to_numeric(df_sales_raw['공급가액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_sales_raw = df_sales_raw.dropna(subset=['일자'])
         
-        # ecount_item_data에 있는 품목만 분석 (inner join)
         df_sales = pd.merge(df_sales_raw, df_item_master, on='품목코드', how='inner')
         df_sales['환산수량'] = df_sales['수량'] / df_sales['박스입수']
         df_sales['월_dt'] = df_sales['일자'].dt.to_period('M').dt.to_timestamp()
-        df_sales['월'] = df_sales['일자'].dt.strftime('%Y-%m')
+        df_sales['월'] = df_sales['일자'].dt.strftime('%Y년 %m월')
 
         # ==========================================
         # 2. 사이드바 설정
@@ -55,16 +54,17 @@ def run(load_data_func):
             filtered_df = filtered_df[filtered_df['공식품목명'] == selected_product]
 
         # ==========================================
-        # 3. 날짜 설정 및 필터 재정의 (모드별)
+        # 3. 날짜 설정 및 필터
         # ==========================================
         today = datetime.date.today()
         if view_mode == "일별 현황":
             if "trend_start_date" not in st.session_state: st.session_state.trend_start_date = today - relativedelta(months=3)
-            start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY-MM-DD")
-            end_date = st.sidebar.date_input("종료일", value=today, format="YYYY-MM-DD")
+            start_date = st.sidebar.date_input("시작일", key="trend_start_date")
+            end_date = st.sidebar.date_input("종료일", value=today)
             mask = (filtered_df['일자'].dt.date >= start_date) & (filtered_df['일자'].dt.date <= end_date)
             display_df = filtered_df.loc[mask].copy()
-            date_range_str = f"{start_date} ~ {end_date}"
+            # 🚀 날짜 포맷 한국식 변경
+            date_range_str = f"{start_date.strftime('%Y년 %m월 %d일')} ~ {end_date.strftime('%Y년 %m월 %d일')}"
         elif view_mode == "월별 현황":
             month_list = sorted(list(df_sales['월'].unique()))
             start_month = st.sidebar.selectbox("시작 월", month_list, index=max(0, len(month_list)-12))
@@ -72,14 +72,14 @@ def run(load_data_func):
             display_df = filtered_df[(filtered_df['월'] >= start_month) & (filtered_df['월'] <= end_month)]
             date_range_str = f"{start_month} ~ {end_month}"
         else:
-            display_df = filtered_df # 수요 예측은 전체 기간 참고
+            display_df = filtered_df
 
         if display_df.empty:
             st.warning("선택하신 조건에 데이터가 없습니다.")
             return
 
         # ==========================================
-        # 4. KPI 표시
+        # 4. KPI 표시 (글자 크기 보정)
         # ==========================================
         total_amount = display_df['공급가액'].sum()
         total_qty = display_df['수량'].sum()
@@ -89,71 +89,97 @@ def run(load_data_func):
         
         if view_mode == "일별 현황":
             diff = (end_date - start_date).days + 1
+            # 🚀 서브 텍스트(날짜 범위)가 더 잘 보이도록 delta에 배치
             c2.metric("📅 분석 기간", f"{diff} 일", date_range_str, delta_color="off")
             c3.metric("💸 일평균 판매액", f"{int(total_amount/diff if diff>0 else 0):,} 원")
         elif view_mode == "월별 현황":
-            diff = (pd.to_datetime(end_month).year - pd.to_datetime(start_month).year) * 12 + (pd.to_datetime(end_month).month - pd.to_datetime(start_month).month) + 1
+            # 월 차이 계산
+            d1 = pd.to_datetime(start_month, format='%Y년 %m월')
+            d2 = pd.to_datetime(end_month, format='%Y년 %m월')
+            diff = (d2.year - d1.year) * 12 + (d2.month - d1.month) + 1
             c2.metric("📅 분석 기간", f"{diff} 개월", date_range_str, delta_color="off")
             c3.metric("💸 월평균 판매액", f"{int(total_amount/diff if diff>0 else 0):,} 원")
         else:
-            c2.metric("📊 데이터 기준", "과거 12개월")
-            c3.metric("🏷️ 분석 브랜드", selected_brand)
+            c2.metric("📊 데이터 기준", "최근 12개월")
+            c3.metric("🏷️ 브랜드", selected_brand)
 
         c4.metric("📦 총 판매수량", f"{int(total_qty):,} 개")
         st.markdown("---")
 
         # ==========================================
-        # 5. 메인 시각화 (추이 및 차트)
+        # 5. 메인 시각화 (글자 크기 대폭 확대)
         # ==========================================
+        # 공통 차트 설정
+        common_axis_config = alt.Axis(
+            labelFontSize=14,   # 축 글자 크기
+            titleFontSize=16,   # 축 제목 크기
+            labelAngle=0        # 글자 눕지 않게
+        )
+
         if view_mode in ["월별 현황", "일별 현황"]:
-            # (1) 추이 차트
             st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
             t_line1, t_line2 = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
+            
+            # 추이 차트용 데이터 가공 (Altair 사용으로 글자 제어)
             group_key = '월' if view_mode == "월별 현황" else '일자'
-            trend_data = display_df.groupby(group_key)[['공급가액', '수량']].sum()
-            with t_line1: st.line_chart(trend_data['공급가액'], color="#2E86C1")
-            with t_line2: st.line_chart(trend_data['수량'], color="#28B463")
+            trend_data = display_df.groupby(group_key)[['공급가액', '수량']].sum().reset_index()
+            
+            with t_line1:
+                chart_l1 = alt.Chart(trend_data).mark_line(point=True, color="#2E86C1").encode(
+                    x=alt.X(f'{group_key}:{"T" if view_mode=="일별 현황" else "N"}', title='', axis=common_axis_config),
+                    y=alt.Y('공급가액:Q', title='매출액 (원)', axis=common_axis_config)
+                ).properties(height=350)
+                st.altair_chart(chart_l1, use_container_width=True)
+            
+            with t_line2:
+                chart_l2 = alt.Chart(trend_data).mark_line(point=True, color="#28B463").encode(
+                    x=alt.X(f'{group_key}:{"T" if view_mode=="일별 현황" else "N"}', title='', axis=common_axis_config),
+                    y=alt.Y('수량:Q', title='수량 (개)', axis=common_axis_config)
+                ).properties(height=350)
+                st.altair_chart(chart_l2, use_container_width=True)
 
-            # (2) 상세 항목별 막대 차트 (가로형/확장형)
+            # 상세 항목별 막대 차트 (가로형)
             st.subheader("📊 상세 항목별 순위")
-            tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 환산수량(박스) 순위"])
-            prod_summary = display_df.groupby(['품목코드', '공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
-            chart_height = max(400, len(prod_summary) * 40)
-            y_axis_config = alt.Axis(labelLimit=500, labelFontSize=15, title='')
+            tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 박스 순위"])
+            prod_summary = display_df.groupby(['공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
+            chart_height = max(400, len(prod_summary) * 45) # 🚀 줄 간격 더 확대
+            
+            # 🚀 제품명 영역 및 폰트 대폭 확대
+            y_axis_large = alt.Axis(labelLimit=600, labelFontSize=16, title='', labelPadding=15)
 
             with tab_name:
                 c = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
-                    x=alt.X('공급가액:Q', title='매출액'),
-                    y=alt.Y('공식품목명:N', sort='ascending', axis=y_axis_config)
+                    x=alt.X('공급가액:Q', title='매출액', axis=common_axis_config),
+                    y=alt.Y('공식품목명:N', sort='ascending', axis=y_axis_large)
                 ).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
             with tab_amt:
                 c = alt.Chart(prod_summary).mark_bar(color="#E74C3C").encode(
-                    x=alt.X('공급가액:Q', title='매출액'),
-                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_config)
+                    x=alt.X('공급가액:Q', title='매출액', axis=common_axis_config),
+                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_large)
                 ).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
             with tab_qty:
                 c = alt.Chart(prod_summary).mark_bar(color="#F39C12").encode(
-                    x=alt.X('환산수량:Q', title='박스'),
-                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_config)
+                    x=alt.X('환산수량:Q', title='박스', axis=common_axis_config),
+                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_large)
                 ).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
 
         # 🚀 [수요 예측 모드]
         elif view_mode == "🔮 수요 예측":
-            st.subheader("🔮 향후 3개월 수요 예측 분석 (계절성 반영)")
+            st.subheader("🔮 향후 3개월 수요 예측 분석")
             monthly_data = filtered_df.groupby('월_dt')['수량'].sum().reset_index()
             monthly_data = monthly_data.set_index('월_dt').asfreq('MS').fillna(0)
             
             if len(monthly_data) < 12:
-                st.warning("계절성 분석을 위해서는 최소 12개월 이상의 데이터가 필요합니다.")
+                st.warning("정확한 분석을 위해 12개월 이상의 데이터가 필요합니다.")
             else:
                 seasonal_profile = filtered_df.groupby(filtered_df['일자'].dt.month)['수량'].sum()
                 seasonal_index = seasonal_profile / seasonal_profile.mean()
                 recent_avg = monthly_data['수량'].tail(3).mean()
                 
-                current_month_start = datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                current_month_start = datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0)
                 forecast_results = []
                 for i in range(1, 4):
                     target_date = current_month_start + relativedelta(months=i)
@@ -161,18 +187,27 @@ def run(load_data_func):
                     forecast_results.append({'월_dt': target_date, '예측수량': recent_avg * weight})
                 
                 forecast_df = pd.DataFrame(forecast_results)
-                combined_plot = pd.concat([monthly_data.tail(12).reset_index().rename(columns={'수량': '실제판매량'}), forecast_df.rename(columns={'예측수량': '예측판매량'})])
+                # 🚀 날짜 포맷팅용 컬럼 추가
+                forecast_df['월_표시'] = forecast_df['월_dt'].dt.strftime('%m월 %d일')
+                
+                combined_plot = pd.concat([
+                    monthly_data.tail(12).reset_index().rename(columns={'수량': '값', '월_dt': '날짜'}),
+                    forecast_df.rename(columns={'예측수량': '값', '월_dt': '날짜'})
+                ])
 
-                chart = alt.Chart(combined_plot).mark_line(point=True).encode(x='월_dt:T', y='실제판매량:Q', color=alt.value("#2E86C1")) + \
-                        alt.Chart(combined_plot).mark_line(strokeDash=[5,5], point=True).encode(x='월_dt:T', y='예측판매량:Q', color=alt.value("#E74C3C"))
-                st.altair_chart(chart.properties(height=400), use_container_width=True)
+                chart = alt.Chart(combined_plot).mark_line(point=True).encode(
+                    x=alt.X('날짜:T', title='연월', axis=alt.Axis(format='%y년 %m월', labelFontSize=14)),
+                    y=alt.Y('값:Q', title='수량', axis=common_axis_config)
+                ).properties(height=400)
+                st.altair_chart(chart, use_container_width=True)
 
                 st.markdown("### 📋 월별 예상 수요 요약")
                 avg_box_unit = filtered_df['박스입수'].mean() if not filtered_df.empty else 1
                 cols = st.columns(3)
                 for i, row in enumerate(forecast_df.itertuples()):
                     with cols[i]:
-                        st.metric(f"📅 {row.월_dt.strftime('%Y-%m')}", f"{int(row.예측수량):,} 개")
+                        # 🚀 '년' 생략하고 '월 일' 형식 적용
+                        st.metric(f"📅 {row.월_dt.strftime('%m월 %d일')}", f"{int(row.예측수량):,} 개")
                         st.caption(f"📦 약 **{row.예측수량/avg_box_unit:.1f} 박스**")
                 
                 total_est = sum(forecast_df['예측수량'])
@@ -182,10 +217,11 @@ def run(load_data_func):
         with st.expander("🔍 상세 판매 기록 보기"):
             def format_qty_display(qty, box_unit):
                 if box_unit <= 1: return f"{int(qty):,} 개"
-                boxes = qty / box_unit
-                return f"{boxes:.1f} 박스" if boxes < 10 else f"{int(boxes):,} 박스"
+                return f"{qty/box_unit:.1f} 박스"
             
             show_df = display_df[['일자', '브랜드', '공식품목명', '수량', '박스입수', '공급가액']].copy()
+            # 🚀 표 안의 날짜도 한국식으로
+            show_df['일자'] = show_df['일자'].dt.strftime('%Y년 %m월 %d일')
             show_df['환산수량'] = show_df.apply(lambda r: format_qty_display(r['수량'], r['박스입수']), axis=1)
             st.dataframe(show_df.sort_values(by='일자', ascending=False), use_container_width=True)
 
