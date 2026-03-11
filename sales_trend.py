@@ -7,8 +7,7 @@ import altair as alt
 
 def run(load_data_func):
     st.title("📈 판매 현황 및 수요 예측")
-    # 🚀 알고리즘 설명 업데이트
-    st.markdown("과거 1년 데이터를 **계절성 지수 평활법(Seasonal Exponential Smoothing)**으로 분석하여 향후 3개월 수요를 예측합니다.")
+    st.markdown("과거 데이터를 **계절성 지수 평활법(Seasonal Exponential Smoothing)**으로 분석하여 성과를 확인하고 향후 수요를 예측합니다.")
 
     try:
         # 1. 데이터 불러오기
@@ -25,13 +24,13 @@ def run(load_data_func):
         df_sales_raw.columns = df_sales_raw.columns.str.strip()
         df_sales_raw['일자'] = pd.to_datetime(df_sales_raw['일자'], errors='coerce')
         df_sales_raw['수량'] = pd.to_numeric(df_sales_raw['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+        df_sales_raw['공급가액'] = pd.to_numeric(df_sales_raw['공급가액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_sales_raw = df_sales_raw.dropna(subset=['일자'])
         
-        # 데이터 결합
+        # ecount_item_data에 있는 품목만 분석 (inner join)
         df_sales = pd.merge(df_sales_raw, df_item_master, on='품목코드', how='inner')
         df_sales['환산수량'] = df_sales['수량'] / df_sales['박스입수']
         df_sales['월_dt'] = df_sales['일자'].dt.to_period('M').dt.to_timestamp()
-        df_sales['월_num'] = df_sales['일자'].dt.month # 계절성 계산용 (1~12)
         df_sales['월'] = df_sales['일자'].dt.strftime('%Y-%m')
 
         # ==========================================
@@ -48,7 +47,7 @@ def run(load_data_func):
         st.sidebar.markdown("---")
         view_mode = st.sidebar.radio("3. 분석 모드", ["월별 현황", "일별 현황", "🔮 수요 예측"], index=0)
 
-        # 필터링
+        # 공통 필터링
         filtered_df = df_sales.copy()
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
@@ -56,92 +55,139 @@ def run(load_data_func):
             filtered_df = filtered_df[filtered_df['공식품목명'] == selected_product]
 
         # ==========================================
-        # 3. 분석 모드별 시각화
+        # 3. 날짜 설정 및 필터 재정의 (모드별)
         # ==========================================
-        if view_mode == "월별 현황":
-            # (기존 월별 현황 코드 유지)
+        today = datetime.date.today()
+        if view_mode == "일별 현황":
+            if "trend_start_date" not in st.session_state: st.session_state.trend_start_date = today - relativedelta(months=3)
+            start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY-MM-DD")
+            end_date = st.sidebar.date_input("종료일", value=today, format="YYYY-MM-DD")
+            mask = (filtered_df['일자'].dt.date >= start_date) & (filtered_df['일자'].dt.date <= end_date)
+            display_df = filtered_df.loc[mask].copy()
+            date_range_str = f"{start_date} ~ {end_date}"
+        elif view_mode == "월별 현황":
             month_list = sorted(list(df_sales['월'].unique()))
             start_month = st.sidebar.selectbox("시작 월", month_list, index=max(0, len(month_list)-12))
             end_month = st.sidebar.selectbox("종료 월", month_list, index=len(month_list)-1)
             display_df = filtered_df[(filtered_df['월'] >= start_month) & (filtered_df['월'] <= end_month)]
-            trend_data = display_df.groupby('월')[['수량']].sum()
-            st.subheader(f"📉 월별 판매 흐름")
-            st.line_chart(trend_data['수량'], color="#2E86C1")
+            date_range_str = f"{start_month} ~ {end_month}"
+        else:
+            display_df = filtered_df # 수요 예측은 전체 기간 참고
 
-        elif view_mode == "일별 현황":
-            # (기존 일별 현황 코드 유지)
-            today = datetime.date.today()
-            start_date = st.sidebar.date_input("시작일", today - relativedelta(months=3))
-            end_date = st.sidebar.date_input("종료일", today)
-            display_df = filtered_df[(filtered_df['일자'].dt.date >= start_date) & (filtered_df['일자'].dt.date <= end_date)]
-            trend_data = display_df.groupby('일자')[['수량']].sum()
-            st.subheader(f"📉 일별 판매 흐름")
-            st.line_chart(trend_data['수량'], color="#2E86C1")
+        if display_df.empty:
+            st.warning("선택하신 조건에 데이터가 없습니다.")
+            return
 
-        # 🚀 [업그레이드: 계절성 반영 수요 예측]
+        # ==========================================
+        # 4. KPI 표시
+        # ==========================================
+        total_amount = display_df['공급가액'].sum()
+        total_qty = display_df['수량'].sum()
+        
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("💰 총 판매액", f"{int(total_amount):,} 원")
+        
+        if view_mode == "일별 현황":
+            diff = (end_date - start_date).days + 1
+            c2.metric("📅 분석 기간", f"{diff} 일", date_range_str, delta_color="off")
+            c3.metric("💸 일평균 판매액", f"{int(total_amount/diff if diff>0 else 0):,} 원")
+        elif view_mode == "월별 현황":
+            diff = (pd.to_datetime(end_month).year - pd.to_datetime(start_month).year) * 12 + (pd.to_datetime(end_month).month - pd.to_datetime(start_month).month) + 1
+            c2.metric("📅 분석 기간", f"{diff} 개월", date_range_str, delta_color="off")
+            c3.metric("💸 월평균 판매액", f"{int(total_amount/diff if diff>0 else 0):,} 원")
+        else:
+            c2.metric("📊 데이터 기준", "과거 12개월")
+            c3.metric("🏷️ 분석 브랜드", selected_brand)
+
+        c4.metric("📦 총 판매수량", f"{int(total_qty):,} 개")
+        st.markdown("---")
+
+        # ==========================================
+        # 5. 메인 시각화 (추이 및 차트)
+        # ==========================================
+        if view_mode in ["월별 현황", "일별 현황"]:
+            # (1) 추이 차트
+            st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
+            t_line1, t_line2 = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
+            group_key = '월' if view_mode == "월별 현황" else '일자'
+            trend_data = display_df.groupby(group_key)[['공급가액', '수량']].sum()
+            with t_line1: st.line_chart(trend_data['공급가액'], color="#2E86C1")
+            with t_line2: st.line_chart(trend_data['수량'], color="#28B463")
+
+            # (2) 상세 항목별 막대 차트 (가로형/확장형)
+            st.subheader("📊 상세 항목별 순위")
+            tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 환산수량(박스) 순위"])
+            prod_summary = display_df.groupby(['품목코드', '공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
+            chart_height = max(400, len(prod_summary) * 40)
+            y_axis_config = alt.Axis(labelLimit=500, labelFontSize=15, title='')
+
+            with tab_name:
+                c = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
+                    x=alt.X('공급가액:Q', title='매출액'),
+                    y=alt.Y('공식품목명:N', sort='ascending', axis=y_axis_config)
+                ).properties(height=chart_height)
+                st.altair_chart(c, use_container_width=True)
+            with tab_amt:
+                c = alt.Chart(prod_summary).mark_bar(color="#E74C3C").encode(
+                    x=alt.X('공급가액:Q', title='매출액'),
+                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_config)
+                ).properties(height=chart_height)
+                st.altair_chart(c, use_container_width=True)
+            with tab_qty:
+                c = alt.Chart(prod_summary).mark_bar(color="#F39C12").encode(
+                    x=alt.X('환산수량:Q', title='박스'),
+                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_config)
+                ).properties(height=chart_height)
+                st.altair_chart(c, use_container_width=True)
+
+        # 🚀 [수요 예측 모드]
         elif view_mode == "🔮 수요 예측":
             st.subheader("🔮 향후 3개월 수요 예측 분석 (계절성 반영)")
-            st.info("작년 동월 판매 비중을 분석하여, 다음 달부터 3개월간의 수요를 예측합니다.")
-            
-            # 1. 월별 데이터 집계
             monthly_data = filtered_df.groupby('월_dt')['수량'].sum().reset_index()
             monthly_data = monthly_data.set_index('월_dt').asfreq('MS').fillna(0)
             
             if len(monthly_data) < 12:
-                st.warning("계절성 분석을 위해서는 최소 12개월 이상의 데이터가 필요합니다. (현재 데이터 부족)")
+                st.warning("계절성 분석을 위해서는 최소 12개월 이상의 데이터가 필요합니다.")
             else:
-                # 2. 계절성 지수(Seasonal Index) 계산
-                # 작년 한 해 동안 각 월이 차지하는 판매 비중 계산
-                last_year_data = filtered_df[filtered_df['일자'] > (filtered_df['일자'].max() - relativedelta(years=1))]
-                seasonal_profile = last_year_data.groupby(last_year_data['일자'].dt.month)['수량'].sum()
-                seasonal_index = seasonal_profile / seasonal_profile.mean() # 평균 대비 비중
-                
-                # 3. 현재의 기초 판매 체력(Level) 계산 (최근 3개월 가중 평균)
+                seasonal_profile = filtered_df.groupby(filtered_df['일자'].dt.month)['수량'].sum()
+                seasonal_index = seasonal_profile / seasonal_profile.mean()
                 recent_avg = monthly_data['수량'].tail(3).mean()
                 
-                # 4. 미래 3개월 예측 (기초 체력 * 해당 월의 계절 비중)
                 current_month_start = datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
                 forecast_results = []
                 for i in range(1, 4):
                     target_date = current_month_start + relativedelta(months=i)
-                    month_num = target_date.month
-                    weight = seasonal_index.get(month_num, 1.0) # 해당 월의 가중치
-                    pred_qty = recent_avg * weight
-                    forecast_results.append({'월_dt': target_date, '예측수량': pred_qty})
+                    weight = seasonal_index.get(target_date.month, 1.0)
+                    forecast_results.append({'월_dt': target_date, '예측수량': recent_avg * weight})
                 
                 forecast_df = pd.DataFrame(forecast_results)
+                combined_plot = pd.concat([monthly_data.tail(12).reset_index().rename(columns={'수량': '실제판매량'}), forecast_df.rename(columns={'예측수량': '예측판매량'})])
 
-                # 5. 시각화
-                plot_past = monthly_data.tail(12).reset_index().rename(columns={'수량': '실제판매량'})
-                plot_future = forecast_df.rename(columns={'예측수량': '예측판매량'})
-                combined_plot = pd.concat([plot_past, plot_future])
-
-                chart = alt.Chart(combined_plot).mark_line(point=True).encode(
-                    x=alt.X('월_dt:T', title='연월'),
-                    y=alt.Y('실제판매량:Q', title='수량(개)'),
-                    color=alt.value("#2E86C1")
-                ) + alt.Chart(combined_plot).mark_line(strokeDash=[5,5], point=True).encode(
-                    x='월_dt:T',
-                    y='예측판매량:Q',
-                    color=alt.value("#E74C3C")
-                )
+                chart = alt.Chart(combined_plot).mark_line(point=True).encode(x='월_dt:T', y='실제판매량:Q', color=alt.value("#2E86C1")) + \
+                        alt.Chart(combined_plot).mark_line(strokeDash=[5,5], point=True).encode(x='월_dt:T', y='예측판매량:Q', color=alt.value("#E74C3C"))
                 st.altair_chart(chart.properties(height=400), use_container_width=True)
 
-                # 6. 결과 요약
                 st.markdown("### 📋 월별 예상 수요 요약")
                 avg_box_unit = filtered_df['박스입수'].mean() if not filtered_df.empty else 1
                 cols = st.columns(3)
-                
                 for i, row in enumerate(forecast_df.itertuples()):
-                    month_str = row.월_dt.strftime('%Y년 %m월')
-                    est_qty = int(row.예측수량)
-                    est_box = est_qty / avg_box_unit
                     with cols[i]:
-                        st.metric(f"📅 {month_str}", f"{est_qty:,} 개")
-                        st.caption(f"📦 약 **{est_box:.1f} 박스**")
-
+                        st.metric(f"📅 {row.월_dt.strftime('%Y-%m')}", f"{int(row.예측수량):,} 개")
+                        st.caption(f"📦 약 **{row.예측수량/avg_box_unit:.1f} 박스**")
+                
                 total_est = sum(forecast_df['예측수량'])
                 st.success(f"✅ 3개월 총 예상 필요량: 약 **{int(total_est):,}** 개 (**약 {total_est/avg_box_unit:.1f} 박스**)")
+
+        # 6. 상세 데이터 표
+        with st.expander("🔍 상세 판매 기록 보기"):
+            def format_qty_display(qty, box_unit):
+                if box_unit <= 1: return f"{int(qty):,} 개"
+                boxes = qty / box_unit
+                return f"{boxes:.1f} 박스" if boxes < 10 else f"{int(boxes):,} 박스"
+            
+            show_df = display_df[['일자', '브랜드', '공식품목명', '수량', '박스입수', '공급가액']].copy()
+            show_df['환산수량'] = show_df.apply(lambda r: format_qty_display(r['수량'], r['박스입수']), axis=1)
+            st.dataframe(show_df.sort_values(by='일자', ascending=False), use_container_width=True)
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
