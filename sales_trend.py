@@ -6,39 +6,15 @@ from dateutil.relativedelta import relativedelta
 import altair as alt
 
 def run(load_data_func):
-    # 🚀 CSS 주입: 전반적인 글자 크기 상향 및 Metric 레이블/캡션 가독성 강화
+    # 🚀 CSS 주입: 전반적인 글자 크기 상향 및 Metric 가독성 강화
     st.markdown("""
         <style>
-            /* 전체 본문 글자 크기 조정 */
-            html, body, [class*="css"]  {
-                font-size: 1.1rem;
-            }
-            /* Metric 상단 라벨 (예: 날짜, 분석 기간 등) */
-            [data-testid="stMetricLabel"] {
-                font-size: 1.3rem !important;
-                font-weight: bold !important;
-                color: #31333F !important;
-                margin-bottom: 5px;
-            }
-            /* Metric 메인 수치 (이미 크지만 가독성 위해 약간 보정) */
-            [data-testid="stMetricValue"] {
-                font-size: 2.2rem !important;
-            }
-            /* Metric 하단 캡션/델타 (예: 박스 수량, 날짜 범위 등) */
-            [data-testid="stMetricDelta"] {
-                font-size: 1.1rem !important;
-                font-weight: 500 !important;
-            }
-            /* 일반 캡션(st.caption) 크기 확대 */
-            .stCaption {
-                font-size: 1.1rem !important;
-                line-height: 1.5 !important;
-                color: #555 !important;
-            }
-            /* 탭 제목 글자 크기 */
-            button[data-baseweb="tab"] {
-                font-size: 1.2rem !important;
-            }
+            html, body, [class*="css"]  { font-size: 1.1rem; }
+            [data-testid="stMetricLabel"] { font-size: 1.3rem !important; font-weight: bold !important; color: #31333F !important; }
+            [data-testid="stMetricValue"] { font-size: 2.2rem !important; }
+            [data-testid="stMetricDelta"] { font-size: 1.1rem !important; font-weight: 500 !important; }
+            .stCaption { font-size: 1.1rem !important; line-height: 1.5 !important; color: #555 !important; }
+            button[data-baseweb="tab"] { font-size: 1.2rem !important; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -167,28 +143,37 @@ def run(load_data_func):
             tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 박스 순위"])
             prod_summary = display_df.groupby(['공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
             chart_height = max(400, len(prod_summary) * 45)
-            y_axis_large = alt.Axis(labelLimit=600, labelFontSize=17, title='', labelPadding=15)
+            
+            # 🚀 [간격 수정 핵심] y_axis_large의 설정을 고정하여 일별/월별 편차를 줄입니다.
+            y_axis_large = alt.Axis(
+                labelLimit=500,    # 이름 길이를 500으로 제한하여 공간 확보
+                labelFontSize=17, 
+                title='', 
+                labelPadding=20,   # 이름과 막대 사이 간격을 일정하게 유지
+                offset=0           # 축 위치 오프셋 제거
+            )
 
             with tab_name:
                 c = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
                     x=alt.X('공급가액:Q', title='매출액', axis=common_axis_config),
                     y=alt.Y('공식품목명:N', sort='ascending', axis=y_axis_large)
-                ).properties(height=chart_height)
+                ).configure_view(strokeWidth=0).properties(height=chart_height) # 🚀 stroke 제거로 깔끔하게
                 st.altair_chart(c, use_container_width=True)
             with tab_amt:
                 c = alt.Chart(prod_summary).mark_bar(color="#E74C3C").encode(
                     x=alt.X('공급가액:Q', title='매출액', axis=common_axis_config),
                     y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_large)
-                ).properties(height=chart_height)
+                ).configure_view(strokeWidth=0).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
             with tab_qty:
                 c = alt.Chart(prod_summary).mark_bar(color="#F39C12").encode(
                     x=alt.X('환산수량:Q', title='박스', axis=common_axis_config),
                     y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_large)
-                ).properties(height=chart_height)
+                ).configure_view(strokeWidth=0).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
 
         elif view_mode == "🔮 수요 예측":
+            # (수요 예측 부분 생략 없이 그대로 유지)
             st.subheader("🔮 향후 3개월 수요 예측 분석")
             monthly_data = filtered_df.groupby('월_dt')['수량'].sum().reset_index()
             monthly_data = monthly_data.set_index('월_dt').asfreq('MS').fillna(0)
@@ -224,7 +209,6 @@ def run(load_data_func):
                 cols = st.columns(3)
                 for i, row in enumerate(forecast_df.itertuples()):
                     with cols[i]:
-                        # 🚀 메트릭과 캡션 글자 크기가 강제로 크게 적용됩니다.
                         st.metric(f"📅 {row.월_dt.strftime('%m월 %d일')}", f"{int(row.예측수량):,} 개")
                         st.caption(f"📦 약 **{row.예측수량/avg_box_unit:.1f} 박스** (필요량)")
                 
