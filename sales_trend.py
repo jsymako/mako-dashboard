@@ -48,12 +48,9 @@ def run(load_data_func):
         # 2. 사이드바: 브랜드 & 품목 연동 필터
         # ==========================================
         st.sidebar.markdown("### 🔍 조회 조건")
-        
-        # (1) 브랜드 선택
         brand_list = ["전체보기"] + sorted(list(df_sales['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
         
-        # (2) 품목 선택 (브랜드에 따라 목록 자동 변경)
         if selected_brand == "전체보기":
             product_df = df_sales
         else:
@@ -72,13 +69,11 @@ def run(load_data_func):
         if view_mode == "일별 현황":
             if "trend_start_date" not in st.session_state: st.session_state.trend_start_date = today - relativedelta(months=3)
             if "trend_end_date" not in st.session_state: st.session_state.trend_end_date = today
-            
-            st.sidebar.markdown("### 📅 상세 기간 설정")
             start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY-MM-DD")
             end_date = st.sidebar.date_input("종료일", key="trend_end_date", format="YYYY-MM-DD")
             mask = (df_sales['일자'].dt.date >= start_date) & (df_sales['일자'].dt.date <= end_date)
+            date_range_str = f"{start_date} ~ {end_date}"
         else:
-            st.sidebar.markdown("### 📅 달(Month) 범위 설정")
             month_list = sorted(list(df_sales['월'].unique()))
             if not month_list: return
             start_month = st.sidebar.selectbox("시작 월", month_list, index=max(0, len(month_list)-4))
@@ -86,17 +81,14 @@ def run(load_data_func):
             start_date_m = pd.to_datetime(start_month + '-01').date()
             end_date_m = (pd.to_datetime(end_month + '-01') + relativedelta(months=1, days=-1)).date()
             mask = (df_sales['일자'].dt.date >= start_date_m) & (df_sales['일자'].dt.date <= end_date_m)
+            date_range_str = f"{start_month} ~ {end_month}"
 
         # ==========================================
         # 4. 필터 적용 및 KPI
         # ==========================================
         filtered_df = df_sales.loc[mask].copy()
-        
-        # 브랜드 필터 적용
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
-        
-        # 🚀 [추가] 품목 필터 적용
         if selected_product != "전체보기":
             filtered_df = filtered_df[filtered_df['공식품목명'] == selected_product]
 
@@ -108,40 +100,45 @@ def run(load_data_func):
         total_qty = filtered_df['수량'].sum()
         
         col1, col2, col3, col4 = st.columns(4)
+        col1.metric("💰 총 판매액", f"{int(total_amount):,} 원")
+        
         if view_mode == "일별 현황":
             total_days = (end_date - start_date).days + 1
-            col2.metric("📅 분석 기간", f"{total_days} 일", f"{start_date} ~ {end_date}", delta_color="off")
-            col3.metric("💸 일평균 판매액", f"{int(total_amount / total_days):,} 원")
+            col2.metric("📅 분석 기간", f"{total_days} 일", date_range_str, delta_color="off")
+            col3.metric("💸 일평균 판매액", f"{int(total_amount / total_days if total_days > 0 else 0):,} 원")
         else:
             diff_months = (pd.to_datetime(end_month).year - pd.to_datetime(start_month).year) * 12 + (pd.to_datetime(end_month).month - pd.to_datetime(start_month).month) + 1
-            col2.metric("📅 분석 기간", f"{diff_months} 개월", f"{start_month} ~ {end_month}", delta_color="off")
-            col3.metric("💸 월평균 판매액", f"{int(total_amount / diff_months):,} 원")
+            col2.metric("📅 분석 기간", f"{diff_months} 개월", date_range_str, delta_color="off")
+            col3.metric("💸 월평균 판매액", f"{int(total_amount / diff_months if diff_months > 0 else 0):,} 원")
         
-        col1.metric("💰 총 판매액", f"{int(total_amount):,} 원")
         col4.metric("📦 총 판매수량", f"{int(total_qty):,} 개")
-        
         st.markdown("---")
 
         # ==========================================
-        # 5. 추이 차트
+        # 5. 🚀 추이 차트 (탭 부활)
         # ==========================================
         st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
+        tab_line_amt, tab_line_qty = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
+        
         if view_mode == "일별 현황":
-            daily_trend = filtered_df.groupby('일자')[['공급가액', '수량']].sum()
-            st.line_chart(daily_trend['공급가액'], color="#2E86C1")
+            trend_data = filtered_df.groupby('일자')[['공급가액', '수량']].sum()
         else:
-            monthly_trend = filtered_df.groupby('월')[['공급가액', '수량']].sum()
-            st.line_chart(monthly_trend['공급가액'], color="#2E86C1")
+            trend_data = filtered_df.groupby('월')[['공급가액', '수량']].sum()
+            
+        with tab_line_amt:
+            st.line_chart(trend_data['공급가액'], color="#2E86C1")
+        with tab_line_qty:
+            st.line_chart(trend_data['수량'], color="#28B463")
 
         # ==========================================
-        # 6. 품목별 상세 현황 (가로 막대 그래프)
+        # 6. 품목별 상세 현황 (수평 막대 차트)
         # ==========================================
-        st.subheader(f"📊 상세 분석 리스트")
+        st.subheader(f"📊 {selected_brand} 품목별 상세 현황")
         tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 환산수량(박스) 순위"])
         
         prod_summary = filtered_df.groupby(['품목코드', '공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
         chart_height = max(400, len(prod_summary) * 40)
-        y_axis_config = alt.Axis(labelLimit=500, labelFontSize=14, title='')
+        y_axis_config = alt.Axis(labelLimit=500, labelFontSize=15, title='')
 
         with tab_name:
             c = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
