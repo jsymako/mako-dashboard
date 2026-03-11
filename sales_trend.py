@@ -14,10 +14,10 @@ def run(load_data_func):
         df_item = load_data_func("ecount_item_data") 
         
         # --- [데이터 전처리: 품목 정보 (Master Data)] ---
-        # ecount_item_data에서 공식 이름, 브랜드, 박스입수(D열) 가져오기
+        # 🚀 [수정] '품목명' 대신 '이름' 컬럼을 사용합니다.
         box_col_name = df_item.columns[3] 
-        df_item_master = df_item[['품목코드', '품목명', '브랜드', box_col_name]].copy()
-        df_item_master.rename(columns={'품목명': '공식품목명', box_col_name: '박스입수'}, inplace=True)
+        df_item_master = df_item[['품목코드', '이름', '브랜드', box_col_name]].copy()
+        df_item_master.rename(columns={'이름': '공식품목명', box_col_name: '박스입수'}, inplace=True)
         df_item_master['박스입수'] = pd.to_numeric(df_item_master['박스입수'], errors='coerce').fillna(1)
         
         # --- [데이터 전처리: 판매 기록 (Raw Data)] ---
@@ -34,15 +34,14 @@ def run(load_data_func):
         df_sales_raw = df_sales_raw.dropna(subset=['일자'])
         df_sales_raw = df_sales_raw[df_sales_raw['수량'] > 0] 
 
-        # 🚀 [핵심 수정] 판매기록의 품목명은 버리고, 품목코드 기준으로 공식 정보 매칭
-        # Raw Data의 품목명 컬럼을 제거하여 중복 이름 방지
+        # 판매기록의 품목명은 버리고, 품목코드 기준으로 공식 정보 매칭
         if '품목명' in df_sales_raw.columns:
             df_sales_raw = df_sales_raw.drop(columns=['품목명'])
             
         df_sales = pd.merge(df_sales_raw, df_item_master, on='품목코드', how='left')
         
         # 정보가 없는 품목(기타) 처리
-        df_sales['공식품목명'] = df_sales['공식품목명'].fillna(df_sales['품목코드']) # 이름 없으면 코드라도 표시
+        df_sales['공식품목명'] = df_sales['공식품목명'].fillna(df_sales['품목코드'])
         df_sales['브랜드'] = df_sales['브랜드'].fillna('기타')
         df_sales['박스입수'] = df_sales['박스입수'].fillna(1)
         df_sales['환산수량'] = df_sales['수량'] / df_sales['박스입수']
@@ -114,7 +113,6 @@ def run(load_data_func):
         # ==========================================
         # 4. 추이 및 막대 차트
         # ==========================================
-        # 추이 차트
         if view_mode == "일별 현황":
             daily_trend = filtered_df.groupby('일자')[['공급가액', '수량']].sum()
             st.line_chart(daily_trend['공급가액'], color="#2E86C1")
@@ -122,8 +120,7 @@ def run(load_data_func):
             monthly_trend = filtered_df.groupby('월')[['공급가액', '수량']].sum()
             st.line_chart(monthly_trend['공급가액'], color="#2E86C1")
 
-        # 🚀 [품목코드 기준 통합 집계] 🚀
-        # 공식품목명을 사용하여 그룹핑 (코드가 같으면 이름도 같아짐)
+        # 품목코드 기준 통합 집계
         prod_summary = filtered_df.groupby(['품목코드', '공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
         chart_height = max(400, len(prod_summary) * 40)
         y_axis_config = alt.Axis(labelLimit=500, labelFontSize=14, title='')
