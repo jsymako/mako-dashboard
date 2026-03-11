@@ -6,6 +6,42 @@ from dateutil.relativedelta import relativedelta
 import altair as alt
 
 def run(load_data_func):
+    # 🚀 CSS 주입: 전반적인 글자 크기 상향 및 Metric 레이블/캡션 가독성 강화
+    st.markdown("""
+        <style>
+            /* 전체 본문 글자 크기 조정 */
+            html, body, [class*="css"]  {
+                font-size: 1.1rem;
+            }
+            /* Metric 상단 라벨 (예: 날짜, 분석 기간 등) */
+            [data-testid="stMetricLabel"] {
+                font-size: 1.3rem !important;
+                font-weight: bold !important;
+                color: #31333F !important;
+                margin-bottom: 5px;
+            }
+            /* Metric 메인 수치 (이미 크지만 가독성 위해 약간 보정) */
+            [data-testid="stMetricValue"] {
+                font-size: 2.2rem !important;
+            }
+            /* Metric 하단 캡션/델타 (예: 박스 수량, 날짜 범위 등) */
+            [data-testid="stMetricDelta"] {
+                font-size: 1.1rem !important;
+                font-weight: 500 !important;
+            }
+            /* 일반 캡션(st.caption) 크기 확대 */
+            .stCaption {
+                font-size: 1.1rem !important;
+                line-height: 1.5 !important;
+                color: #555 !important;
+            }
+            /* 탭 제목 글자 크기 */
+            button[data-baseweb="tab"] {
+                font-size: 1.2rem !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
     st.title("📈 판매 현황 및 수요 예측")
     st.markdown("과거 데이터를 **계절성 지수 평활법**으로 분석하여 성과를 확인하고 향후 수요를 예측합니다.")
 
@@ -63,7 +99,6 @@ def run(load_data_func):
             end_date = st.sidebar.date_input("종료일", value=today)
             mask = (filtered_df['일자'].dt.date >= start_date) & (filtered_df['일자'].dt.date <= end_date)
             display_df = filtered_df.loc[mask].copy()
-            # 🚀 날짜 포맷 한국식 변경
             date_range_str = f"{start_date.strftime('%Y년 %m월 %d일')} ~ {end_date.strftime('%Y년 %m월 %d일')}"
         elif view_mode == "월별 현황":
             month_list = sorted(list(df_sales['월'].unique()))
@@ -79,7 +114,7 @@ def run(load_data_func):
             return
 
         # ==========================================
-        # 4. KPI 표시 (글자 크기 보정)
+        # 4. KPI 표시
         # ==========================================
         total_amount = display_df['공급가액'].sum()
         total_qty = display_df['수량'].sum()
@@ -89,11 +124,9 @@ def run(load_data_func):
         
         if view_mode == "일별 현황":
             diff = (end_date - start_date).days + 1
-            # 🚀 서브 텍스트(날짜 범위)가 더 잘 보이도록 delta에 배치
             c2.metric("📅 분석 기간", f"{diff} 일", date_range_str, delta_color="off")
             c3.metric("💸 일평균 판매액", f"{int(total_amount/diff if diff>0 else 0):,} 원")
         elif view_mode == "월별 현황":
-            # 월 차이 계산
             d1 = pd.to_datetime(start_month, format='%Y년 %m월')
             d2 = pd.to_datetime(end_month, format='%Y년 %m월')
             diff = (d2.year - d1.year) * 12 + (d2.month - d1.month) + 1
@@ -107,20 +140,13 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 5. 메인 시각화 (글자 크기 대폭 확대)
+        # 5. 메인 시각화
         # ==========================================
-        # 공통 차트 설정
-        common_axis_config = alt.Axis(
-            labelFontSize=14,   # 축 글자 크기
-            titleFontSize=16,   # 축 제목 크기
-            labelAngle=0        # 글자 눕지 않게
-        )
+        common_axis_config = alt.Axis(labelFontSize=15, titleFontSize=17, labelAngle=0)
 
         if view_mode in ["월별 현황", "일별 현황"]:
             st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
             t_line1, t_line2 = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
-            
-            # 추이 차트용 데이터 가공 (Altair 사용으로 글자 제어)
             group_key = '월' if view_mode == "월별 현황" else '일자'
             trend_data = display_df.groupby(group_key)[['공급가액', '수량']].sum().reset_index()
             
@@ -130,7 +156,6 @@ def run(load_data_func):
                     y=alt.Y('공급가액:Q', title='매출액 (원)', axis=common_axis_config)
                 ).properties(height=350)
                 st.altair_chart(chart_l1, use_container_width=True)
-            
             with t_line2:
                 chart_l2 = alt.Chart(trend_data).mark_line(point=True, color="#28B463").encode(
                     x=alt.X(f'{group_key}:{"T" if view_mode=="일별 현황" else "N"}', title='', axis=common_axis_config),
@@ -138,14 +163,11 @@ def run(load_data_func):
                 ).properties(height=350)
                 st.altair_chart(chart_l2, use_container_width=True)
 
-            # 상세 항목별 막대 차트 (가로형)
             st.subheader("📊 상세 항목별 순위")
             tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 박스 순위"])
             prod_summary = display_df.groupby(['공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
-            chart_height = max(400, len(prod_summary) * 45) # 🚀 줄 간격 더 확대
-            
-            # 🚀 제품명 영역 및 폰트 대폭 확대
-            y_axis_large = alt.Axis(labelLimit=600, labelFontSize=16, title='', labelPadding=15)
+            chart_height = max(400, len(prod_summary) * 45)
+            y_axis_large = alt.Axis(labelLimit=600, labelFontSize=17, title='', labelPadding=15)
 
             with tab_name:
                 c = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
@@ -166,7 +188,6 @@ def run(load_data_func):
                 ).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
 
-        # 🚀 [수요 예측 모드]
         elif view_mode == "🔮 수요 예측":
             st.subheader("🔮 향후 3개월 수요 예측 분석")
             monthly_data = filtered_df.groupby('월_dt')['수량'].sum().reset_index()
@@ -187,16 +208,13 @@ def run(load_data_func):
                     forecast_results.append({'월_dt': target_date, '예측수량': recent_avg * weight})
                 
                 forecast_df = pd.DataFrame(forecast_results)
-                # 🚀 날짜 포맷팅용 컬럼 추가
-                forecast_df['월_표시'] = forecast_df['월_dt'].dt.strftime('%m월 %d일')
-                
                 combined_plot = pd.concat([
                     monthly_data.tail(12).reset_index().rename(columns={'수량': '값', '월_dt': '날짜'}),
                     forecast_df.rename(columns={'예측수량': '값', '월_dt': '날짜'})
                 ])
 
                 chart = alt.Chart(combined_plot).mark_line(point=True).encode(
-                    x=alt.X('날짜:T', title='연월', axis=alt.Axis(format='%y년 %m월', labelFontSize=14)),
+                    x=alt.X('날짜:T', title='연월', axis=alt.Axis(format='%y년 %m월', labelFontSize=15)),
                     y=alt.Y('값:Q', title='수량', axis=common_axis_config)
                 ).properties(height=400)
                 st.altair_chart(chart, use_container_width=True)
@@ -206,21 +224,18 @@ def run(load_data_func):
                 cols = st.columns(3)
                 for i, row in enumerate(forecast_df.itertuples()):
                     with cols[i]:
-                        # 🚀 '년' 생략하고 '월 일' 형식 적용
+                        # 🚀 메트릭과 캡션 글자 크기가 강제로 크게 적용됩니다.
                         st.metric(f"📅 {row.월_dt.strftime('%m월 %d일')}", f"{int(row.예측수량):,} 개")
-                        st.caption(f"📦 약 **{row.예측수량/avg_box_unit:.1f} 박스**")
+                        st.caption(f"📦 약 **{row.예측수량/avg_box_unit:.1f} 박스** (필요량)")
                 
                 total_est = sum(forecast_df['예측수량'])
                 st.success(f"✅ 3개월 총 예상 필요량: 약 **{int(total_est):,}** 개 (**약 {total_est/avg_box_unit:.1f} 박스**)")
 
-        # 6. 상세 데이터 표
         with st.expander("🔍 상세 판매 기록 보기"):
             def format_qty_display(qty, box_unit):
                 if box_unit <= 1: return f"{int(qty):,} 개"
                 return f"{qty/box_unit:.1f} 박스"
-            
             show_df = display_df[['일자', '브랜드', '공식품목명', '수량', '박스입수', '공급가액']].copy()
-            # 🚀 표 안의 날짜도 한국식으로
             show_df['일자'] = show_df['일자'].dt.strftime('%Y년 %m월 %d일')
             show_df['환산수량'] = show_df.apply(lambda r: format_qty_display(r['수량'], r['박스입수']), axis=1)
             st.dataframe(show_df.sort_values(by='일자', ascending=False), use_container_width=True)
