@@ -120,7 +120,7 @@ def run(load_data_func):
             mask = (df_sales['일자'].dt.date >= start_date_m) & (df_sales['일자'].dt.date <= end_date_m)
 
         # ==========================================
-        # 4. 필터 적용 및 KPI 계산 (날짜 표시 추가)
+        # 4. 필터 적용 및 KPI 계산
         # ==========================================
         filtered_df = df_sales.loc[mask].copy()
         if selected_brand != "전체보기":
@@ -157,7 +157,7 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 5. 추이 차트 (일별 vs 월별)
+        # 5. 추이 차트
         # ==========================================
         if view_mode == "일별 현황":
             st.subheader("📉 일별 판매 추이")
@@ -175,7 +175,7 @@ def run(load_data_func):
             with tab2: st.line_chart(monthly_trend['수량'], color="#28B463")
 
         # ==========================================
-        # 6. 전체 품목 상세 현황 (가로 막대 그래프)
+        # 6. 전체 품목 상세 현황 (가로 막대 그래프 개선)
         # ==========================================
         title_text = f"📊 {selected_brand} 품목별 상세 현황" if selected_brand != "전체보기" else "📊 전체 품목별 상세 현황"
         st.subheader(title_text)
@@ -183,26 +183,36 @@ def run(load_data_func):
         tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 환산수량(박스) 순위"])
         
         prod_summary = filtered_df.groupby('품목명')[['공급가액', '환산수량']].sum().reset_index()
-        chart_height = max(400, len(prod_summary) * 30)
+        
+        # 🚀 [개선 1] 글자가 커졌으므로 줄 간격(높이)을 더 넉넉하게 (30 -> 40)
+        chart_height = max(400, len(prod_summary) * 40)
+
+        # 🚀 [개선 2] 제품명 영역 너비(labelLimit)를 500px로 대폭 확장, 글자 크기(labelFontSize) 키움
+        y_axis_config = alt.Axis(
+            labelLimit=500,    # 제품명이 길어도 잘리지 않게 너비 확보
+            labelFontSize=15,   # 제품명 글자 크기 확대
+            titleFontSize=16,   # 축 제목 크기 확대
+            labelPadding=10     # 막대와 글자 사이 간격
+        )
 
         with tab_name:
             chart_name = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
                 x=alt.X('공급가액:Q', title='총 매출액 (원)'),
-                y=alt.Y('품목명:N', sort='ascending', title='')
+                y=alt.Y('품목명:N', sort='ascending', title='', axis=y_axis_config)
             ).properties(height=chart_height)
             st.altair_chart(chart_name, use_container_width=True)
 
         with tab_amt:
             chart_amt = alt.Chart(prod_summary).mark_bar(color="#E74C3C").encode(
                 x=alt.X('공급가액:Q', title='총 매출액 (원)'),
-                y=alt.Y('품목명:N', sort='-x', title='')
+                y=alt.Y('품목명:N', sort='-x', title='', axis=y_axis_config)
             ).properties(height=chart_height)
             st.altair_chart(chart_amt, use_container_width=True)
 
         with tab_qty:
             chart_qty = alt.Chart(prod_summary).mark_bar(color="#F39C12").encode(
                 x=alt.X('환산수량:Q', title='환산수량 (박스)'),
-                y=alt.Y('품목명:N', sort='-x', title='')
+                y=alt.Y('품목명:N', sort='-x', title='', axis=y_axis_config)
             ).properties(height=chart_height)
             st.altair_chart(chart_qty, use_container_width=True)
 
