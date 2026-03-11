@@ -139,41 +139,42 @@ def run(load_data_func):
                 ).properties(height=350)
                 st.altair_chart(chart_l2, use_container_width=True)
 
-            st.subheader("📊 상세 항목별 순위")
-            tab_name, tab_amt, tab_qty = st.tabs(["📋 제품명 순", "💰 매출액 순위", "📦 박스 순위"])
-            prod_summary = display_df.groupby(['공식품목명'])[['공급가액', '환산수량']].sum().reset_index()
+            # 🚀 [로직 변경 핵심] 브랜드가 '전체보기'일 때는 브랜드별로 집계
+            if selected_brand == "전체보기":
+                st.subheader("📊 브랜드별 판매 현황")
+                group_field = '브랜드'
+                tab_names = ["📋 브랜드명 순", "💰 매출액 순위", "📦 박스 순위"]
+            else:
+                st.subheader(f"📊 {selected_brand} 품목별 상세 순위")
+                group_field = '공식품목명'
+                tab_names = ["📋 제품명 순", "💰 매출액 순위", "📦 박스 순위"]
+
+            tab_name, tab_amt, tab_qty = st.tabs(tab_names)
+            prod_summary = display_df.groupby([group_field])[['공급가액', '환산수량']].sum().reset_index()
             chart_height = max(400, len(prod_summary) * 45)
-            
-            # 🚀 [간격 수정 핵심] y_axis_large의 설정을 고정하여 일별/월별 편차를 줄입니다.
-            y_axis_large = alt.Axis(
-                labelLimit=500,    # 이름 길이를 500으로 제한하여 공간 확보
-                labelFontSize=17, 
-                title='', 
-                labelPadding=20,   # 이름과 막대 사이 간격을 일정하게 유지
-                offset=0           # 축 위치 오프셋 제거
-            )
+            y_axis_large = alt.Axis(labelLimit=500, labelFontSize=17, title='', labelPadding=20, offset=0)
 
             with tab_name:
                 c = alt.Chart(prod_summary).mark_bar(color="#95A5A6").encode(
                     x=alt.X('공급가액:Q', title='매출액', axis=common_axis_config),
-                    y=alt.Y('공식품목명:N', sort='ascending', axis=y_axis_large)
-                ).configure_view(strokeWidth=0).properties(height=chart_height) # 🚀 stroke 제거로 깔끔하게
+                    y=alt.Y(f'{group_field}:N', sort='ascending', axis=y_axis_large)
+                ).configure_view(strokeWidth=0).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
             with tab_amt:
                 c = alt.Chart(prod_summary).mark_bar(color="#E74C3C").encode(
                     x=alt.X('공급가액:Q', title='매출액', axis=common_axis_config),
-                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_large)
+                    y=alt.Y(f'{group_field}:N', sort='-x', axis=y_axis_large)
                 ).configure_view(strokeWidth=0).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
             with tab_qty:
                 c = alt.Chart(prod_summary).mark_bar(color="#F39C12").encode(
                     x=alt.X('환산수량:Q', title='박스', axis=common_axis_config),
-                    y=alt.Y('공식품목명:N', sort='-x', axis=y_axis_large)
+                    y=alt.Y(f'{group_field}:N', sort='-x', axis=y_axis_large)
                 ).configure_view(strokeWidth=0).properties(height=chart_height)
                 st.altair_chart(c, use_container_width=True)
 
         elif view_mode == "🔮 수요 예측":
-            # (수요 예측 부분 생략 없이 그대로 유지)
+            # (수요 예측 부분 유지)
             st.subheader("🔮 향후 3개월 수요 예측 분석")
             monthly_data = filtered_df.groupby('월_dt')['수량'].sum().reset_index()
             monthly_data = monthly_data.set_index('월_dt').asfreq('MS').fillna(0)
