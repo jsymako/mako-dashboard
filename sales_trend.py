@@ -65,8 +65,8 @@ def run(load_data_func):
                 st.session_state.trend_start_date = today - relativedelta(months=3)
             
             st.sidebar.markdown("#### 📅 날짜 지정")
-            start_date = st.sidebar.date_input("시작일", key="trend_start_date")
-            end_date = st.sidebar.date_input("종료일", value=today)
+            start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY/MM/DD")
+            end_date = st.sidebar.date_input("종료일", value=today, format="YYYY/MM/DD")
             
             mask = (filtered_df['일자'].dt.date >= start_date) & (filtered_df['일자'].dt.date <= end_date)
             display_df = filtered_df.loc[mask].copy()
