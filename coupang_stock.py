@@ -83,9 +83,19 @@ def run(load_data_func):
         c4.metric("💸 평균 판매가", f"{int(avg_price):,} 원")
         st.markdown("---")
 
-        # 4. 메인 시각화 (Altair)
+        # ==========================================
+        # 4. 메인 시각화 (범례 우측 배치로 변경 🚀)
+        # ==========================================
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
-        legend_config = alt.Legend(titleFontSize=15, labelFontSize=14, orient='bottom')
+        
+        # 🚀 범례를 화면 오른쪽(right)에 세로 리스트로 배치합니다.
+        legend_config = alt.Legend(
+            titleFontSize=15, 
+            labelFontSize=14, 
+            orient='right',      # 하단(bottom) -> 우측(right) 변경
+            symbolLimit=0,       # 품목이 아무리 많아도 숨기지 않고 다 출력
+            labelLimit=250       # 이름이 너무 길면 적당히 자르기 (가로 공간 확보)
+        )
 
         if view_target in ["📦 재고량 추이", "📊 모두 보기"]:
             st.subheader(f"📦 {selected_brand if selected_brand != '전체보기' else '전체'} 재고량 변동 흐름")
@@ -94,7 +104,7 @@ def run(load_data_func):
                 y=alt.Y('재고:Q', title='재고 수량 (개)', axis=common_axis),
                 color=alt.Color('품목명:N', legend=legend_config, title='품목명'),
                 tooltip=['일자:T', '브랜드', '품목명', '재고']
-            ).properties(height=400)
+            ).properties(height=450) # 범례가 길어질 것을 대비해 차트 높이도 살짝 키웠습니다.
             st.altair_chart(stock_chart, use_container_width=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -107,17 +117,14 @@ def run(load_data_func):
                 y=alt.Y('판매가:Q', title='판매가 (원)', axis=common_axis, scale=alt.Scale(zero=False)),
                 color=alt.Color('품목명:N', legend=legend_config, title='품목명'),
                 tooltip=['일자:T', '브랜드', '품목명', '판매가']
-            ).properties(height=400)
+            ).properties(height=450)
             st.altair_chart(price_chart, use_container_width=True)
 
-        # ==========================================
-        # 5. 🚀 일자별 상세 모니터링 표 (날짜 열 피벗)
-        # ==========================================
+        # 5. 일자별 상세 모니터링 표 (날짜 열 피벗)
         st.markdown("---")
         st.subheader("🚨 일자별 안전재고 및 가격 모니터링")
         st.markdown("※ 기준치 미달/초과 발생 시 아이콘과 함께 표시됩니다.")
 
-        # 상태 판별 함수
         def format_stock_status(row):
             val = int(row['재고'])
             safe_val = int(row['안전재고량'])
@@ -138,14 +145,11 @@ def run(load_data_func):
 
         show_df = display_df[['일자', '브랜드', '품목명', '재고', '안전재고량', '판매가', '최소판매가', '최대판매가']].copy()
         
-        # 상태값 추출
         show_df['재고 현황'] = show_df.apply(format_stock_status, axis=1)
         show_df['판매가 현황'] = show_df.apply(format_price_status, axis=1)
         
-        # 날짜를 열로 보내기 위해 'MM/DD' 형식으로 변환 (가로 공간 확보)
         show_df['일자'] = show_df['일자'].dt.strftime('%m/%d')
 
-        # 🚀 사이드바 라디오 버튼에 따라 표 내용 변경
         if view_target == "📦 재고량 추이":
             show_df['표시값'] = show_df['재고 현황']
         elif view_target == "💰 판매가 변동":
@@ -153,12 +157,10 @@ def run(load_data_func):
         else:
             show_df['표시값'] = "📦 " + show_df['재고 현황'] + " | 💰 " + show_df['판매가 현황']
 
-        # 기준 정보 포맷팅 (기준값은 열 고정)
         show_df['안전재고'] = show_df['안전재고량'].apply(lambda x: f"{int(x):,}")
         show_df['최소판매가'] = show_df['최소판매가'].apply(lambda x: f"{int(x):,}")
         show_df['최대판매가'] = show_df['최대판매가'].apply(lambda x: f"{int(x):,}")
 
-        # 🚀 날짜 피벗 (일자가 열 제목으로 올라감)
         pivot_df = show_df.pivot_table(
             index=['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'],
             columns='일자',
@@ -166,14 +168,11 @@ def run(load_data_func):
             aggfunc=lambda x: ' '.join(x)
         ).reset_index()
 
-        # 열 정렬: 최신 날짜가 품목명 바로 옆(왼쪽)에 오도록 내림차순 정렬
         date_cols = sorted([col for col in pivot_df.columns if col not in ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가']], reverse=True)
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         
-        # 데이터가 없는 날짜 빈칸 처리
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        # 테이블 출력
         st.dataframe(pivot_df, use_container_width=True, hide_index=True)
 
     except Exception as e:
