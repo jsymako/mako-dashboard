@@ -16,7 +16,7 @@ def load_css(file_name):
 
 def run(load_data_func):
     # 🚀 분리된 CSS 파일 불러오기
-    load_css("sales_style.css")
+    load_css("main_style.css")
 
     st.title("📈 판매 현황 및 수요 예측")
 
