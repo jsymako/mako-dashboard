@@ -58,9 +58,48 @@ def run(load_data_func):
         if selected_product != "전체보기":
             filtered_df = filtered_df[filtered_df['공식품목명'] == selected_product]
 
-        # 3. KPI 상단 바
-        total_amt = filtered_df['공급가액'].sum()
-        total_qty = filtered_df['수량'].sum()
+        # 🚀 [복구 완료] 3. 모드별 날짜 세팅 및 필터링
+        today = datetime.date.today()
+        if view_mode == "일별 현황":
+            if "trend_start_date" not in st.session_state: 
+                st.session_state.trend_start_date = today - relativedelta(months=3)
+            
+            st.sidebar.markdown("#### 📅 날짜 지정")
+            start_date = st.sidebar.date_input("시작일", key="trend_start_date")
+            end_date = st.sidebar.date_input("종료일", value=today)
+            
+            mask = (filtered_df['일자'].dt.date >= start_date) & (filtered_df['일자'].dt.date <= end_date)
+            display_df = filtered_df.loc[mask].copy()
+            
+            date_range_str = f"{start_date.strftime('%Y년 %m월 %d일')} ~ {end_date.strftime('%Y년 %m월 %d일')}"
+            diff_val = (end_date - start_date).days + 1
+            avg_label = "💸 일평균 판매액"
+
+        elif view_mode == "월별 현황":
+            month_list = sorted(list(df_sales['월'].unique()))
+            
+            st.sidebar.markdown("#### 📅 월 지정")
+            start_month = st.sidebar.selectbox("시작 월", month_list, index=max(0, len(month_list)-12))
+            end_month = st.sidebar.selectbox("종료 월", month_list, index=len(month_list)-1)
+            
+            display_df = filtered_df[(filtered_df['월'] >= start_month) & (filtered_df['월'] <= end_month)]
+            
+            date_range_str = f"{start_month} ~ {end_month}"
+            d1, d2 = pd.to_datetime(start_month, format='%Y년 %m월'), pd.to_datetime(end_month, format='%Y년 %m월')
+            diff_val = (d2.year - d1.year) * 12 + (d2.month - d1.month) + 1
+            avg_label = "💸 월평균 판매액"
+
+        else: # 수요 예측
+            display_df = filtered_df
+            diff_val = 0
+
+        if display_df.empty:
+            st.warning("선택하신 조건에 데이터가 없습니다.")
+            return
+
+        # 4. KPI 상단 바 (🚀 display_df 기반으로 계산)
+        total_amt = display_df['공급가액'].sum()
+        total_qty = display_df['수량'].sum()
         
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("💰 총 판매액", f"{int(total_amt):,} 원")
@@ -68,19 +107,21 @@ def run(load_data_func):
             c2.metric("📊 기준", "최근 12개월")
             c3.metric("🏷️ 브랜드", selected_brand)
         else:
-            c2.metric("📦 총 수량", f"{int(total_qty):,} 개")
-            c3.metric("🛒 품목 수", f"{len(filtered_df['품목코드'].unique())} 종")
-        c4.metric("📈 분석 모드", view_mode)
+            c2.metric("📅 분석 기간", f"{diff_val}{'일' if view_mode=='일별 현황' else '개월'}", date_range_str, delta_color="off")
+            c3.metric(avg_label, f"{int(total_amt/diff_val if diff_val>0 else 0):,} 원")
+            
+        c4.metric("📦 총 수량", f"{int(total_qty):,} 개")
         st.markdown("---")
 
-        # 4. 분석 모드별 시각화
+        # 5. 분석 모드별 시각화 (🚀 display_df 기반으로 시각화)
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
 
         if view_mode in ["월별 현황", "일별 현황"]:
             st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
             t_line1, t_line2 = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
             grp = '월' if view_mode == "월별 현황" else '일자'
-            trend = filtered_df.groupby(grp)[['공급가액', '수량']].sum().reset_index()
+            
+            trend = display_df.groupby(grp)[['공급가액', '수량']].sum().reset_index()
             with t_line1: st.line_chart(trend.set_index(grp)['공급가액'], color="#2E86C1")
             with t_line2: st.line_chart(trend.set_index(grp)['수량'], color="#28B463")
 
@@ -88,7 +129,7 @@ def run(load_data_func):
             st.subheader(f"📊 {selected_brand if selected_brand != '전체보기' else '전체'} 순위 현황")
             tab_n, tab_a, tab_q = st.tabs(["📋 이름 순", "💰 매출액 순", "📦 박스 순"])
             
-            sum_df = filtered_df.groupby([group_field])[['공급가액', '환산수량']].sum().reset_index()
+            sum_df = display_df.groupby([group_field])[['공급가액', '환산수량']].sum().reset_index()
             y_ax = alt.Axis(labelLimit=500, labelFontSize=16, title='', labelPadding=20)
             chart_h = max(400, len(sum_df) * 45)
 
