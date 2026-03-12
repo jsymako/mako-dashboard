@@ -1,0 +1,75 @@
+/* =========================================
+   판매 현황 및 수요 예측 대시보드 스타일 (sales_style.css)
+========================================= */
+
+/* 1. 전체 기본 글자 및 컨테이너 */
+.main .block-container { 
+    font-size: 1.2rem; 
+}
+p { 
+    font-size: 1.2rem; 
+}
+
+/* 2. 메인 제목 및 서브 타이틀 (h1, h2, h3) */
+h1 { 
+    font-size: 2.2rem !important; 
+    font-weight: 800 !important; 
+}
+h2 { 
+    font-size: 1.8rem !important; 
+    font-weight: 700 !important; 
+}
+h3 { 
+    font-size: 1.5rem !important; 
+    font-weight: 600 !important; 
+}
+
+/* 3. 사이드바 (Sidebar) 텍스트 및 컨트롤 */
+[data-testid="stSidebar"] p { 
+    font-size: 1.2rem !important; 
+}
+.stRadio label, .stSelectbox label { 
+    font-size: 1.2rem !important; /* 라디오 버튼, 셀렉트박스 제목 */
+}
+div[data-baseweb="select"] { 
+    font-size: 1.1rem !important; /* 셀렉트박스 안의 선택된 글자 */
+}
+
+/* 4. KPI 지표 (Metric) - 상단 제목 */
+[data-testid="stMetricLabel"] > div { 
+    font-size: 1.6rem !important; 
+    font-weight: 800 !important; 
+    color: #1E1E1E !important; 
+}
+
+/* 5. KPI 지표 (Metric) - 메인 수치 (박스 수량, 금액 등) */
+[data-testid="stMetricValue"] > div { 
+    font-size: 2.8rem !important; 
+    font-weight: 700 !important;
+}
+
+/* 6. 보조 수치 및 캡션 (낱개 수량, 요약 설명 등) */
+.stCaption, [data-testid="stCaptionContainer"] { 
+    font-size: 1.6rem !important; 
+    line-height: 1.6 !important; 
+    color: #007BFF !important; 
+    font-weight: 700 !important;
+    background-color: #f0f8ff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1e9ff;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+/* 7. 탭 메뉴 (이름 순, 매출액 순 등) */
+button[data-baseweb="tab"] p { 
+    font-size: 1.3rem !important; 
+    font-weight: 600 !important; 
+}
+
+/* 8. 알림창 (st.success, st.warning 등의 메시지) */
+.stAlert p { 
+    font-size: 1.5rem !important; 
+    font-weight: 700 !important; 
+}
