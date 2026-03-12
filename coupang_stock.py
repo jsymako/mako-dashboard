@@ -56,7 +56,6 @@ def run(load_data_func):
         st.sidebar.markdown("---")
         view_target = st.sidebar.radio("3. 조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
 
-        # 필터링 적용
         filtered_df = df.copy()
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
@@ -84,43 +83,69 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 4. 메인 시각화 (범례 우측 배치로 변경 🚀)
+        # 4. 메인 시각화 (🚀 직접 라벨링 방식 적용)
         # ==========================================
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
         
-        # 🚀 범례를 화면 오른쪽(right)에 세로 리스트로 배치합니다.
-        legend_config = alt.Legend(
-            titleFontSize=15, 
-            labelFontSize=14, 
-            orient='right',      # 하단(bottom) -> 우측(right) 변경
-            symbolLimit=0,       # 품목이 아무리 많아도 숨기지 않고 다 출력
-            labelLimit=250       # 이름이 너무 길면 적당히 자르기 (가로 공간 확보)
-        )
+        # 라벨이 차트 밖으로 잘리지 않도록 X축(날짜)의 오른쪽 여백 공간을 계산합니다.
+        x_min = display_df['일자'].min()
+        x_max = display_df['일자'].max()
+        padding_days = max(3, int((x_max - x_min).days * 0.25)) # 전체 기간의 25%만큼 여백 추가
+        x_max_padded = x_max + datetime.timedelta(days=padding_days)
+        
+        common_x = alt.X('일자:T', title='', axis=alt.Axis(format='%m/%d', labelFontSize=14), scale=alt.Scale(domain=[x_min, x_max_padded]))
+
+        # 각 품목별로 가장 마지막 날짜의 데이터를 추출하여 그 위치에 글씨를 띄웁니다.
+        label_idx = display_df.groupby('품목명')['일자'].idxmax()
+        label_df = display_df.loc[label_idx]
 
         if view_target in ["📦 재고량 추이", "📊 모두 보기"]:
             st.subheader(f"📦 {selected_brand if selected_brand != '전체보기' else '전체'} 재고량 변동 흐름")
-            stock_chart = alt.Chart(display_df).mark_line(point=True).encode(
-                x=alt.X('일자:T', title='', axis=alt.Axis(format='%m/%d', labelFontSize=14)),
+            
+            # 선 차트 생성 (기본 범례 제거: legend=None)
+            stock_line = alt.Chart(display_df).mark_line(point=True).encode(
+                x=common_x,
                 y=alt.Y('재고:Q', title='재고 수량 (개)', axis=common_axis),
-                color=alt.Color('품목명:N', legend=legend_config, title='품목명'),
+                color=alt.Color('품목명:N', legend=None),
                 tooltip=['일자:T', '브랜드', '품목명', '재고']
-            ).properties(height=450) # 범례가 길어질 것을 대비해 차트 높이도 살짝 키웠습니다.
-            st.altair_chart(stock_chart, use_container_width=True)
+            )
+            
+            # 글자 라벨 생성
+            stock_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(
+                x=common_x,
+                y='재고:Q',
+                text='품목명:N',
+                color='품목명:N'
+            )
+            
+            # 선 + 글자 합치기
+            st.altair_chart((stock_line + stock_label).properties(height=450), use_container_width=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
         if view_target in ["💰 판매가 변동", "📊 모두 보기"]:
             st.subheader(f"💰 {selected_brand if selected_brand != '전체보기' else '전체'} 판매가 변동 흐름")
             st.caption("※ 쿠팡의 잦은 가격 변동(바이박스 경쟁 등)을 추적합니다.")
-            price_chart = alt.Chart(display_df).mark_line(point=True).encode(
-                x=alt.X('일자:T', title='', axis=alt.Axis(format='%m/%d', labelFontSize=14)),
+            
+            # 선 차트 생성
+            price_line = alt.Chart(display_df).mark_line(point=True).encode(
+                x=common_x,
                 y=alt.Y('판매가:Q', title='판매가 (원)', axis=common_axis, scale=alt.Scale(zero=False)),
-                color=alt.Color('품목명:N', legend=legend_config, title='품목명'),
+                color=alt.Color('품목명:N', legend=None),
                 tooltip=['일자:T', '브랜드', '품목명', '판매가']
-            ).properties(height=450)
-            st.altair_chart(price_chart, use_container_width=True)
+            )
+            
+            # 글자 라벨 생성
+            price_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(
+                x=common_x,
+                y='판매가:Q',
+                text='품목명:N',
+                color='품목명:N'
+            )
+            
+            st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
 
-        # 5. 일자별 상세 모니터링 표 (날짜 열 피벗)
+        # 5. 일자별 상세 모니터링 표
         st.markdown("---")
         st.subheader("🚨 일자별 안전재고 및 가격 모니터링")
         st.markdown("※ 기준치 미달/초과 발생 시 아이콘과 함께 표시됩니다.")
@@ -128,26 +153,20 @@ def run(load_data_func):
         def format_stock_status(row):
             val = int(row['재고'])
             safe_val = int(row['안전재고량'])
-            if safe_val > 0 and val < safe_val:
-                return f"{val:,} 🚨"
+            if safe_val > 0 and val < safe_val: return f"{val:,} 🚨"
             return f"{val:,}"
 
         def format_price_status(row):
             val = int(row['판매가'])
             max_val = int(row['최대판매가'])
             min_val = int(row['최소판매가'])
-            
-            if max_val > 0 and val > max_val:
-                return f"{val:,} 🔺"
-            elif min_val > 0 and val < min_val:
-                return f"{val:,} 🔻"
+            if max_val > 0 and val > max_val: return f"{val:,} 🔺"
+            elif min_val > 0 and val < min_val: return f"{val:,} 🔻"
             return f"{val:,}"
 
         show_df = display_df[['일자', '브랜드', '품목명', '재고', '안전재고량', '판매가', '최소판매가', '최대판매가']].copy()
-        
         show_df['재고 현황'] = show_df.apply(format_stock_status, axis=1)
         show_df['판매가 현황'] = show_df.apply(format_price_status, axis=1)
-        
         show_df['일자'] = show_df['일자'].dt.strftime('%m/%d')
 
         if view_target == "📦 재고량 추이":
@@ -170,7 +189,6 @@ def run(load_data_func):
 
         date_cols = sorted([col for col in pivot_df.columns if col not in ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가']], reverse=True)
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
-        
         pivot_df = pivot_df[final_cols].fillna("-")
 
         st.dataframe(pivot_df, use_container_width=True, hide_index=True)
