@@ -1,20 +1,15 @@
 /* =========================================
-   [1] Streamlit 기본 UI 글자 크기 덮어쓰기 (공통)
+   [1] Streamlit 메인 화면 기본 글자 크기 공통
 ========================================= */
 
 /* 전체 기본 글자 및 컨테이너 */
 .main .block-container { font-size: 1.2rem; }
-p { font-size: 1.2rem; }
+.main p { font-size: 1.2rem; }
 
 /* 메인 제목 및 서브 타이틀 */
 h1 { font-size: 2.2rem !important; font-weight: 800 !important; }
 h2 { font-size: 1.8rem !important; font-weight: 700 !important; }
 h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
-
-/* 사이드바 텍스트 및 컨트롤 */
-[data-testid="stSidebar"] p { font-size: 1.2rem !important; }
-.stRadio label, .stSelectbox label { font-size: 1.2rem !important; }
-div[data-baseweb="select"] { font-size: 1.1rem !important; }
 
 /* KPI 지표 (Metric) */
 [data-testid="stMetricLabel"] > div { font-size: 1.6rem !important; font-weight: 800 !important; color: #1E1E1E !important; }
@@ -40,7 +35,47 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
 
 
 /* =========================================
-   [2] 자사 재고 현황용 커스텀 카드 스타일
+   [2] 사이드바 (Sidebar) 전용 통합 스타일 🚀
+========================================= */
+
+/* 사이드바 내 제목들 (### 🔍 조회 조건 등) */
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] h3, 
+[data-testid="stSidebar"] h4 {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 10px !important;
+    color: #2C3E50 !important;
+}
+
+/* 사이드바 내 모든 위젯 라벨 (브랜드 선택, 시작일, 분석 모드 등) */
+[data-testid="stSidebar"] label {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    color: #34495E !important;
+}
+
+/* 선택창(Selectbox) 및 날짜 입력창(DateInput) 내부 선택된 글자 */
+[data-testid="stSidebar"] div[data-baseweb="select"],
+[data-testid="stSidebar"] input {
+    font-size: 1.15rem !important;
+}
+
+/* 라디오 버튼의 개별 항목 글자 (월별 현황, 일별 현황 등) */
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
+    font-size: 1.15rem !important;
+    font-weight: 500 !important;
+}
+
+/* 사이드바 일반 텍스트 */
+[data-testid="stSidebar"] p {
+    font-size: 1.15rem !important;
+}
+
+
+/* =========================================
+   [3] 자사 재고 현황용 커스텀 카드 스타일
 ========================================= */
 
 /* 브랜드별 그룹 박스 */
