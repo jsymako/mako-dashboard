@@ -137,8 +137,7 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
 }
 .stock-val {
     font-family: 'Abel', sans-serif !important;
-    font-weight: 700 !important;      /* 폰트 굵기 (원하시면 800으로 더 두껍게 가능) */
-    letter-spacing: -0.5px;           /* 자간을 살짝 좁히면 숫자가 훨씬 세련되어 보입니다 */
+    font-weight: 700 !important;
     font-size: 2.2rem; 
     font-weight: 900;
     color: #000000; 
@@ -166,7 +165,10 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
     font-size: 1.1rem;
 }
 .info-label { color: #777; }
-.info-val { font-weight: 600; }
+.info-val { 
+   font-family: 'Abel', sans-serif !important;
+   font-weight: 700 !important;
+   font-weight: 600; }
 
 /* 상태 뱃지 */
 .badge {
