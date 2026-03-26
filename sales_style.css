@@ -39,6 +39,8 @@ div[data-baseweb="select"] {
 
 /* 4. KPI 지표 (Metric) - 상단 제목 */
 [data-testid="stMetricLabel"] > div { 
+   font-family: 'Abel', sans-serif !important;
+    font-weight: 700 !important;
     font-size: 1.6rem !important; 
     font-weight: 800 !important; 
     color: #1E1E1E !important; 
