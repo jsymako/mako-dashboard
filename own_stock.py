@@ -115,11 +115,11 @@ def run(load_data_func):
                     border_style = "border: 1px solid #e0e0e0;" # 기본 얇은 회색 (적정)
                     
                     if "품절" in row['재고상태']: 
-                        border_style = "border: 3px solid #ff4b4b;" # 빨간색 두껍게
+                        border_style = "border: 5px solid #ff4b4b;" # 빨간색 두껍게
                     elif "부족" in row['재고상태']: 
-                        border_style = "border: 3px solid #ffc107;" # 노란색 두껍게
+                        border_style = "border: 5px solid #ffc107;" # 노란색 두껍게
                     elif "과다" in row['재고상태']: 
-                        border_style = "border: 3px solid #28a745;" # 녹색 두껍게
+                        border_style = "border: 5px solid #28a745;" # 녹색 두껍게
                     
                     if row['예상소진주'] >= 999:
                         combined_val = "자료 없음"
