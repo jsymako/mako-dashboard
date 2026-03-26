@@ -119,14 +119,15 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
 .card-header { margin-bottom: 10px; }
 .item-title {
     font-size: 1.4rem; 
-    font-weight: 800;
-    margin-bottom: 12px;
+    font-weight: 700;
+    color: #1E1E1E;
     
-    /* 🚀 글씨 그라데이션 효과 */
-    background: linear-gradient(45deg, #1e3c72, #2a5298); /* 짙은 파랑~푸른색 조합 */
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: inline-block;
+    /* 🚀 카드 윗부분을 꽉 채우는 배경색 마법 */
+    background-color: #f8f9fa; /* 아주 연한 회색/파란색 등 원하는 색상 */
+    margin: -20px -20px 15px -20px; /* 카드의 기본 여백을 무시하고 양옆/위로 쫙 늘림 */
+    padding: 15px 20px; /* 늘어난 만큼 글자 안쪽 여백 다시 주기 */
+    border-bottom: 1px solid #eaeaea; /* 제목 아래에 연한 선 긋기 */
+    border-radius: 12px 12px 0 0; /* 카드 윗모서리 둥글기에 맞춤 */
 }
 .stock-main {
     display: flex;
