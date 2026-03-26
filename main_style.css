@@ -118,15 +118,16 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
 /* 상부: 품목명과 현재 재고 */
 .card-header { margin-bottom: 10px; }
 .item-title {
-    font-size: 1.4rem; 
+    font-size: 1.3rem; 
     font-weight: 700;
-    line-height: 1.4;
-    color: #1E1E1E;
-    margin-bottom: 12px;
+    margin-bottom: 15px;
     
-    /* 🚀 형광펜 효과 (원하는 색상으로 변경 가능) */
-    background: linear-gradient(to top, #e3f2fd 40%, transparent 40%);
-    display: inline-block; /* 텍스트 길이에 맞춰 형광펜이 칠해집니다 */
+    /* 🚀 네임택 효과 */
+    background-color: #f4f6f8; /* 아주 연한 회색 배경 */
+    color: #2c3e50; /* 진한 남색 글씨 */
+    padding: 8px 12px; /* 글자 주변 여백 */
+    border-radius: 6px; /* 모서리 둥글게 */
+    border-left: 4px solid #007BFF; /* 왼쪽 끝에 파란색 포인트 선 */
 }
 .stock-main {
     display: flex;
