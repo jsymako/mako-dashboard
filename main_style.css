@@ -120,10 +120,10 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
 .item-title {
     font-size: 1.4rem; 
     font-weight: 700;
-    color: #1E1E1E;
     
     /* 🚀 카드 윗부분을 꽉 채우는 배경색 마법 */
-    background-color: #e3f2fd; /* 아주 연한 회색/파란색 등 원하는 색상 */
+    background-color: #e2e8f0; /* 🚀 확실히 티가 나는 세련된 회색 */
+    color: #1E1E1E; /* 글자색은 검정에 가까운 진회색 그대로 */
     margin: -15px -15px 12px -15px; /* 🚀 카드 밖으로 딱 맞게 팽창시킴 */
     padding: 10px 15px; /* 늘어난 만큼 글자 안쪽 여백 다시 주기 */
     border-bottom: 1px solid #eaeaea; /* 제목 아래에 연한 선 긋기 */
