@@ -126,7 +126,7 @@ def run(load_data_func):
                     else:
                         weeks = row['예상소진주']
                         months = round(weeks / 4, 1)
-                        combined_val = f"{weeks}주 · {months}개월"
+                        combined_val = f"{weeks}주 · {months}달"
                     
                     # 숫자와 단위를 분리하여 렌더링
                     stock_text = row['환산재고']
