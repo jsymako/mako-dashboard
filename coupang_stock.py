@@ -174,7 +174,7 @@ def run(load_data_func):
         elif view_target == "💰 판매가 변동":
             show_df['표시값'] = show_df['판매가 현황']
         else:
-            show_df['표시값'] = "📦 " + show_df['재고 현황'] + " | 💰 " + show_df['판매가 현황']
+            show_df['표시값'] = show_df['재고 현황'] + " | show_df['판매가 현황']
 
         show_df['안전재고'] = show_df['안전재고량'].apply(lambda x: f"{int(x):,}")
         show_df['최소판매가'] = show_df['최소판매가'].apply(lambda x: f"{int(x):,}")
