@@ -17,7 +17,7 @@ def run(load_data_func):
     load_css("main_style.css")
 
     st.title("📦 쿠팡 재고 및 판매가 현황")
-    st.markdown("매일 기록되는 쿠팡 물류 창고의 **재고 흐름**과 **판매가 변동**을 추적합니다.")
+    
 
     try:
         # 1. 데이터 로드 및 마스터 결합
@@ -125,7 +125,7 @@ def run(load_data_func):
 
         if view_target in ["💰 판매가 변동", "📊 모두 보기"]:
             st.subheader(f"💰 {selected_brand if selected_brand != '전체보기' else '전체'} 판매가 변동 흐름")
-            st.caption("※ 쿠팡의 잦은 가격 변동(바이박스 경쟁 등)을 추적합니다.")
+            
             
             # 선 차트 생성
             price_line = alt.Chart(display_df).mark_line(point=True).encode(
