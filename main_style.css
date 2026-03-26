@@ -109,7 +109,7 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
     background-color: var(--background-color);
     border: 1px solid rgba(150, 150, 150, 0.2);
     border-radius: 12px;
-    padding: 20px;
+    padding: 15px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
@@ -124,21 +124,23 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
     
     /* 🚀 카드 윗부분을 꽉 채우는 배경색 마법 */
     background-color: #f8f9fa; /* 아주 연한 회색/파란색 등 원하는 색상 */
-    margin: -20px -20px 15px -20px; /* 카드의 기본 여백을 무시하고 양옆/위로 쫙 늘림 */
-    padding: 15px 20px; /* 늘어난 만큼 글자 안쪽 여백 다시 주기 */
+    margin: -15px -15px 12px -15px; /* 🚀 카드 밖으로 딱 맞게 팽창시킴 */
+    padding: 10px 15px; /* 늘어난 만큼 글자 안쪽 여백 다시 주기 */
     border-bottom: 1px solid #eaeaea; /* 제목 아래에 연한 선 긋기 */
     border-radius: 12px 12px 0 0; /* 카드 윗모서리 둥글기에 맞춤 */
 }
 .stock-main {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end; 
-    margin-top: 15px;
+   display: flex;
+   justify-content: space-between;
+   align-items: flex-end; 
+   margin-top: 5px;
+   margin-bottom: 15px;
+   
 }
 .stock-label {
-    font-size: 1rem;
-    color: #777;
-    padding-bottom: 5px; 
+   font-size: 1rem;
+   color: #777;
+   padding-bottom: 5px; 
 }
 .stock-val {
     font-family: 'Abel', sans-serif !important;
@@ -157,8 +159,7 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
 
 /* 중간 구분 점선 */
 .card-divider {
-    border-top: 2px dashed rgba(150, 150, 150, 0.3);
-    margin: 10px 0 15px 0;
+    display: none;
 }
 
 /* 하부: 주평균 및 예상 소진 */
