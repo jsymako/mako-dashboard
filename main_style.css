@@ -100,7 +100,7 @@ button[data-baseweb="tab"] p { font-size: 1.3rem !important; font-weight: 600 !i
 /* 그리드 컨테이너 */
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 15px;
 }
 
