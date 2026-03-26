@@ -46,12 +46,16 @@ div[data-baseweb="select"] {
 
 /* 5. KPI 지표 (Metric) - 메인 수치 (박스 수량, 금액 등) */
 [data-testid="stMetricValue"] > div { 
+   font-family: 'Abel', sans-serif !important;
+    font-weight: 700 !important;
     font-size: 2.8rem !important; 
     font-weight: 700 !important;
 }
 
 /* 6. 보조 수치 및 캡션 (낱개 수량, 요약 설명 등) */
 .stCaption, [data-testid="stCaptionContainer"] { 
+   font-family: 'Abel', sans-serif !important;
+    font-weight: 700 !important;
     font-size: 1.6rem !important; 
     line-height: 1.6 !important; 
     color: #007BFF !important; 
@@ -66,6 +70,8 @@ div[data-baseweb="select"] {
 
 /* 7. 탭 메뉴 (이름 순, 매출액 순 등) */
 button[data-baseweb="tab"] p { 
+   font-family: 'Abel', sans-serif !important;
+    font-weight: 700 !important;
     font-size: 1.3rem !important; 
     font-weight: 600 !important; 
 }
