@@ -37,7 +37,6 @@ def run(load_data_func):
         df_sales['월'] = df_sales['일자'].dt.strftime('%Y년 %m월')
 
         # 2. 사이드바 필터 (브랜드-품목 연동)
-        st.sidebar.markdown("### 🔍 품목 조건")
         brand_list = ["전체보기"] + sorted(list(df_sales['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
         
@@ -47,7 +46,7 @@ def run(load_data_func):
         
         st.sidebar.markdown("---")
 
-        st.sidebar.markdown("### 🔮 분석 모드")
+        st.sidebar.markdown("### 분석 모드")
         view_mode = st.sidebar.radio("### 🔮 분석 모드",["월별 현황", "일별 현황", "수요 예측"], index=0)
 
         # 공통 필터 적용
