@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 import os
 
 def run(load_data_func):
-    st.title("📦 자사 재고 현황 및 소진 예측 (주 단위)")
+    st.title("📦 자사 재고 현황")
     
     # CSS 적용 (style.css 파일이 있는 경우)
     if os.path.exists("main_style.css"):
