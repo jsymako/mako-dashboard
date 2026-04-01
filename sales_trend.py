@@ -39,11 +39,11 @@ def run(load_data_func):
         # 2. 사이드바 필터 (브랜드-품목 연동)
         st.sidebar.markdown("### 🔍 품목 조건")
         brand_list = ["전체보기"] + sorted(list(df_sales['브랜드'].unique()))
-        selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
+        selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
         
         prod_df = df_sales if selected_brand == "전체보기" else df_sales[df_sales['브랜드'] == selected_brand]
         product_list = ["전체보기"] + sorted(list(prod_df['공식품목명'].unique()))
-        selected_product = st.sidebar.selectbox("2. 품목 선택", product_list)
+        selected_product = st.sidebar.selectbox("품목 선택", product_list)
         
         st.sidebar.markdown("---")
         view_mode = st.sidebar.radio("🔮 분석 모드", ["월별 현황", "일별 현황", "수요 예측"], index=0)
