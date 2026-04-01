@@ -46,8 +46,7 @@ def run(load_data_func):
         
         st.sidebar.markdown("---")
 
-        st.sidebar.markdown("### 분석 모드")
-        view_mode = st.sidebar.radio("### 🔮 분석 모드",["월별 현황", "일별 현황", "수요 예측"], index=0)
+        view_mode = st.sidebar.radio("🔮 분석 모드",["월별 현황", "일별 현황", "수요 예측"], index=0)
 
         # 공통 필터 적용
         filtered_df = df_sales.copy()
@@ -62,7 +61,6 @@ def run(load_data_func):
             if "trend_start_date" not in st.session_state: 
                 st.session_state.trend_start_date = today - relativedelta(months=3)
             
-            st.sidebar.markdown("### 📅 일 지정건")
             start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY/MM/DD")
             end_date = st.sidebar.date_input("종료일", value=today, format="YYYY/MM/DD")
             
@@ -76,7 +74,6 @@ def run(load_data_func):
         elif view_mode == "월별 현황":
             month_list = sorted(list(df_sales['월'].unique()))
             
-            st.sidebar.markdown("### 📅 월 지정")
             start_month = st.sidebar.selectbox("시작 월", month_list, index=max(0, len(month_list)-12))
             end_month = st.sidebar.selectbox("종료 월", month_list, index=len(month_list)-1)
             
