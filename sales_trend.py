@@ -46,7 +46,7 @@ def run(load_data_func):
         
         st.sidebar.markdown("---")
 
-        view_mode = st.sidebar.radio("🔮 분석 모드",["월별 현황", "일별 현황", "수요 예측"], index=0)
+        view_mode = st.sidebar.radio("분석 모드",["월별 현황", "일별 현황", "수요 예측"], index=0)
 
         # 공통 필터 적용
         filtered_df = df_sales.copy()
