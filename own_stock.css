@@ -1,8 +1,14 @@
 /* =========================================
    📦 자사 재고 현황 스타일 (own_stock.css)
 ========================================= */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap');
+/* 프리텐다드(Pretendard) 및 Abel 폰트 불러오기 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 @import url('https://fonts.googleapis.com/css2?family=Abel&display=swap');
+
+/* [0] 전역 폰트 강제 적용 (Pretendard) */
+.stApp, .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp label, .stApp span, .stApp div {
+    font-family: 'Pretendard', sans-serif !important;
+}
 
 /* [1] 공통 텍스트 및 레이아웃 */
 .main .block-container { font-size: 1.2rem; }
@@ -18,23 +24,27 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
    [3] 자사 재고 전용: 카드 디자인
 ========================================= */
 .brand-section { background-color: rgba(150, 150, 150, 0.05); border-radius: 12px; padding: 20px; margin-bottom: 30px; }
-.brand-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid rgba(150, 150, 150, 0.2); padding-bottom: 10px; }
-.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 15px; }
+.brand-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 15px; border-bottom: 2px solid rgba(150, 150, 150, 0.2); padding-bottom: 10px; }
+.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
 .item-card { background-color: var(--background-color); border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
 
 .item-title {
-    font-size: 1.4rem; font-weight: 700;
+    font-size: 1.3rem; font-weight: 700;
     background-color: #e2e8f0; color: #1E1E1E;
     margin: -15px -15px 12px -15px; padding: 10px 15px;
     border-bottom: 1px solid #eaeaea; border-radius: 12px 12px 0 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;
 }
-.stock-main { display: flex; justify-content: space-between; align-items: flex-end; margin: 5px 0; }
+.stock-main { display: flex; justify-content: space-between; align-items: flex-end; margin: 5px 0 15px 0; }
 .stock-label { font-size: 1rem; color: #777; padding-bottom: 5px; }
+
+/* 🚀 핵심: 여기만 Abel 폰트 무적 권한(!)으로 방어 */
 .stock-val { font-family: 'Abel', sans-serif !important; font-size: 2.2rem; font-weight: 900 !important; color: #000000; line-height: 1; }
+
 .stock-unit { font-size: 1.1rem; font-weight: 400; color: #000000; margin-left: 4px; }
 
 .card-divider { display: none; }
 .card-body { flex-grow: 1; }
 .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1rem; }
 .info-label { font-size: 1rem; color: #777; }
-.info-val { font-family: 'Abel', sans-serif !important; font-weight: 700 !important; }
+.info-val { font-weight: 700 !important; }
