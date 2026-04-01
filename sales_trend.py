@@ -121,17 +121,17 @@ def run(load_data_func):
         # --- (여기서부터는 화면에 그리는 HTML 코드 동일) ---
         check_html = "<hr style='margin: 15px 0px 10px 0px; border-top: 1px solid #ddd;'>"
         check_html += "<div style='font-size: 0.85rem; line-height: 1.5; color: #666;'>"
-        check_html += "<strong style='color: #2C3E50;'>🚨 데이터 점검 (최근 1년)</strong><br>"
+        check_html += "<strong style='color: #2C3E50;'>🚨 Check for missing data (last 1 year)</strong><br>"
         
         if missing_dates:
-            check_html += f"<span style='color: #E74C3C; font-weight: 600;'>⚠️ 평일 데이터 누락 ({len(missing_dates)}일)</span><br>"
+            check_html += f"<span style='color: #E74C3C; font-weight: 600;'>⚠️ Missing data occurs ({len(missing_dates)}일)</span><br>"
             check_html += "<div style='max-height: 120px; overflow-y: auto; margin-top: 5px; padding-right: 5px; border-left: 2px solid #E74C3C;'>"
             weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
             for md in missing_dates:
                 check_html += f"<span style='margin-left: 8px; font-size: 0.8rem;'>- {md.strftime('%y/%m/%d')} ({weekdays_kr[md.weekday()]})</span><br>"
             check_html += "</div>"
         else:
-            check_html += "<span style='color: #27AE60; font-weight: 600;'>✅ 1년간 누락 없음 완벽!</span>"
+            check_html += "<span style='color: #27AE60; font-weight: 600;'>✅ No missing data</span>"
             
         check_html += "</div>"
         
