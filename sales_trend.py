@@ -94,36 +94,37 @@ def run(load_data_func):
 
         
         # ==========================================
-        # 🚀 [신규 추가] 최근 30일 평일 데이터 누락 점검기
+        # 🚀 [초소형 버전] 최근 30일 평일 데이터 누락 점검기
+        # 기존 CSS 룰을 피해 HTML로 아주 작은 글씨를 강제 적용합니다.
         # ==========================================
-        st.sidebar.markdown("---")
-        st.sidebar.markdown("#### 🚨 데이터 누락 점검")
-        
-        # 오늘 기준으로 어제까지 최근 30일 검사 (오늘은 아직 마감이 안 끝났을 수 있으므로 어제까지만)
         check_end = datetime.date.today() - datetime.timedelta(days=1)
         check_start = check_end - datetime.timedelta(days=30)
         
-        # 1. 파이썬의 기본 기능으로 최근 30일 중 '영업일(월~금)' 리스트만 쏙 뽑아냅니다.
         business_days = pd.bdate_range(start=check_start, end=check_end).date
         
-        # 2. 필터링 되기 전의 원본 데이터(df_sales_raw)에서 해당 기간에 데이터가 있는 날짜만 추출합니다.
         mask_recent = (df_sales_raw['일자'].dt.date >= check_start) & (df_sales_raw['일자'].dt.date <= check_end)
         actual_dates = df_sales_raw[mask_recent]['일자'].dt.date.unique()
         
-        # 3. 누락된 날짜 계산 (전체 평일 리스트 - 실제 데이터가 있는 날짜)
         missing_dates = sorted(list(set(business_days) - set(actual_dates)))
         
-        # 4. 결과 출력
+        # 여기서부터 HTML 덩어리를 만듭니다. (font-size: 0.85rem 으로 아주 작게 설정!)
+        check_html = "<hr style='margin: 15px 0px 10px 0px; border-top: 1px solid #ddd;'>"
+        check_html += "<div style='font-size: 0.85rem; line-height: 1.5; color: #666;'>"
+        check_html += "<strong style='color: #2C3E50;'>🚨 데이터 점검 (최근 30일)</strong><br>"
+        
         if missing_dates:
-            # 누락이 있으면 빨간색 경고창과 함께 누락된 날짜들을 요일과 함께 보여줍니다.
-            st.sidebar.error(f"⚠️ 최근 30일 누락 ({len(missing_dates)}일)")
+            check_html += f"<span style='color: #E74C3C; font-weight: 600;'>⚠️ 평일 데이터 누락 ({len(missing_dates)}일)</span><br>"
             weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
             for md in missing_dates:
-                # 사이드바 공간을 차지하지 않도록 캡션(작은 글씨)으로 띄워줍니다.
-                st.sidebar.caption(f"- {md.strftime('%Y-%m-%d')} ({weekdays_kr[md.weekday()]})")
+                # 개별 날짜는 0.8rem으로 더 작게!
+                check_html += f"<span style='margin-left: 12px; font-size: 0.8rem;'>- {md.strftime('%m/%d')} ({weekdays_kr[md.weekday()]})</span><br>"
         else:
-            # 누락이 없으면 마음 편한 녹색 성공창을 띄웁니다.
-            st.sidebar.success("✅ 최근 30일 평일 누락 없음")
+            check_html += "<span style='color: #27AE60; font-weight: 600;'>✅ 평일 누락 없음</span>"
+            
+        check_html += "</div>"
+        
+        # 완성된 초소형 HTML 덩어리를 화면에 그립니다.
+        st.sidebar.markdown(check_html, unsafe_allow_html=True)
         # ==========================================
 
         # 4. KPI 상단 바 (🚀 display_df 기반으로 계산)
