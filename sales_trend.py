@@ -61,7 +61,7 @@ def run(load_data_func):
             if "trend_start_date" not in st.session_state: 
                 st.session_state.trend_start_date = today - relativedelta(months=3)
             
-            st.sidebar.markdown("##### 📅 날짜 지정")
+            st.sidebar.markdown("#### 📅 날짜 지정")
             start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY/MM/DD")
             end_date = st.sidebar.date_input("종료일", value=today, format="YYYY/MM/DD")
             
