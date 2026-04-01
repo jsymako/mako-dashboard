@@ -6,12 +6,13 @@ from dateutil.relativedelta import relativedelta
 import os
 
 def run(load_data_func):
-    st.title("📦 자사 재고 현황")
     
     # CSS 적용 (style.css 파일이 있는 경우)
     if os.path.exists("main_style.css"):
         with open("main_style.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+    st.title("📦 자사 재고 현황")
 
     try:
         # 1. 데이터 로드
