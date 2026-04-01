@@ -36,10 +36,10 @@ def run(load_data_func):
         df[['안전재고량', '최대판매가', '최소판매가']] = df[['안전재고량', '최대판매가', '최소판매가']].fillna(0)
 
         # 2. 사이드바 필터 설정
-        st.sidebar.markdown("### 🔍 조회 조건")
-        
         brand_list = ["전체보기"] + sorted(list(df['브랜드'].dropna().unique()))
-        selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
+        selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
+
+        st.sidebar.markdown("---")
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
