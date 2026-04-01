@@ -62,7 +62,7 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 [data-testid="stAlert"] {
     background-color: transparent !important;
     border: none !important;
-    padding: 15 !important;
+    padding: 0 !important;
 }
 
 /* 2. 🚀 진짜 알맹이 박스(내부 div)에 디자인 입히기 */
@@ -70,7 +70,7 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
     background-color: transparent !important;  /* 고급스러운 연회색 배경 */
     border: 0px solid #dae1e7 !important;  /* 깔끔한 테두리 */
     border-radius: 10px !important;        /* 모서리 둥글게 */
-    padding: 15px !important;         /* 박스 안쪽 여백 */
+    padding: 0px !important;         /* 박스 안쪽 여백 */
 }
 
 /* 3. 글자 폰트 및 색상 설정 */
