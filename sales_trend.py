@@ -46,7 +46,7 @@ def run(load_data_func):
         selected_product = st.sidebar.selectbox("2. 품목 선택", product_list)
         
         st.sidebar.markdown("---")
-        view_mode = st.sidebar.radio("분석 모드", ["월별 현황", "일별 현황", "수요 예측"], index=0)
+        view_mode = st.sidebar.radio("🔮 분석 모드", ["월별 현황", "일별 현황", "수요 예측"], index=0)
 
         # 공통 필터 적용
         filtered_df = df_sales.copy()
@@ -100,7 +100,7 @@ def run(load_data_func):
         
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("💰 총 판매액", f"{int(total_amt):,} 원")
-        if view_mode == "🔮 수요 예측":
+        if view_mode == "수요 예측":
             c2.metric("📊 기준", "최근 12개월")
             c3.metric("🏷️ 브랜드", selected_brand)
         else:
@@ -143,8 +143,8 @@ def run(load_data_func):
                     x='환산수량:Q', y=alt.Y(f'{group_field}:N', sort='-x', axis=y_ax)
                 ).properties(height=chart_h), use_container_width=True)
 
-        elif view_mode == "🔮 수요 예측":
-            st.subheader("🔮 향후 3개월 수요 예측 분석")
+        elif view_mode == "수요 예측":
+            st.subheader("향후 3개월 수요 예측 분석")
             m_data = filtered_df.groupby('월_dt')['수량'].sum().reset_index().set_index('월_dt').asfreq('MS').fillna(0)
             
             if len(m_data) < 12:
