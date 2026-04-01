@@ -13,7 +13,7 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    st.title("📦 자사 재고 현황")
+    st.title("자사 재고 현황")
 
     try:
         # 1. 데이터 로드
@@ -100,7 +100,7 @@ def run(load_data_func):
 
         # 6. 상단 정보 박스 출력
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
-        st.info(f"**🕒 데이터 업데이트 :** {update_time}  \n**💡 산출 기준 :** {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산)")
+        st.info(f"**업데이트 :** {update_time}  \n**기준 :** {date_range_str} ({months_to_look_back}개월 판매량을 4주 단위로 환산)")
         
         # 7. 카드 렌더링 루프
         if df_merged.empty:
