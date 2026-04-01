@@ -97,7 +97,7 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 [data-testid="stMetricLabel"] > div { font-weight: 800 !important; font-size: 1.6rem !important; color: #1E1E1E !important; }
 
 /* KPI 지표 메인 수치 */
-[data-testid="stMetricValue"] > div { font-weight: 700 !important; font-size: 2.8rem !important; }
+[data-testid="stMetricValue"] > div { font-weight: 700 !important; font-size: 1.8rem !important; }
 
 /* 보조 수치 및 캡션 */
 .stCaption, [data-testid="stCaptionContainer"] { 
