@@ -47,6 +47,8 @@ def run(load_data_func):
         
         status_list = ["전체보기", "품절", "재고 부족", "과다 재고", "적정"]
         selected_status = st.sidebar.selectbox("상태 필터", status_list, key="own_status_filter")
+
+        st.sidebar.markdown("---")
         
         # 🚀 [수정] 디폴트 값을 1에서 3으로 변경했습니다. (4번째 인자가 기본값입니다)
         months_to_look_back = st.sidebar.slider("판매 산출 기준 (개월)", 1, 12, 3, key="own_month_slider_v2")
