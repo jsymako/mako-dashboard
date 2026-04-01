@@ -41,8 +41,7 @@ def run(load_data_func):
 
         st.sidebar.markdown("---")
 
-        st.sidebar.markdown("---")
-        view_target = st.sidebar.radio("3. 조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
+        view_target = st.sidebar.radio("조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
