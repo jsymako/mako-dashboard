@@ -96,14 +96,25 @@ def run(load_data_func):
         total_amt = display_df['공급가액'].sum()
         total_qty = display_df['수량'].sum()
         
+        # 🚀 '만 원' 단위 환산
+        total_amt_man = total_amt / 10000
+        
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("💰 총 판매액", f"{int(total_amt):,} 원")
+        
         if view_mode == "수요 예측":
-            c2.metric("📊 기준", "최근 12개월")
+            # [순서 변경] 1. 기간(기준) -> 2. 총 판매액 -> 3. 브랜드 -> 4. 총 수량
+            c1.metric("📊 기준", "최근 12개월")
+            # delta 옵션에 실제 금액을 넣고 delta_color="off"를 주면 날짜처럼 밑에 작게 회색으로 표시됩니다!
+            c2.metric("💰 총 판매액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
             c3.metric("🏷️ 브랜드", selected_brand)
         else:
-            c2.metric("📅 분석 기간", f"{diff_val}{'일' if view_mode=='일별 현황' else '개월'}", date_range_str, delta_color="off")
-            c3.metric(avg_label, f"{int(total_amt/diff_val if diff_val>0 else 0):,} 원")
+            avg_amt = total_amt / diff_val if diff_val > 0 else 0
+            avg_amt_man = avg_amt / 10000
+            
+            # [순서 변경] 1. 분석 기간 -> 2. 총 판매액 -> 3. 평균 판매액 -> 4. 총 수량
+            c1.metric("📅 분석 기간", f"{diff_val}{'일' if view_mode=='일별 현황' else '개월'}", date_range_str, delta_color="off")
+            c2.metric("💰 총 판매액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
+            c3.metric(avg_label, f"{int(avg_amt_man):,}만 원", f"실제: {int(avg_amt):,} 원", delta_color="off")
             
         c4.metric("📦 총 수량", f"{int(total_qty):,} 개")
         st.markdown("---")
