@@ -7,6 +7,7 @@ import os
 
 def run(load_data_func):
     
+    # 🚀 짝꿍 CSS 파일 불러오기
     try:
         with open("own_stock.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -30,7 +31,7 @@ def run(load_data_func):
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
 
-        # 박스입수(D열) 및 과다기준주(E열) 추출
+        # 박스입수 및 과다기준주 추출
         box_col_name = df_item.columns[3] 
         df_item_box = df_item[['품목코드', box_col_name]].copy()
         df_item_box.rename(columns={box_col_name: '박스입수'}, inplace=True)
@@ -45,12 +46,11 @@ def run(load_data_func):
         brand_list = ["전체보기"] + sorted(list(df_own['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("브랜드 필터", brand_list, key="own_brand_filter")
         
-        status_list = ["전체보기", "품절", "재고 부족", "과다 재고", "적정"]
+        # 🚀 [수정] 순서 및 단어 변경: 부족, 품절, 과다, 적정
+        status_list = ["전체보기", "부족", "품절", "과다", "적정"]
         selected_status = st.sidebar.selectbox("상태 필터", status_list, key="own_status_filter")
 
         st.sidebar.markdown("---")
-        
-        # 🚀 [수정] 디폴트 값을 1에서 3으로 변경했습니다. (4번째 인자가 기본값입니다)
         months_to_look_back = st.sidebar.slider("판매 산출 기준 (개월)", 1, 12, 3, key="own_month_slider_v2")
 
         # 4. 날짜 계산 및 판매량 합산
@@ -62,7 +62,6 @@ def run(load_data_func):
         total_sales_by_item = recent_sales.groupby('품목코드')['수량'].sum().reset_index()
         total_sales_by_item.rename(columns={'수량': '기간내_총판매량'}, inplace=True)
         
-        # 주평균판매량 계산
         total_sales_by_item['주평균판매량'] = ((total_sales_by_item['기간내_총판매량'] / months_to_look_back) / 4).round(1)
         
         # 5. 데이터 병합 및 최종 환산
@@ -70,21 +69,19 @@ def run(load_data_func):
         df_merged = pd.merge(df_merged, df_item_limit, on='품목코드', how='left')
         df_merged = pd.merge(df_merged, df_item_box, on='품목코드', how='left')
         
-        # 예상소진주 계산
         df_merged['예상소진주'] = np.where(df_merged['주평균판매량'] > 0, 
                                        (df_merged['현재재고'] / df_merged['주평균판매량']).round(1), 
                                        999.0)
 
-        # 상태 판별 함수
+        # 🚀 [수정] 상태 판별 함수: 2글자로 간소화 및 잔재 제거
         def check_status(row):
-            if row['현재재고'] <= 0: return "🔴 품절"
-            if row['예상소진주'] < 2.0: return "🟠 재고 부족 (2주 미만)"
+            if row['현재재고'] <= 0: return "품절"
+            if row['예상소진주'] < 2.0: return "부족"
             limit = row['과다기준주'] if pd.notna(row['과다기준주']) and row['과다기준주'] > 0 else 24.0
-            return f"🔵 과다 재고 ({int(limit)}주 초과)" if row['예상소진주'] > limit else "🟢 적정"
+            return "과다" if row['예상소진주'] > limit else "적정"
             
         df_merged['재고상태'] = df_merged.apply(check_status, axis=1)
 
-        # 환산 표시 함수
         def format_stock_display(qty, box_unit):
             if box_unit <= 1: 
                 return f"{int(qty):,} 개" if qty == int(qty) else f"{qty:.1f} 개"
@@ -98,7 +95,7 @@ def run(load_data_func):
         if selected_brand != "전체보기":
             df_merged = df_merged[df_merged['브랜드'] == selected_brand]
         if selected_status != "전체보기":
-            df_merged = df_merged[df_merged['재고상태'].str.contains(selected_status, na=False)]
+            df_merged = df_merged[df_merged['재고상태'] == selected_status]
 
         # 6. 상단 정보 박스 출력
         date_range_str = f"{start_date.year}년 {start_date.month}월 ~ {end_date.year}년 {end_date.month}월"
@@ -111,19 +108,18 @@ def run(load_data_func):
             for br in sorted(df_merged['브랜드'].unique()):
                 br_df = df_merged[df_merged['브랜드'] == br]
                 
-                # 브랜드 섹션 시작
                 html_content = f'<div class="brand-section"><div class="brand-title">🏢 {br} ({len(br_df)}개 품목)</div><div class="grid-container">'
                 
                 for _, row in br_df.iterrows():
-                    # 🚀 [수정] 뱃지 대신 박스 테두리 스타일 적용
-                    border_style = "border: 1px solid #e0e0e0;" # 기본 얇은 회색 (적정)
+                    # 🚀 [수정] 간소화된 2글자 상태명에 맞춰 테두리 조건 변경
+                    border_style = "border: 1px solid #e0e0e0;" # 기본 (적정)
                     
-                    if "품절" in row['재고상태']: 
-                        border_style = "border: 5px solid #ff4b4b;" # 빨간색 두껍게
-                    elif "부족" in row['재고상태']: 
-                        border_style = "border: 5px solid #ffc107;" # 노란색 두껍게
-                    elif "과다" in row['재고상태']: 
-                        border_style = "border: 5px solid #28a745;" # 녹색 두껍게
+                    if row['재고상태'] == "품절": 
+                        border_style = "border: 5px solid #ff4b4b;"
+                    elif row['재고상태'] == "부족": 
+                        border_style = "border: 5px solid #ffc107;"
+                    elif row['재고상태'] == "과다": 
+                        border_style = "border: 5px solid #28a745;"
                     
                     if row['예상소진주'] >= 999:
                         combined_val = "자료 없음"
@@ -132,13 +128,11 @@ def run(load_data_func):
                         months = round(weeks / 4, 1)
                         combined_val = f"{weeks}주 · {months}달"
                     
-                    # 숫자와 단위를 분리하여 렌더링
                     stock_text = row['환산재고']
                     stock_parts = stock_text.split(' ')
                     stock_num = stock_parts[0]
                     stock_unit = stock_parts[1] if len(stock_parts) > 1 else ""
 
-                    # 🚀 [수정] item-card에 border_style을 적용하고 내부 뱃지 div는 삭제했습니다.
                     card_html = f"""
                     <div class="item-card" style="{border_style}">
                         <div class="card-header">
@@ -164,7 +158,6 @@ def run(load_data_func):
                         </div>
                     </div>
                     """
-                    # 줄바꿈과 들여쓰기를 공백으로 치환하여 텍스트 노출 방지
                     html_content += card_html.replace('\n', '').strip()
                 
                 html_content += '</div></div>' 
