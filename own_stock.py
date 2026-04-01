@@ -13,7 +13,7 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    st.title("자사 재고 현황")
+    st.title("📦 자사 재고 현황")
 
     try:
         # 1. 데이터 로드
