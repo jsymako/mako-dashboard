@@ -5,6 +5,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import altair as alt
 import os
+import holidays
 
 
 def run(load_data_func):
@@ -94,36 +95,46 @@ def run(load_data_func):
 
         
         # ==========================================
-        # 🚀 [초소형 버전] 최근 30일 평일 데이터 누락 점검기
-        # 기존 CSS 룰을 피해 HTML로 아주 작은 글씨를 강제 적용합니다.
+        # 🚀 [초소형 + 공휴일 완벽 제외] 최근 1년 데이터 누락 점검기
         # ==========================================
-        check_end = datetime.date.today() - datetime.timedelta(days=2)
-        check_start = check_end - datetime.timedelta(days=365)
+        check_end = datetime.date.today() - datetime.timedelta(days=2) # 크롤링 D-2 기준
+        check_start = check_end - datetime.timedelta(days=365)         # 365일 검사
         
+        # 1. 1차 필터: 주말(토,일)을 제외한 평일 달력 생성
         business_days = pd.bdate_range(start=check_start, end=check_end).date
         
+        # 2. 엑셀에 실제로 존재하는 날짜들
         mask_recent = (df_sales_raw['일자'].dt.date >= check_start) & (df_sales_raw['일자'].dt.date <= check_end)
         actual_dates = df_sales_raw[mask_recent]['일자'].dt.date.unique()
         
-        missing_dates = sorted(list(set(business_days) - set(actual_dates)))
+        # 3. 1차 누락일 계산 (평일인데 엑셀에 없는 날)
+        missing_dates_raw = set(business_days) - set(actual_dates)
         
-        # 여기서부터 HTML 덩어리를 만듭니다. (font-size: 0.85rem 으로 아주 작게 설정!)
+        # 🚀 4. 2차 필터: 대한민국 공휴일 및 대체휴일 완벽 제외 마법!
+        # 검사하는 기간의 연도(예: 2025, 2026)를 파악해서 해당 연도의 한국 달력을 가져옵니다.
+        kr_holidays = holidays.KR(years=range(check_start.year, check_end.year + 1))
+        
+        # 1차 누락일 중에서 "공휴일 달력에 없는 진짜 평일"만 최종 누락일로 확정합니다.
+        missing_dates = sorted([d for d in missing_dates_raw if d not in kr_holidays])
+        
+        
+        # --- (여기서부터는 화면에 그리는 HTML 코드 동일) ---
         check_html = "<hr style='margin: 15px 0px 10px 0px; border-top: 1px solid #ddd;'>"
         check_html += "<div style='font-size: 0.85rem; line-height: 1.5; color: #666;'>"
-        check_html += "<strong style='color: #2C3E50;'>🚨 데이터 점검 (최근 30일)</strong><br>"
+        check_html += "<strong style='color: #2C3E50;'>🚨 데이터 점검 (최근 1년)</strong><br>"
         
         if missing_dates:
             check_html += f"<span style='color: #E74C3C; font-weight: 600;'>⚠️ 평일 데이터 누락 ({len(missing_dates)}일)</span><br>"
+            check_html += "<div style='max-height: 120px; overflow-y: auto; margin-top: 5px; padding-right: 5px; border-left: 2px solid #E74C3C;'>"
             weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
             for md in missing_dates:
-                # 개별 날짜는 0.8rem으로 더 작게!
-                check_html += f"<span style='margin-left: 12px; font-size: 0.8rem;'>- {md.strftime('%m/%d')} ({weekdays_kr[md.weekday()]})</span><br>"
+                check_html += f"<span style='margin-left: 8px; font-size: 0.8rem;'>- {md.strftime('%y/%m/%d')} ({weekdays_kr[md.weekday()]})</span><br>"
+            check_html += "</div>"
         else:
-            check_html += "<span style='color: #27AE60; font-weight: 600;'>✅ 평일 누락 없음</span>"
+            check_html += "<span style='color: #27AE60; font-weight: 600;'>✅ 1년간 누락 없음 완벽!</span>"
             
         check_html += "</div>"
         
-        # 완성된 초소형 HTML 덩어리를 화면에 그립니다.
         st.sidebar.markdown(check_html, unsafe_allow_html=True)
         # ==========================================
 
