@@ -23,11 +23,28 @@ h1 { font-size: 2.2rem !important; font-weight: 800 !important; }
 h2 { font-size: 1.8rem !important; font-weight: 700 !important; }
 h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 
-/* [2] 사이드바 텍스트 */
-[data-testid="stSidebar"] p, .stRadio label, .stSelectbox label { 
-   font-size: 1.2rem !important; 
-   font-weight: 300 !important; 
-   color: #34495E !important;
+[data-testid="stSidebar"] .stRadio > label {
+    font-size: 1.2rem !important;   /* 타이틀은 살짝 크게 */
+    font-weight: 600 !important;    /* 타이틀이니까 진하게 */
+    color: #2C3E50 !important;      /* 진한 남색 */
+    margin-bottom: 5px !important;  /* 옵션들과의 간격 */
+}
+
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
+    font-size: 1.1rem !important;   /* 옵션은 타이틀보다 살짝 작게 */
+    font-weight: 400 !important;    /* 일반 굵기로 얄쌍하게 */
+    color: #555555 !important;      /* 살짝 연한 회색으로 위계 차이 주기 */
+}
+
+[data-testid="stSidebar"] .stSelectbox > label {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    color: #2C3E50 !important;
+}
+
+[data-testid="stSidebar"] div[data-baseweb="select"] { 
+    font-size: 1.1rem !important;
+    font-weight: 400 !important;
 }
 
 /* 1. 제일 큰 왕 제목 (# 1개) */
