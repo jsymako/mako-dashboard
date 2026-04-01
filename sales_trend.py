@@ -48,6 +48,39 @@ def run(load_data_func):
 
         view_mode = st.sidebar.radio("분석 모드",["월별 현황", "일별 현황", "수요 예측"], index=0)
 
+        # ==========================================
+        # 🚀 [신규 추가] 최근 30일 평일 데이터 누락 점검기
+        # ==========================================
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("#### 🚨 데이터 누락 점검")
+        
+        # 오늘 기준으로 어제까지 최근 30일 검사 (오늘은 아직 마감이 안 끝났을 수 있으므로 어제까지만)
+        check_end = datetime.date.today() - datetime.timedelta(days=1)
+        check_start = check_end - datetime.timedelta(days=30)
+        
+        # 1. 파이썬의 기본 기능으로 최근 30일 중 '영업일(월~금)' 리스트만 쏙 뽑아냅니다.
+        business_days = pd.bdate_range(start=check_start, end=check_end).date
+        
+        # 2. 필터링 되기 전의 원본 데이터(df_sales_raw)에서 해당 기간에 데이터가 있는 날짜만 추출합니다.
+        mask_recent = (df_sales_raw['일자'].dt.date >= check_start) & (df_sales_raw['일자'].dt.date <= check_end)
+        actual_dates = df_sales_raw[mask_recent]['일자'].dt.date.unique()
+        
+        # 3. 누락된 날짜 계산 (전체 평일 리스트 - 실제 데이터가 있는 날짜)
+        missing_dates = sorted(list(set(business_days) - set(actual_dates)))
+        
+        # 4. 결과 출력
+        if missing_dates:
+            # 누락이 있으면 빨간색 경고창과 함께 누락된 날짜들을 요일과 함께 보여줍니다.
+            st.sidebar.error(f"⚠️ 최근 30일 누락 ({len(missing_dates)}일)")
+            weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
+            for md in missing_dates:
+                # 사이드바 공간을 차지하지 않도록 캡션(작은 글씨)으로 띄워줍니다.
+                st.sidebar.caption(f"- {md.strftime('%Y-%m-%d')} ({weekdays_kr[md.weekday()]})")
+        else:
+            # 누락이 없으면 마음 편한 녹색 성공창을 띄웁니다.
+            st.sidebar.success("✅ 최근 30일 평일 누락 없음")
+        # ==========================================
+        
         # 공통 필터 적용
         filtered_df = df_sales.copy()
         if selected_brand != "전체보기":
