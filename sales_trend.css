@@ -48,10 +48,10 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 
 /* 3. 소제목 (### 3개) - 현재 '🔍 조회 조건' 등 */
 [data-testid="stSidebar"] h3 {
-    font-size: 1.3rem !important;  /* 라벨(1.2rem)보다 아주 살짝만 크게 */
-    font-weight: 600 !important;
-    color: #2C3E50 !important;
-    margin-bottom: 10px !important;
+   font-size: 1.2rem !important; 
+   font-weight: 300 !important; 
+   color: #34495E !important;
+   margin-bottom: 10px !important;
 }
 
 /* 4. 꼬마 제목 (#### 4개) - 현재 '📅 날짜 지정' 등 */
