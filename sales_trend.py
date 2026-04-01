@@ -98,7 +98,7 @@ def run(load_data_func):
         # 기존 CSS 룰을 피해 HTML로 아주 작은 글씨를 강제 적용합니다.
         # ==========================================
         check_end = datetime.date.today() - datetime.timedelta(days=2)
-        check_start = check_end - datetime.timedelta(days=30)
+        check_start = check_end - datetime.timedelta(days=365)
         
         business_days = pd.bdate_range(start=check_start, end=check_end).date
         
