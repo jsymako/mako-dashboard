@@ -121,7 +121,7 @@ def run(load_data_func):
         # --- (여기서부터는 화면에 그리는 HTML 코드 동일) ---
         check_html = "<hr style='margin: 15px 0px 10px 0px; border-top: 1px solid #ddd;'>"
         check_html += "<div style='font-size: 0.85rem; line-height: 1.5; color: #666;'>"
-        check_html += "<strong style='color: #2C3E50;'>🚨 Check for missing data (last 1 year)</strong><br>"
+        check_html += "<strong style='color: #2C3E50;'>🚨 Check data (last 1 year)</strong><br>"
         
         if missing_dates:
             check_html += f"<span style='color: #E74C3C; font-weight: 600;'>⚠️ Missing data occurs ({len(missing_dates)}일)</span><br>"
