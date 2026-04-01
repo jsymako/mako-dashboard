@@ -17,8 +17,8 @@ h2 { font-size: 1.8rem !important; font-weight: 700 !important; }
 h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 
 /* [2] 사이드바 텍스트 */
-[data-testid="stSidebar"] p, .stRadio label, .stSelectbox label { font-size: 1.2rem !important; font-weight: 600 !important; color: #34495E !important;}
-[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { font-size: 1.5rem !important; font-weight: 100 !important; color: #2C3E50 !important; margin-bottom: 10px !important; }
+[data-testid="stSidebar"] p, .stRadio label, .stSelectbox label { font-size: 1.2rem !important; font-weight: 200 !important; color: #34495E !important;}
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { font-size: 1.5rem !important; font-weight: 500 !important; color: #2C3E50 !important; margin-bottom: 10px !important; }
 div[data-baseweb="select"] { font-size: 1.1rem !important; }
 
 /* =========================================
