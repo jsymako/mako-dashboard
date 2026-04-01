@@ -28,7 +28,7 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 }
 [data-testid="stSidebar"] h4 { 
     font-size: 1.15rem !important;  /* 🚀 1.5rem -> 1.15rem으로 축소 */
-    font-weight: 600 !important;    /* 작아졌으니 살짝 또렷하게 600 적용 */
+    font-weight: 500 !important;    /* 작아졌으니 살짝 또렷하게 600 적용 */
     color: #34495E !important;      /* 색상도 라벨(일반 글씨) 톤에 맞춤 */
     margin-bottom: 8px !important; 
     margin-top: 10px !important;    /* 위쪽 위젯과 살짝 띄워줌 */
