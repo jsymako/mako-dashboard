@@ -61,7 +61,7 @@ def run(load_data_func):
             if "trend_start_date" not in st.session_state: 
                 st.session_state.trend_start_date = today - relativedelta(months=3)
             
-            st.sidebar.markdown("#### 📅 날짜 지정")
+            st.sidebar.markdown("### 📅 날짜 지정")
             start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY/MM/DD")
             end_date = st.sidebar.date_input("종료일", value=today, format="YYYY/MM/DD")
             
@@ -75,7 +75,7 @@ def run(load_data_func):
         elif view_mode == "월별 현황":
             month_list = sorted(list(df_sales['월'].unique()))
             
-            st.sidebar.markdown("#### 📅 월 지정")
+            st.sidebar.markdown("### 📅 월 지정")
             start_month = st.sidebar.selectbox("시작 월", month_list, index=max(0, len(month_list)-12))
             end_month = st.sidebar.selectbox("종료 월", month_list, index=len(month_list)-1)
             
