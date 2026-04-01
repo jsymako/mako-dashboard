@@ -6,17 +6,14 @@ from dateutil.relativedelta import relativedelta
 import altair as alt
 import os
 
-def load_css(file_name):
-    """외부 CSS 파일을 읽어와 Streamlit에 적용하는 함수"""
-    try:
-        with open(file_name, "r", encoding="utf-8") as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning(f"🎨 스타일 파일을 찾을 수 없습니다: {file_name}")
 
 def run(load_data_func):
-    # 🚀 분리된 CSS 파일 불러오기
-    load_css("main_style.css")
+    
+    try:
+        with open("sales_trend.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
 
     st.title("📈 판매 현황 및 수요 예측")
 
