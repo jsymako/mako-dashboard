@@ -35,14 +35,14 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 
 /* 2. 라디오 위젯의 '개별 옵션들' (월별 현황, 일별 현황 등) */
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
-    font-size: 1.15rem !important;  /* 타이틀보다 살짝 작게 */
+    font-size: 1.1rem !important;  /* 타이틀보다 살짝 작게 */
     font-weight: 400 !important;    /* 일반 굵기 */
     color: #495057 !important;      /* 짙은 회색으로 밸런스 맞춤 */
 }
 
 /* 3. 셀렉트박스 내부 '선택된 글자' (전체보기 등) */
 [data-testid="stSidebar"] div[data-baseweb="select"] { 
-    font-size: 1.15rem !important;
+    font-size: 1.1rem !important;
 }
 
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
