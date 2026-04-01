@@ -47,8 +47,8 @@ def run(load_data_func):
         if "coupang_start_date" not in st.session_state: 
             st.session_state.coupang_start_date = today - relativedelta(days=14)
         
-        start_date = st.sidebar.date_input("2. 시작일", key="coupang_start_date", format="YYYY/MM/DD")
-        end_date = st.sidebar.date_input("종료일", value=today, format="YYYY/MM/DD")
+        start_date = st.sidebar.date_input("시작 일", key="coupang_start_date", format="YYYY/MM/DD")
+        end_date = st.sidebar.date_input("종료 일", value=today, format="YYYY/MM/DD")
         
         
 
