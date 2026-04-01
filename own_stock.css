@@ -53,3 +53,29 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1rem; }
 .info-label { font-size: 1rem; color: #777; }
 .info-val { font-weight: 700 !important; }
+
+
+/* =========================================
+   💡 상단 정보 박스 (st.info) 커스텀 스타일
+========================================= */
+/* 1. 박스 전체 배경과 테두리 설정 */
+[data-testid="stAlert"] {
+    background-color: #f8f9fa !important;  /* 🚀 배경색 (연한 회색 예시, 파스텔톤 가능) */
+    border: 1px solid #dae1e7 !important;  /* 🚀 테두리 선 색상 */
+    border-radius: 10px !important;        /* 모서리 둥글게 */
+    padding: 15px 20px !important;         /* 박스 안쪽 여백 */
+}
+
+/* 2. 박스 안의 글자(폰트) 설정 */
+[data-testid="stAlert"] p {
+    font-size: 1.25rem !important;         /* 🚀 글자 크기 */
+    font-weight: 600 !important;           /* 🚀 글자 굵기 (보통~약간 굵게) */
+    color: #2c3e50 !important;             /* 🚀 글자 색상 (진한 네이비/회색계열) */
+    line-height: 1.6 !important;           /* 줄 간격 (읽기 편하게) */
+}
+
+/* (선택) 강조된 굵은 글씨(**데이트 업데이트** 등) 색상 따로 지정 */
+[data-testid="stAlert"] p strong {
+    color: #007BFF !important;             /* 🚀 강조 텍스트만 파란색 등으로 포인트 주기 */
+    font-weight: 800 !important;
+}
