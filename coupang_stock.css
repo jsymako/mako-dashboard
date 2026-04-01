@@ -86,4 +86,4 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
    [3] 쿠팡 전용: 상단 KPI 지표 (Metric) 스타일
 ========================================= */
 [data-testid="stMetricLabel"] > div { font-size: 1.2rem !important; font-weight: 800 !important; color: #1E1E1E !important; }
-[data-testid="stMetricValue"] > div { font-size: 2.4rem !important; font-weight: 700 !important; }
+[data-testid="stMetricValue"] > div { font-size: 2.4rem !important; font-weight: 400 !important; }
