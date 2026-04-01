@@ -38,8 +38,13 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 .stock-main { display: flex; justify-content: space-between; align-items: flex-end; margin: 5px 0 15px 0; }
 .stock-label { font-size: 1rem; color: #777; padding-bottom: 5px; }
 
-/* 🚀 핵심: 여기만 Abel 폰트 무적 권한(!)으로 방어 */
-.stock-val { font-family: 'Abel', sans-serif !important; font-size: 2.2rem; font-weight: 900 !important; color: #000000; line-height: 1; }
+.stApp .item-card span.stock-val { 
+    font-family: 'Abel', sans-serif !important; 
+    font-size: 2.2rem; 
+    font-weight: 900 !important; 
+    color: #000000; 
+    line-height: 1; 
+}
 
 .stock-unit { font-size: 1.1rem; font-weight: 400; color: #000000; margin-left: 4px; }
 
