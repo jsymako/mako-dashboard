@@ -71,11 +71,10 @@ def run(load_data_func):
         avg_price = latest_df['판매가'].mean() if not latest_df.empty else 0
         item_count = len(latest_df['품목명'].unique())
         
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("📅 최근 업데이트", latest_date.strftime('%Y년 %m월 %d일'))
+        c1, c2, c3 = st.columns(3)
+        c1.metric("🛒 운영 품목", f"{item_count} 종")
         c2.metric("📦 현재 총 재고", f"{int(total_stock):,} 개")
-        c3.metric("🛒 운영 품목", f"{item_count} 종")
-        c4.metric("💸 평균 판매가", f"{int(avg_price):,} 원")
+        c3.metric("💸 평균 판매가", f"{int(avg_price):,} 원")
         st.markdown("---")
 
         # ==========================================
