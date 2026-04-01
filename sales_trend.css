@@ -33,7 +33,7 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 /* 1. 제일 큰 왕 제목 (# 1개) */
 [data-testid="stSidebar"] h1 {
     font-size: 1.8rem !important;
-    font-weight: 700 !important;
+    font-weight: 100 !important;
     color: #2C3E50 !important;
     margin-bottom: 15px !important;
 }
