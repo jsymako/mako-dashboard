@@ -37,7 +37,7 @@ def run(load_data_func):
         df_sales['월'] = df_sales['일자'].dt.strftime('%Y년 %m월')
 
         # 2. 사이드바 필터 (브랜드-품목 연동)
-        st.sidebar.markdown("### 🔍 조회 조건")
+        st.sidebar.markdown("### 🔍 품목 조건")
         brand_list = ["전체보기"] + sorted(list(df_sales['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
         
@@ -61,7 +61,7 @@ def run(load_data_func):
             if "trend_start_date" not in st.session_state: 
                 st.session_state.trend_start_date = today - relativedelta(months=3)
             
-            st.sidebar.markdown("### 📅 날짜 지정")
+            st.sidebar.markdown("### 📅 기간 조건")
             start_date = st.sidebar.date_input("시작일", key="trend_start_date", format="YYYY/MM/DD")
             end_date = st.sidebar.date_input("종료일", value=today, format="YYYY/MM/DD")
             
