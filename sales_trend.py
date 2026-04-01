@@ -97,7 +97,7 @@ def run(load_data_func):
         # 🚀 [초소형 버전] 최근 30일 평일 데이터 누락 점검기
         # 기존 CSS 룰을 피해 HTML로 아주 작은 글씨를 강제 적용합니다.
         # ==========================================
-        check_end = datetime.date.today() - datetime.timedelta(days=1)
+        check_end = datetime.date.today() - datetime.timedelta(days=2)
         check_start = check_end - datetime.timedelta(days=30)
         
         business_days = pd.bdate_range(start=check_start, end=check_end).date
