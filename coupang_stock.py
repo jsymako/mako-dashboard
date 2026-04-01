@@ -4,21 +4,16 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import altair as alt
 
-def load_css(file_name):
-    """외부 CSS 파일을 읽어와 Streamlit에 적용"""
+def run(load_data_func):
+    
     try:
-        with open(file_name, "r", encoding="utf-8") as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+        with open("coupang_stock.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         pass
 
-def run(load_data_func):
-    # 🚀 공통 CSS 적용
-    load_css("main_style.css")
-
     st.title("📦 쿠팡 재고 및 판매가 현황")
     
-
     try:
         # 1. 데이터 로드 및 마스터 결합
         df_raw = load_data_func("coupang_stock")
