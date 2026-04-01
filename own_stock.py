@@ -7,10 +7,11 @@ import os
 
 def run(load_data_func):
     
-    # CSS 적용 (style.css 파일이 있는 경우)
-    if os.path.exists("main_style.css"):
-        with open("main_style.css", "r", encoding="utf-8") as f:
+    try:
+        with open("own_stock.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
 
     st.title("📦 자사 재고 현황")
 
