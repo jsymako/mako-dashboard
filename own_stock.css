@@ -62,7 +62,7 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 [data-testid="stAlert"] {
     background-color: transparent !important;
     border: none !important;
-    padding: 0 !important;
+    padding: 0px 0px 20px 0px !important;
 }
 
 /* 2. 🚀 진짜 알맹이 박스(내부 div)에 디자인 입히기 */
