@@ -40,6 +40,9 @@ def run(load_data_func):
         selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
 
         st.sidebar.markdown("---")
+
+        st.sidebar.markdown("---")
+        view_target = st.sidebar.radio("3. 조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
@@ -48,8 +51,7 @@ def run(load_data_func):
         start_date = st.sidebar.date_input("2. 시작일", key="coupang_start_date", format="YYYY/MM/DD")
         end_date = st.sidebar.date_input("종료일", value=today, format="YYYY/MM/DD")
         
-        st.sidebar.markdown("---")
-        view_target = st.sidebar.radio("3. 조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
+        
 
         filtered_df = df.copy()
         if selected_brand != "전체보기":
