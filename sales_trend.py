@@ -83,6 +83,14 @@ def run(load_data_func):
             d1, d2 = pd.to_datetime(start_month, format='%Y년 %m월'), pd.to_datetime(end_month, format='%Y년 %m월')
             diff_val = (d2.year - d1.year) * 12 + (d2.month - d1.month) + 1
             avg_label = "💸 월평균 판매액"
+        
+        else: # 수요 예측
+            display_df = filtered_df
+            diff_val = 0
+
+        if display_df.empty:
+            st.warning("선택하신 조건에 데이터가 없습니다.")
+            return
 
         
         # ==========================================
@@ -117,14 +125,6 @@ def run(load_data_func):
             # 누락이 없으면 마음 편한 녹색 성공창을 띄웁니다.
             st.sidebar.success("✅ 최근 30일 평일 누락 없음")
         # ==========================================
-
-        else: # 수요 예측
-            display_df = filtered_df
-            diff_val = 0
-
-        if display_df.empty:
-            st.warning("선택하신 조건에 데이터가 없습니다.")
-            return
 
         # 4. KPI 상단 바 (🚀 display_df 기반으로 계산)
         total_amt = display_df['공급가액'].sum()
