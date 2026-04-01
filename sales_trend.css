@@ -23,23 +23,32 @@ h1 { font-size: 2.2rem !important; font-weight: 800 !important; }
 h2 { font-size: 1.8rem !important; font-weight: 700 !important; }
 h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
 
-[data-testid="stSidebar"] .stRadio > label {
-    font-size: 1.2rem !important;   /* 타이틀은 살짝 크게 */
-    font-weight: 600 !important;    /* 타이틀이니까 진하게 */
-    color: #2C3E50 !important;      /* 진한 남색 */
-    margin-bottom: 5px !important;  /* 옵션들과의 간격 */
+
+/* 1. 모든 위젯의 '메인 타이틀' (브랜드 선택, 분석 모드 등) */
+/* 🚀 스트림릿 전용 이름표(stWidgetLabel) 안의 p 태그를 직접 타격! */
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+    font-size: 1.25rem !important;  /* 타이틀답게 확실히 키움 (1.2rem ~ 1.25rem 추천) */
+    font-weight: 600 !important;    /* 진하게 */
+    color: #2C3E50 !important;      /* 짙은 남색 */
+    margin-bottom: 5px !important;  /* 아래 옵션들과의 간격 */
+}
+
+/* 2. 라디오 위젯의 '개별 옵션들' (월별 현황, 일별 현황 등) */
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
+    font-size: 1.15rem !important;  /* 타이틀보다 살짝 작게 */
+    font-weight: 400 !important;    /* 일반 굵기 */
+    color: #495057 !important;      /* 짙은 회색으로 밸런스 맞춤 */
+}
+
+/* 3. 셀렉트박스 내부 '선택된 글자' (전체보기 등) */
+[data-testid="stSidebar"] div[data-baseweb="select"] { 
+    font-size: 1.15rem !important;
 }
 
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
     font-size: 1.1rem !important;   /* 옵션은 타이틀보다 살짝 작게 */
     font-weight: 400 !important;    /* 일반 굵기로 얄쌍하게 */
     color: #555555 !important;      /* 살짝 연한 회색으로 위계 차이 주기 */
-}
-
-[data-testid="stSidebar"] .stSelectbox > label {
-    font-size: 1.2rem !important;
-    font-weight: 600 !important;
-    color: #2C3E50 !important;
 }
 
 [data-testid="stSidebar"] div[data-baseweb="select"] { 
@@ -79,9 +88,7 @@ h3 { font-size: 1.5rem !important; font-weight: 600 !important; }
     margin-bottom: 8px !important;
     margin-top: 10px !important;
 }
-div[data-baseweb="select"] { 
-   font-size: 1.1rem !important; 
-}
+
 
 /* =========================================
    [3] 판매 현황 전용: KPI 지표 및 탭
