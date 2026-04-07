@@ -5,7 +5,6 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
-    # 담당자 매핑
     MANAGER_MAP = {
         "001": "001:이계성", "002": "002:이계흥", "004": "004:황일용",
         "00026": "00026:신의명", "007": "007:정상영", "009": "009:이경옥"
@@ -25,7 +24,7 @@ def run(load_data_func):
     if not uploaded_file: return
 
     try:
-        # 데이터 로드 및 정제 (이전 로직 동일)
+        # 데이터 로드 및 정제
         if uploaded_file.name.endswith('.csv'):
             try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
             except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
@@ -48,9 +47,12 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1 = month_list[0], (month_list[1] if len(month_list) > 1 else None)
         
-        # 12개월 추이 스파크라인
+        # 🚀 12개월 추이 스파크라인 (순수 숫자 리스트 유지)
         past_12 = sorted(month_list[:12])
-        trend_series = df_pivot[df_pivot['기준월'].isin(past_12)].sort_values('기준월').groupby('거래처명')['잔액'].apply(list).reset_index(name='trend')
+        traders = df_pivot['거래처명'].unique()
+        grid = pd.MultiIndex.from_product([traders, past_12], names=['거래처명', '기준월']).to_frame(index=False)
+        trend_full = pd.merge(grid, df_pivot[['거래처명', '기준월', '잔액']], on=['거래처명', '기준월'], how='left').fillna(0)
+        trend_series = trend_full.groupby('거래처명')['잔액'].apply(list).reset_index(name='trend')
 
         # 분석 리스트 생성
         final_list = []
@@ -67,7 +69,6 @@ def run(load_data_func):
             final_list.append({
                 '거래처명': trader,
                 '담당자': curr[manager_col] if manager_col else "미지정",
-                '📈 추이': trend_series[trend_series['거래처명']==trader]['trend'].iloc[0],
                 '전월_매출': int(prev['매출']) if prev is not None else 0,
                 '전월_수금': int(prev['수금']) if prev is not None else 0,
                 '전월_잔액': int(prev['잔액']) if prev is not None else 0,
@@ -79,7 +80,7 @@ def run(load_data_func):
 
         res_df = pd.DataFrame(final_list)
 
-        # 사이드바 필터 (담당자 복구)
+        # 사이드바 필터
         st.sidebar.markdown("### 🔍 필터 설정")
         if manager_col:
             m_list = ["전체보기"] + [m for m in MANAGER_ORDER if m in res_df['담당자'].unique()]
@@ -99,53 +100,48 @@ def run(load_data_func):
         res_df['🚨 전월'] = res_df['d1'].apply(fmt_dso)
         res_df['🚨 전전월'] = res_df['d2'].apply(fmt_dso)
         res_df = pd.merge(res_df, df_memo_gs[['거래처명', '메모']], on='거래처명', how='left').fillna({'메모': ""})
+        res_df = pd.merge(res_df, trend_series, on='거래처명', how='left')
 
         # ---------------------------------------------------------
-        # 🚀 [UI] 1. 병합 헤더 조회용 표 (조회 모드)
+        # 🚀 [에러 해결] 단일 헤더 구조로 변경 (튜플 사용 금지)
         # ---------------------------------------------------------
-        st.subheader(f"📋 채권 상세 리포트 ({m0} 기준)")
-        
-        # 병합용 멀티인덱스 생성
         view_df = res_df[[
-            '거래처명', '담당자', '📈 추이', 
+            '거래처명', '담당자', 'trend', 
             '전월_매출', '전월_수금', '전월_잔액', 
             '당월_매출', '당월_수금', '당월_잔액',
             '🚨 전전월', '🚨 전월', '🚨 당월', '메모'
         ]].copy()
         
-        view_df.columns = pd.MultiIndex.from_tuples([
-            ("기본 정보", "거래처명"), ("기본 정보", "담당자"), ("기본 정보", "📈 추이"),
-            ("전월 (원)", "매출"), ("전월 (원)", "수금"), ("전월 (원)", "잔액"),
-            ("당월 (원)", "매출"), ("당월 (원)", "수금"), ("당월 (원)", "잔액"),
-            ("DSO 회수일수", "전전월"), ("DSO 회수일수", "전월"), ("DSO 회수일수", "당월"),
-            ("비고", "메모")
-        ])
+        # 이름표만 명확하게 달아줍니다.
+        view_df.columns = [
+            '거래처명', '담당자', '📈 1년 잔액 추이',
+            '⏮️[전월] 매출', '⏮️[전월] 수금', '⏮️[전월] 잔액',
+            '⬇️[당월] 매출', '⬇️[당월] 수금', '⬇️[당월] 잔액',
+            'DSO(전전월)', 'DSO(전월)', 'DSO(당월)', '📝 메모'
+        ]
 
-        # 🌟 조회용 표 출력 (수정 불가 모드 - 튜플 에러 없음)
+        st.subheader(f"📋 채권 상세 리포트 ({m0} 기준)")
+        
+        # 🌟 조회용 표 출력
         st.dataframe(
             view_df,
             use_container_width=True,
             hide_index=True,
-            height=(len(view_df) + 1) * 35 + 100,
+            height=600,
             column_config={
-                ("기본 정보", "📈 추이"): st.column_config.LineChartColumn(width="medium"),
-                ("전월 (원)", "매출"): st.column_config.NumberColumn(format="%d"),
-                ("전월 (원)", "수금"): st.column_config.NumberColumn(format="%d"),
-                ("전월 (원)", "잔액"): st.column_config.NumberColumn(format="%d"),
-                ("당월 (원)", "매출"): st.column_config.NumberColumn(format="%d"),
-                ("당월 (원)", "수금"): st.column_config.NumberColumn(format="%d"),
-                ("당월 (원)", "잔액"): st.column_config.NumberColumn(format="%d"),
+                "📈 1년 잔액 추이": st.column_config.LineChartColumn(width="medium"),
+                "⏮️[전월] 매출": st.column_config.NumberColumn(format="%d"),
+                "⏮️[전월] 수금": st.column_config.NumberColumn(format="%d"),
+                "⏮️[전월] 잔액": st.column_config.NumberColumn(format="%d"),
+                "⬇️[당월] 매출": st.column_config.NumberColumn(format="%d"),
+                "⬇️[당월] 수금": st.column_config.NumberColumn(format="%d"),
+                "⬇️[당월] 잔액": st.column_config.NumberColumn(format="%d"),
+                "📝 메모": st.column_config.Column(width="large")
             }
         )
 
-        # ---------------------------------------------------------
-        # 🚀 [UI] 2. 메모 수정 섹션 (수정 버튼 클릭 시 등장)
-        # ---------------------------------------------------------
         st.markdown("---")
         with st.expander("📝 메모 수정 및 구글 시트 저장"):
-            st.write("아래 표의 '메모' 칸을 더블클릭하여 수정 후, 아래 버튼을 눌러주세요.")
-            
-            # 수정을 위해 제목 병합을 푼 단순한 표 제공 (에러 방지)
             edit_df = res_df[['거래처명', '담당자', '메모']].copy()
             final_edit = st.data_editor(
                 edit_df,
@@ -162,8 +158,6 @@ def run(load_data_func):
                 client = gspread.authorize(creds)
                 doc = client.open("통합재고관리")
                 sheet = doc.worksheet("ar_memo")
-                
-                # 저장 데이터 준비
                 save_data = final_edit[['거래처명', '메모']].values.tolist()
                 sheet.clear()
                 sheet.update([['거래처명', '메모']] + save_data)
