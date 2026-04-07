@@ -26,7 +26,7 @@ def load_sheet_data(worksheet_name):
     return df
 
 st.sidebar.title("마코펫 통합재고관리")
-menu = st.sidebar.radio("MENU", ["자사 재고", "쿠팡 재고", "판매 현황", "거래처 현황"])
+main_menu = st.sidebar.radio("MENU", ["자사 재고", "쿠팡 재고", "판매 현황", "거래처 현황"])
 st.sidebar.markdown("---")
 
 # 🚀 각 파일의 run 함수에 load_sheet_data 함수 자체를 전달함
