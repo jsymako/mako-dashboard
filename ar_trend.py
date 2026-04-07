@@ -10,36 +10,39 @@ def run(load_data_func):
         "00026": "신의명", "007": "정상영", "009": "이경옥"
     }
 
-    # 🎨 [CSS] 초슬림 카드 및 레이아웃 최적화
+    # 🎨 [CSS] 글자 크기 확대 및 여백 최적화
     st.markdown("""
         <style>
         .ar-container {
-            border: 1px solid #333;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 15px;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
             background-color: #fff;
         }
-        .header-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+        .title-txt { font-size: 1.4rem; font-weight: 800; color: #000; }
+        .mgr-txt { font-size: 1.0rem; color: #555; background: #f0f0f0; padding: 2px 10px; border-radius: 4px; }
+        .data-column { 
+            background: #fcfcfc; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            padding: 15px; 
+            height: 100%;
         }
-        .title-txt { font-size: 1.1rem; font-weight: 800; color: #000; }
-        .mgr-txt { font-size: 0.8rem; color: #555; background: #f0f0f0; padding: 1px 6px; border-radius: 3px; }
-        .data-column { background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; padding: 8px; }
-        .row-item { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; }
-        .label-sm { color: #888; }
-        .val-sm { font-weight: 700; }
-        .diff-up { color: #d9534f; font-size: 0.75rem; font-weight: bold; }
-        .diff-down { color: #0275d8; font-size: 0.75rem; font-weight: bold; }
+        .col-title { font-size: 0.95rem; font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .row-item { display: flex; justify-content: space-between; font-size: 1.1rem; margin-bottom: 8px; }
+        .label-lg { color: #666; font-weight: 500; }
+        .val-lg { font-weight: 700; color: #111; }
+        .diff-up { color: #d9534f; font-size: 0.9rem; font-weight: bold; }
+        .diff-down { color: #0275d8; font-size: 0.9rem; font-weight: bold; }
+        .dso-box { text-align: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; }
+        .memo-area { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; }
         </style>
     """, unsafe_allow_html=True)
 
-    st.title("💳 채권 현황 분석 관제탑")
+    st.title("💳 채권 현황 3개월 통합 분석")
 
-    # 1. 데이터 로드 및 전처리
+    # 1. 데이터 로드
     try:
         df_memo_gs = load_data_func("ar_memo")
     except:
@@ -47,7 +50,7 @@ def run(load_data_func):
 
     uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
     if not uploaded_file:
-        st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
+        st.info("📊 최근 3개월 추적을 위해 이카운트 엑셀 파일을 업로드해 주세요.")
         return
 
     try:
@@ -72,12 +75,12 @@ def run(load_data_func):
         df_pivot = df_melt.pivot_table(index=['거래처명', '기준월'] + ([manager_col] if manager_col else []), columns='구분', values='금액', aggfunc='sum').reset_index()
 
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
-        m0, m1 = month_list[0], (month_list[1] if len(month_list) > 1 else None)
+        m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
-        # 사이드바 설정
+        # 사이드바
         st.sidebar.subheader("🔍 분석 조건")
         sel_m = st.sidebar.selectbox("담당자", ["전체보기"] + sorted(list(df_pivot[manager_col].unique()))) if manager_col else "전체보기"
-        min_dso = st.sidebar.slider("DSO 필터", 0, 120, 45, 15)
+        min_dso = st.sidebar.slider("DSO 필터 (당월 기준)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("정렬", ["잔액순", "가나다순"])
 
         cards_data = []
@@ -92,29 +95,29 @@ def run(load_data_func):
             if d0 < min_dso or curr['잔액'] <= 0: continue
             if sel_m != "전체보기" and curr[manager_col] != sel_m: continue
 
-            prev = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
+            # 3개월치 데이터 추출
+            p1 = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
+            p2 = group[group['기준월'] == m2].iloc[0] if m2 in group['기준월'].values else None
             trend = group[group['기준월'].isin(sorted(month_list[:12]))].sort_values('기준월')['잔액'].tolist()
             
             cards_data.append({
                 'name': trader, 'mgr': curr[manager_col], 'trend': trend,
-                'm_c': curr['매출'], 'm_p': prev['매출'] if prev is not None else 0,
-                's_c': curr['수금'], 's_p': prev['수금'] if prev is not None else 0,
-                'j_c': curr['잔액'], 'j_p': prev['잔액'] if prev is not None else 0,
-                'd0': d0, 'd1': get_dso(1), 'd2': get_dso(2)
+                'm0': curr['매출'], 's0': curr['수금'], 'j0': curr['잔액'], 'd0': d0,
+                'm1': p1['매출'] if p1 is not None else 0, 's1': p1['수금'] if p1 is not None else 0, 'j1': p1['잔액'] if p1 is not None else 0, 'd1': get_dso(1),
+                'm2': p2['매출'] if p2 is not None else 0, 's2': p2['수금'] if p2 is not None else 0, 'j2': p2['잔액'] if p2 is not None else 0, 'd2': get_dso(2)
             })
 
         final_df = pd.DataFrame(cards_data)
         if not final_df.empty:
-            final_df = final_df.sort_values('j_c', ascending=False) if sort_opt == "잔액순" else final_df.sort_values('name')
+            final_df = final_df.sort_values('j0', ascending=False) if sort_opt == "잔액순" else final_df.sort_values('name')
 
-            # 🚀 [UI] 상단 전체 현황(KPI)
+            # 전체 KPI
             c1, c2, c3 = st.columns(3)
-            c1.metric("💰 총 미수잔액", f"{int(final_df['j_c'].sum() / 10000):,}만 원")
-            c2.metric("📈 당월 총 매출", f"{int(final_df['m_c'].sum() / 10000):,}만 원")
+            c1.metric("💰 총 미수잔액", f"{int(final_df['j0'].sum() / 10000):,}만 원")
+            c2.metric("📈 당월 총 매출", f"{int(final_df['m0'].sum() / 10000):,}만 원")
             c3.metric("🚨 대상 업체수", f"{len(final_df)}개")
             st.markdown("---")
 
-            # 🚀 [UI] 개별 카드 렌더링
             for _, row in final_df.iterrows():
                 st.markdown(f"""
                     <div class="ar-container">
@@ -124,57 +127,49 @@ def run(load_data_func):
                         </div>
                 """, unsafe_allow_html=True)
 
-                c_graph, c_compare, c_dso = st.columns([1, 2.5, 1.2])
+                col_graph, col_data = st.columns([1, 4])
+                with col_graph:
+                    st.markdown('<p style="font-size:0.8rem; color:#888;">📈 잔액 추이</p>', unsafe_allow_html=True)
+                    st.line_chart(row['trend'], height=150, use_container_width=True)
 
-                with c_graph:
-                    st.line_chart(row['trend'], height=90, use_container_width=True)
+                with col_data:
+                    c_m2, c_m1, c_m0 = st.columns(3)
+                    
+                    def get_diff_html(c, p):
+                        diff = c - p
+                        if diff == 0: return ""
+                        return f"<span class='diff-up'>▲{int(diff):,}</span>" if diff > 0 else f"<span class='diff-down'>▼{abs(int(diff)):,}</span>"
 
-                with c_compare:
-                    c_prev, c_curr = st.columns(2)
-                    with c_prev:
-                        st.markdown(f"""
-                            <div class="data-column">
-                                <div style="font-size:0.7rem; color:#888; font-weight:bold; margin-bottom:5px;">⏮️ 전월 실적</div>
-                                <div class="row-item"><span class="label-sm">매출</span><span class="val-sm">{int(row['m_p']):,}</span></div>
-                                <div class="row-item"><span class="label-sm">수금</span><span class="val-sm">{int(row['s_p']):,}</span></div>
-                                <div class="row-item"><span class="label-sm">잔액</span><span class="val-sm">{int(row['j_p']):,}</span></div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                    with c_curr:
-                        def get_diff(c, p):
-                            diff = c - p
-                            return f"<span class='diff-up'>▲{int(diff):,}</span>" if diff > 0 else f"<span class='diff-down'>▼{abs(int(diff)):,}</span>"
-                        
-                        st.markdown(f"""
-                            <div class="data-column" style="border-color:#333;">
-                                <div style="font-size:0.7rem; color:#333; font-weight:bold; margin-bottom:5px;">⬇️ 당월 실적(증감)</div>
-                                <div class="row-item"><span class="label-sm">매출</span><span class="val-sm">{int(row['m_c']):,} {get_diff(row['m_c'], row['m_p'])}</span></div>
-                                <div class="row-item"><span class="label-sm">수금</span><span class="val-sm">{int(row['s_c']):,} {get_diff(row['s_c'], row['s_p'])}</span></div>
-                                <div class="row-item"><span class="label-sm" style="color:#d9534f;">잔액</span><span class="val-sm" style="color:#d9534f;">{int(row['j_c']):,} {get_diff(row['j_c'], row['j_p'])}</span></div>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-                with c_dso:
                     def get_dso_tag(v):
                         c = "#d9534f" if v > 90 or v == 9999 else ("#f0ad4e" if v > 45 else "#5cb85c")
-                        t = "F" if v == 9999 else f"{v}d"
+                        t = "장기(F)" if v == 9999 else f"{v}일"
                         return f'<span style="color:{c}; font-weight:bold;">{t}</span>'
-                    
-                    st.markdown(f"""
-                        <div style="text-align:right; font-size:0.8rem; line-height:1.6;">
-                            <div style="color:#888;">DSO 흐름</div>
-                            <div>{get_dso_tag(row['d2'])} ➔ {get_dso_tag(row['d1'])} ➔ <span style="font-size:1.1rem;">{get_dso_tag(row['d0'])}</span></div>
-                        </div>
-                    """, unsafe_allow_html=True)
 
-                # 🚀 메모 및 개별 저장 버튼
+                    # 각 월별 기둥 렌더링
+                    for col, m_idx, title in [(c_m2, '2', f"⏮️ {m2}"), (c_m1, '1', f"⬅️ {m1}"), (c_m0, '0', f"⬇️ {m0} (당월)")]:
+                        with col:
+                            diff_j = get_diff_html(row[f'j{m_idx}'], row[f'j{str(int(m_idx)+1)}']) if m_idx != '2' else ""
+                            st.markdown(f"""
+                                <div class="data-column">
+                                    <div class="col-title">{title}</div>
+                                    <div class="row-item"><span class="label-lg">매출</span><span class="val-lg">{int(row[f'm{m_idx}']):,}</span></div>
+                                    <div class="row-item"><span class="label-lg">수금</span><span class="val-lg">{int(row[f's{m_idx}']):,}</span></div>
+                                    <div class="row-item"><span class="label-lg">잔액</span><span class="val-lg">{int(row[f'j{m_idx}']):,} {diff_j}</span></div>
+                                    <div class="dso-box">
+                                        <div style="font-size:0.75rem; color:#888;">DSO 회수</div>
+                                        <div style="font-size:1.1rem;">{get_dso_tag(row[f'd{m_idx}'])}</div>
+                                    </div>
+                                </div>
+                            """, unsafe_allow_html=True)
+
+                # 🚀 메모 섹션 (여백 확보 및 디자인 개선)
+                st.markdown('<div class="memo-area">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
-                m_col, b_col = st.columns([5, 1])
+                m_col, b_col = st.columns([6, 1])
                 with m_col:
-                    memo_input = st.text_input(f"메모 입력 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
+                    memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed", placeholder="영업 의견이나 특이사항을 입력하세요...")
                 with b_col:
-                    if st.button("💾", key=f"save_{row['name']}", help="이 업체 메모만 즉시 저장"):
-                        # 구글 시트 개별 업데이트 로직
+                    if st.button("💾 저장", key=f"save_{row['name']}"):
                         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
                         creds_dict = json.loads(st.secrets["gcp_service_account"])
                         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -182,16 +177,12 @@ def run(load_data_func):
                         doc = client.open("통합재고관리")
                         sheet = doc.worksheet("ar_memo")
                         
-                        # 기존 메모 로드 후 해당 행만 수정하거나 전체 업데이트
                         all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
                         all_memos[row['name']] = memo_input
-                        
-                        new_data = [[k, v] for k, v in all_memos.items()]
                         sheet.clear()
-                        sheet.update([['거래처명', '메모']] + new_data)
+                        sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
                         st.toast(f"{row['name']} 저장 완료!", icon="✅")
-
-                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown('</div></div>', unsafe_allow_html=True)
 
     except Exception as e:
-        st.error(f"오류: {e}")
+        st.error(f"데이터 처리 오류: {e}")
