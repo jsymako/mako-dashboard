@@ -28,9 +28,9 @@ def run(load_data_func):
             align-items: center;
             gap: 15px;
             padding: 0px 5px 5px 5px; 
-            margin-bottom: 5px;
+            margin-bottom: 0px;
         }
-        .title-txt { font-size: 1.5rem; font-weight: 900; color: #000; }
+        .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
         .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
         
         /* 데이터 박스 디자인 */
