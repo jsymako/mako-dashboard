@@ -36,7 +36,7 @@ elif main_menu == "🚀 쿠팡 재고 현황":
     coupang_stock.run(load_sheet_data)
 elif main_menu == "📈 판매 현황":
     sales_trend.run(load_sheet_data)
-elif menu == "거래처 현황":
+elif main_menu == "거래처 현황":
     trade_trend.run(load_sheet_data)
 
 
