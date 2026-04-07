@@ -211,19 +211,15 @@ def run(load_data_func):
         chart_h = max(300, len(sum_df) * 45)
 
         # 🚀 [디자인 핵심] 막대 차트 정의
+        # 🚀 [디자인 핵심] 막대 차트 정의
         rank_chart = alt.Chart(sum_df).mark_bar(
-            size=25,            # 🌟 막대 두께를 25로 고정합니다. (항상 슬림하게)
-            cornerRadius=5,     # ✨ 막대 끝을 둥글게 깎아 부드러운 느낌을 줍니다.
-            opacity=0.9         # 💡 살짝 투명도를 주어 그라데이션 색상을 더 돋보이게 합니다.
+            size=25,            # 막대 두께 25로 고정 (슬림하게 유지)
+            cornerRadius=5,     # 막대 끝 둥글게
+            color="#2E86C1",    # 🌟 그라데이션 제거! 모든 막대를 또렷한 파란색으로 통일합니다. (빨간색을 원하시면 "#E74C3C" 로 변경)
+            opacity=0.9
         ).encode(
             x=alt.X('공급가액:Q', title='총 거래액 (원)'), 
             y=alt.Y(f'{rank_field}:N', sort='-x', axis=y_ax),
-            # 🌈 [디자인 핵심] 공급가액 크기에 따라 진해지는 그라데이션 색상 적용
-            color=alt.Color(
-                '공급가액:Q', 
-                scale=alt.Scale(scheme='teals'), # 'teals' 그라데이션 스키마 사용
-                legend=None                       # 범례는 거추장스러우니 제거
-            ),
             tooltip=[rank_field, alt.Tooltip('공급가액', format=','), alt.Tooltip('수량', format=',')]
         )
         
