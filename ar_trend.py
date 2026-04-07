@@ -66,19 +66,15 @@ def run():
         for col in ['잔액', '매출', '수금']:
             if col not in df_pivot.columns: df_pivot[col] = 0
 
-        # 🚀 3. 빈 달(결측치)을 0으로 완벽히 채워서 스파크라인 에러 방지
+        # 3. DSO 및 스파크라인 로직
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
-        past_12_months = sorted(month_list[:12]) # 과거 -> 최신 순
+        past_12_months = sorted(month_list[:12]) 
         
-        # 거래처 x 12개월의 완벽한 뼈대(Grid) 생성
         traders = df_pivot['거래처명'].unique()
         grid = pd.MultiIndex.from_product([traders, past_12_months], names=['거래처명', '기준월']).to_frame(index=False)
         trend_full = pd.merge(grid, df_pivot[['거래처명', '기준월', '잔액']], on=['거래처명', '기준월'], how='left').fillna(0)
-        
-        # 스파크라인용 12개짜리 리스트 생성
         trend_series = trend_full.groupby('거래처명')['잔액'].apply(list).reset_index(name='12개월 추이')
 
-        # DSO 로직
         dso_data = []
         for trader, group in df_pivot.groupby('거래처명'):
             def get_12m_dso(m_idx):
@@ -112,8 +108,6 @@ def run():
 
         df_m0 = pd.merge(df_m0, df_dso, on='거래처명', how='left')
         df_m0 = pd.merge(df_m0, trend_series, on='거래처명', how='left') 
-        
-        # 🚀 [추가] 메모장 열 생성
         df_m0['메모 (더블클릭)'] = ""
 
         # 5. 사이드바 필터
@@ -177,12 +171,11 @@ def run():
             '전월 매출', '전월 수금', '전월 잔액', 
             '당월 매출', '당월 수금', '당월 잔액', 
             '전전월 DSO', '전월 DSO', '당월 DSO',
-            '메모 (더블클릭)' # 👈 메모장 추가!
+            '메모 (더블클릭)'
         ])
         
         show_df = sorted_df[cols].copy()
         
-        # 🚀 [변경] 배경색 대신 '신호등 이모지'로 직관적인 위험도 표시!
         def format_dso(val):
             if val == 9999: return "🔴 F(장기)"
             elif val > 365: return "🔴 ▲ (>365)"
@@ -208,19 +201,21 @@ def run():
         
         show_df.columns = pd.MultiIndex.from_tuples(multi_cols)
 
-        # 🚀 [에디터 핵심] 스파크라인 적용 및 메모 외의 칸은 '수정 불가(disabled)'로 잠금
+        # 🚀 [에러 수정] 튜플을 스트림릿이 알아듣는 문자열로 변환하여 적용 (str_key)
         config_dict = {}
         for c in show_df.columns:
-            if c == ("기본 정보", "12개월 추이"):
-                config_dict[c] = st.column_config.LineChartColumn("📈 1년 잔액 흐름", width="medium")
-            elif c == ("의견", "메모 (더블클릭)"):
-                config_dict[c] = st.column_config.TextColumn("📝 메모", disabled=False) # 👈 이 칸만 수정 가능!
+            str_key = str(c) # 🌟 핵심! 스트림릿이 에러를 뱉지 않게 문자열로 포장해줍니다.
+            
+            if "12개월 추이" in c[1]:
+                config_dict[str_key] = st.column_config.LineChartColumn("📈 1년 잔액 흐름", width="medium")
+            elif "메모" in c[1]:
+                config_dict[str_key] = st.column_config.TextColumn("📝 메모", disabled=False)
             else:
-                config_dict[c] = st.column_config.Column(disabled=True) # 나머지는 잠금
+                config_dict[str_key] = st.column_config.Column(disabled=True)
 
-        dynamic_height = len(show_df) * 35 + 120
+        dynamic_height = max(400, len(show_df) * 35 + 150)
 
-        # 🚀 [에디터 핵심] st.dataframe 대신 st.data_editor 사용!
+        # st.data_editor 출력
         st.data_editor(
             show_df, 
             use_container_width=True, 
