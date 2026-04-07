@@ -18,8 +18,8 @@ def run(load_data_func):
         .ar-container {
             border: 2px solid #222;
             border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
+            padding: 10px;
+            margin-bottom: 20px;
             background-color: #fff;
         }
         /* 헤더 박스 라인 제거 및 슬림화 */
