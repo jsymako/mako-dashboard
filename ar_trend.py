@@ -28,8 +28,7 @@ def run(load_data_func):
             align-items: center;
             gap: 15px;
             padding: 0px 5px 10px 5px; 
-            margin-bottom: 15px;
-            border-bottom: 2px solid #eee; /* 테두리 대신 하단 선만 깔끔하게 */
+            margin-bottom: 5px;
         }
         .title-txt { font-size: 1.5rem; font-weight: 900; color: #000; }
         .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
