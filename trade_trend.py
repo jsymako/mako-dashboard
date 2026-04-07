@@ -181,7 +181,10 @@ def run(load_data_func):
             ).properties(height=350)
             st.altair_chart(line_chart, use_container_width=True)
 
-        # 🚀 6. 관점 전환이 가능한 교차 랭킹 차트
+        # ==========================================
+        # 🚀 [디자인 튜닝 완료] 6. 관점 전환이 가능한 교차 랭킹 차트
+        # 막대 두께를 고정하고, 순위에 따라 다채로운 그라데이션 색상을 적용합니다.
+        # ==========================================
         st.markdown("---")
         
         # 스위치(라디오 버튼) 추가: 가로로 예쁘게 배치
@@ -191,7 +194,7 @@ def run(load_data_func):
             horizontal=True
         )
         
-        # 🚀 사용자가 선택한 모드에 따라 차트의 축(Y)과 제목이 즉시 바뀝니다!
+        # 사용자가 선택한 모드에 따라 차트의 축(Y)과 제목이 즉시 바뀝니다!
         if "품목" in rank_mode:
             rank_field = group_field # 전체보기일 땐 브랜드명, 브랜드를 선택했을 땐 공식품목명
             st.subheader(f"📊 {trader_title} 내 [{rank_field}] 매출 순위 (TOP 15)")
@@ -207,13 +210,37 @@ def run(load_data_func):
         y_ax = alt.Axis(labelLimit=500, labelFontSize=14, title='', labelPadding=10)
         chart_h = max(300, len(sum_df) * 45)
 
-        st.altair_chart(alt.Chart(sum_df).mark_bar(color="#E74C3C").encode(
+        # 🚀 [디자인 핵심] 막대 차트 정의
+        rank_chart = alt.Chart(sum_df).mark_bar(
+            size=25,            # 🌟 막대 두께를 25로 고정합니다. (항상 슬림하게)
+            cornerRadius=5,     # ✨ 막대 끝을 둥글게 깎아 부드러운 느낌을 줍니다.
+            opacity=0.9         # 💡 살짝 투명도를 주어 그라데이션 색상을 더 돋보이게 합니다.
+        ).encode(
             x=alt.X('공급가액:Q', title='총 거래액 (원)'), 
             y=alt.Y(f'{rank_field}:N', sort='-x', axis=y_ax),
-            tooltip=[rank_field, '공급가액', '수량']
-        ).properties(height=chart_h), use_container_width=True)
+            # 🌈 [디자인 핵심] 공급가액 크기에 따라 진해지는 그라데이션 색상 적용
+            color=alt.Color(
+                '공급가액:Q', 
+                scale=alt.Scale(scheme='teals'), # 'teals' 그라데이션 스키마 사용
+                legend=None                       # 범례는 거추장스러우니 제거
+            ),
+            tooltip=[rank_field, alt.Tooltip('공급가액', format=','), alt.Tooltip('수량', format=',')]
+        )
+        
+        # [보너스 디자인] 막대 끝에 실제 수량 숫자를 띄워 가독성 업그레이드!
+        text_label = rank_chart.mark_text(
+            align='left', 
+            dx=5, 
+            fontSize=13, 
+            fontWeight='bold',
+            color='#555'
+        ).encode(
+            text=alt.Text('공급가액:Q', format=',')
+        )
 
-        # (상세 데이터 표는 요청에 따라 완벽하게 삭제되었습니다 🧹)
-
+        # 차트와 숫자 라벨을 합쳐서 그립니다.
+        st.altair_chart((rank_chart + text_label).properties(height=chart_h), use_container_width=True)
+        # ==========================================
+    
     except Exception as e:
         st.error(f"오류 발생: {e}")
