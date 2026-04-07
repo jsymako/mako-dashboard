@@ -9,6 +9,7 @@ import own_stock
 import coupang_stock
 import sales_trend
 import trade_trend
+import ar_trend
 
 st.set_page_config(page_title="통합재고관리", page_icon="", layout="wide")
 
@@ -32,7 +33,8 @@ main_menu = st.sidebar.radio("MENU", [
     "📦 자사 재고 현황", 
     "🚀 쿠팡 재고 현황", 
     "📈 판매 현황", 
-    "🤝 거래처 현황"
+    "🤝 거래처 현황",
+    "💳 채권 분석"
 ])
 
 st.sidebar.markdown("---")
@@ -46,6 +48,8 @@ elif main_menu == "📈 판매 현황":
     sales_trend.run(load_sheet_data)
 elif main_menu == "🤝 거래처 현황":
     trade_trend.run(load_sheet_data)
+elif main_menu == "💳 채권 분석":
+    ar_trend.run()
 
 
 
