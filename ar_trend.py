@@ -5,61 +5,63 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
+    # 🚀 요청하신 담당자 리스트로만 딱 고정 (008 등 제외)
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
         "00026": "신의명", "007": "정상영", "009": "이경옥"
     }
+    MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 슬림 헤더 및 고정 높이 데이터 박스
+    # 🎨 [CSS] 헤더 라인 제거 및 글자 크기 극대화
     st.markdown("""
         <style>
         .ar-container {
             border: 2px solid #222;
             border-radius: 10px;
-            padding: 15px 20px;
-            margin-bottom: 25px;
+            padding: 20px;
+            margin-bottom: 30px;
             background-color: #fff;
         }
+        /* 헤더 박스 라인 제거 및 슬림화 */
         .header-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 4px 10px; /* 헤더 높이 최소화 */
-            background: #f8f9fa;
-            border-radius: 5px;
+            gap: 15px;
+            padding: 0px 5px 10px 5px; 
             margin-bottom: 15px;
-            border: 1px solid #eee;
+            border-bottom: 2px solid #eee; /* 테두리 대신 하단 선만 깔끔하게 */
         }
-        .title-txt { font-size: 1.3rem; font-weight: 900; color: #000; }
-        .mgr-txt { font-size: 0.95rem; color: #444; font-weight: bold; }
+        .title-txt { font-size: 1.5rem; font-weight: 900; color: #000; }
+        .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
         
-        /* 데이터 컬럼 디자인 */
+        /* 데이터 박스 디자인 */
         .data-column { 
             background: #ffffff; 
             border: 1px solid #e0e0e0; 
-            border-radius: 6px; 
-            padding: 12px;
-            height: 190px; /* 높이 고정으로 칼정렬 */
+            border-radius: 8px; 
+            padding: 15px;
+            height: 200px; /* 높이 고정 */
         }
         .col-title { 
-            font-size: 1.2rem; font-weight: 800; margin-bottom: 12px; 
-            text-align: center; color: #000; border-bottom: 2px solid #333; padding-bottom: 5px; 
+            font-size: 1.3rem; font-weight: 900; margin-bottom: 15px; 
+            text-align: center; color: #000; border-bottom: 3px solid #333; padding-bottom: 5px; 
         }
-        .row-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .row-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         
-        /* 글자 크기 대폭 상향 */
-        .label-xl { font-size: 1.0rem; color: #555; font-weight: 600; }
-        .val-xl { font-size: 1.2rem; font-weight: 800; color: #111; }
+        /* 대왕 글자 설정 */
+        .label-xl { font-size: 1.1rem; color: #555; font-weight: 600; }
+        .val-xl { font-size: 1.4rem; font-weight: 900; color: #111; }
         
-        .diff-up { color: #d9534f; font-weight: bold; font-size: 0.9rem; }
-        .diff-down { color: #0275d8; font-weight: bold; font-size: 0.9rem; }
-        .traffic-light { font-size: 1.3rem; margin-right: 5px; }
+        .diff-up { color: #d9534f; font-weight: bold; font-size: 1.0rem; }
+        .diff-down { color: #0275d8; font-weight: bold; font-size: 1.0rem; }
+        .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
-        .memo-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+        .memo-section { margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; }
         </style>
     """, unsafe_allow_html=True)
 
-    # 1. 데이터 로드 로직
+    st.title("💳 채권 현황 3개월 통합 관제")
+
     try:
         df_memo_gs = load_data_func("ar_memo")
     except:
@@ -67,24 +69,29 @@ def run(load_data_func):
 
     uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
     if not uploaded_file:
-        st.info("📊 3개월 통합 분석을 위해 엑셀 파일을 업로드해 주세요.")
+        st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
         return
 
     try:
-        # 데이터 정제 (중복 로직 생략)
+        # 1. 데이터 로드 및 "누계" 행 사전 차단 🛡️
         if uploaded_file.name.endswith('.csv'):
             try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
             except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
-        else: df_raw = pd.read_excel(uploaded_file)
+        else:
+            df_raw = pd.read_excel(uploaded_file)
 
         header_idx = df_raw[df_raw.apply(lambda r: r.astype(str).str.contains('거래처명').any(), axis=1)].index[0]
         df_raw.columns = df_raw.iloc[header_idx]
         df = df_raw.iloc[header_idx+1:].reset_index(drop=True)
+        
+        # 🚀 "소계", "누계", "합계" 등 불필요한 행 제거
+        df = df[~df['거래처명'].astype(str).str.contains('계|합계|누계', na=False)]
         df['거래처명'] = df['거래처명'].ffill()
         
         manager_col = next((c for c in df.columns if '담당자' in str(c)), None)
         if manager_col:
-            df[manager_col] = df[manager_col].ffill().astype(str).str.strip().apply(lambda x: MANAGER_MAP.get(x, x))
+            # 🚀 하드코딩된 MANAGER_MAP에 있는 담당자만 유효하게 처리
+            df[manager_col] = df[manager_col].ffill().astype(str).str.strip().apply(lambda x: MANAGER_MAP.get(x, "기타/미지정"))
 
         month_cols = [c for c in df.columns if '20' in str(c) and ('/' in str(c) or '-' in str(c))]
         df_melt = df.melt(id_vars=['거래처명', '구분'] + ([manager_col] if manager_col else []), value_vars=month_cols, var_name='기준월', value_name='금액')
@@ -94,9 +101,10 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
-        # 사이드바
-        st.sidebar.subheader("🔍 필터 및 정렬")
-        sel_m = st.sidebar.selectbox("담당자", ["전체보기"] + sorted(list(df_pivot[manager_col].unique()))) if manager_col else "전체보기"
+        # 2. 사이드바 (정해진 담당자만 노출)
+        st.sidebar.subheader("🔍 필터")
+        valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
+        sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
         min_dso = st.sidebar.slider("DSO 필터", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("정렬", ["잔액순", "가나다순"])
 
@@ -135,16 +143,15 @@ def run(load_data_func):
             st.markdown("---")
 
             for _, row in final_df.iterrows():
-                # 🚀 카드 시작
+                # 🚀 [디자인] 헤더 선만 남기고 외부 박스 제거
                 st.markdown(f"""
                     <div class="ar-container">
                         <div class="header-row">
                             <span class="title-txt">{row['name']}</span>
-                            <span class="mgr-txt">👤 {row['mgr']}</span>
+                            <span class="mgr-txt">담당: {row['mgr']}</span>
                         </div>
                 """, unsafe_allow_html=True)
 
-                # 데이터 기둥 3개 (좌) | 그래프 (우)
                 col_data, col_graph = st.columns([3.5, 1])
                 
                 with col_data:
@@ -160,7 +167,6 @@ def run(load_data_func):
                         txt = "장기(F)" if v == 9999 else f"{v}일"
                         return f'<span class="traffic-light">{color}</span><b>{txt}</b>'
 
-                    # 각 월별 기둥 (전전월 -> 전월 -> 당월)
                     month_data = [
                         (c_m2, m2, row['m2'], row['s2'], row['j2'], row['d2'], ""),
                         (c_m1, m1, row['m1'], row['s1'], row['j1'], row['d1'], get_diff_text(row['j1'], row['j2'])),
@@ -175,23 +181,23 @@ def run(load_data_func):
                                     <div class="row-item"><span class="label-xl">매출</span><span class="val-xl">{int(m):,}</span></div>
                                     <div class="row-item"><span class="label-xl">수금</span><span class="val-xl">{int(s):,}</span></div>
                                     <div class="row-item"><span class="label-xl">잔액</span><span class="val-xl">{int(j):,}</span></div>
-                                    <div style="text-align:right; font-size:0.8rem; height:15px; margin-top:-5px;">{j_diff}</div>
-                                    <div style="text-align:center; margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;">
+                                    <div style="text-align:right; font-size:0.9rem; height:18px;">{j_diff}</div>
+                                    <div style="text-align:center; margin-top:12px; border-top:1px dashed #ccc; padding-top:12px;">
                                         {get_dso_html(d)}
                                     </div>
                                 </div>
                             """, unsafe_allow_html=True)
 
                 with col_graph:
-                    st.markdown('<p style="font-size:0.9rem; color:#666; text-align:center; font-weight:bold;">📉 12개월 추이</p>', unsafe_allow_html=True)
-                    st.line_chart(row['trend'], height=160, use_container_width=True)
+                    st.markdown('<p style="font-size:1.0rem; color:#000; text-align:center; font-weight:900;">📈 12개월 추이</p>', unsafe_allow_html=True)
+                    st.line_chart(row['trend'], height=170, use_container_width=True)
 
-                # 🚀 메모 섹션
+                # 🚀 메모 저장
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
-                m_col, b_col = st.columns([6.5, 1])
+                m_col, b_col = st.columns([6, 1])
                 with m_col:
-                    memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed", placeholder="영업 특이사항 입력...")
+                    memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
                 with b_col:
                     if st.button("💾 저장", key=f"save_{row['name']}", use_container_width=True):
                         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -200,11 +206,12 @@ def run(load_data_func):
                         client = gspread.authorize(creds)
                         doc = client.open("통합재고관리")
                         sheet = doc.worksheet("ar_memo")
+                        
                         all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
                         all_memos[row['name']] = memo_input
                         sheet.clear()
                         sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
-                        st.toast(f"{row['name']} 메모 저장!", icon="✅")
+                        st.toast(f"{row['name']} 저장!", icon="✅")
                 st.markdown('</div></div>', unsafe_allow_html=True)
 
     except Exception as e:
