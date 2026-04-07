@@ -66,10 +66,17 @@ def run():
         for col in ['잔액', '매출', '수금']:
             if col not in df_pivot.columns: df_pivot[col] = 0
 
-        # 3. DSO 12개월 누적 로직
+        # 3. DSO 12개월 누적 로직 & 🚀 12개월 잔액 스파크라인 데이터 생성
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
-        dso_data = []
         
+        # 🚀 그래프가 왼쪽(과거)에서 오른쪽(최신)으로 그려지도록 날짜 오름차순 정렬
+        past_12_months = sorted(month_list[:12]) 
+        
+        # 스파크라인을 그릴 12개월치 잔액 리스트 추출
+        trend_df = df_pivot[df_pivot['기준월'].isin(past_12_months)].sort_values('기준월')
+        trend_series = trend_df.groupby('거래처명')['잔액'].apply(list).reset_index(name='12개월 추이')
+
+        dso_data = []
         for trader, group in df_pivot.groupby('거래처명'):
             def get_12m_dso(m_idx):
                 target_m = month_list[m_idx : m_idx+12]
@@ -100,7 +107,9 @@ def run():
         else:
             df_m0['전월 매출'] = df_m0['전월 수금'] = df_m0['전월 잔액'] = 0
 
+        # 병합: DSO + 12개월 추이 스파크라인
         df_m0 = pd.merge(df_m0, df_dso, on='거래처명', how='left')
+        df_m0 = pd.merge(df_m0, trend_series, on='거래처명', how='left') 
 
         # 5. 사이드바 필터
         st.sidebar.markdown("### 🔍 분석 조건")
@@ -115,8 +124,6 @@ def run():
         st.sidebar.markdown("---")
         st.sidebar.markdown("### ⚠️ 위험 채권 필터")
         hide_zero = st.sidebar.checkbox("✅ 잔액 0원 거래처 숨기기", value=True)
-        
-        # 🚀 [수정] DSO 슬라이더 기본값을 45로 변경 (가운데 숫자 45)
         min_dso = st.sidebar.slider("최소 당월 회수일수(DSO) 기준", 0, 120, 45, step=15)
 
         st.sidebar.markdown("---")
@@ -149,17 +156,18 @@ def run():
             st.success("🎉 조건에 해당하는 내역이 없습니다!")
             return
 
-        # (그래프 삭제 완료 🧹)
-
-        # 7. 상세 리포트
+        # 7. 상세 리포트 세팅
         st.subheader(f"📋 {sort_option.split(' ')[0]} 채권 상세 리포트")
         
         if "당월 잔액순" in sort_option: sorted_df = display_df.sort_values(by='당월 잔액', ascending=False)
         elif "가나다순" in sort_option: sorted_df = display_df.sort_values(by='거래처명', ascending=True)
         elif "DSO순" in sort_option: sorted_df = display_df.sort_values(by='당월 DSO', ascending=False) 
 
+        # 🚀 [추가] '12개월 추이' 컬럼을 표 앞쪽에 배치합니다.
         cols = ['거래처명']
         if manager_col: cols.append(manager_col)
+        cols.append('12개월 추이')
+        
         cols.extend([
             '전월 매출', '전월 수금', '전월 잔액', 
             '당월 매출', '당월 수금', '당월 잔액', 
@@ -179,23 +187,24 @@ def run():
         for c in dso_cols: show_df[c] = show_df[c].apply(format_dso)
         for c in krw_cols: show_df[c] = show_df[c].apply(lambda x: f"{int(x):,}")
 
+        # 다중 헤더 묶기
         multi_cols = []
         for c in show_df.columns:
-            if c in ['거래처명', manager_col]: multi_cols.append(("기본 정보", c))
+            if c in ['거래처명', manager_col, '12개월 추이']: multi_cols.append(("기본 정보", c))
             elif '전월' in c and 'DSO' not in c: multi_cols.append(("전월 (단위: 원)", c.replace('전월 ', '')))
             elif '당월' in c and 'DSO' not in c: multi_cols.append(("당월 (단위: 원)", c.replace('당월 ', '')))
             elif 'DSO' in c: multi_cols.append(("매출채권회수일수 (DSO)", c.replace(' DSO', '')))
         
         show_df.columns = pd.MultiIndex.from_tuples(multi_cols)
 
+        # 색상 로직
         def style_dso(val):
             if val in ["▲", "F"]: return 'background-color: #FFCCCC; color: #000; font-weight: bold;'
             try:
                 v = int(val.replace('일', ''))
                 if v > 90: return 'background-color: #FFCCCC; color: #000; font-weight: bold;' 
                 elif v > 45: return 'background-color: #FFFFCC; color: #000; font-weight: bold;' 
-            except:
-                pass
+            except: pass
             return ''
 
         styled_df = show_df.style.set_properties(**{'font-size': '15px', 'text-align': 'right'})\
@@ -204,11 +213,22 @@ def run():
         for dso_c in [c for c in show_df.columns if "매출채권회수일수" in c[0]]:
             styled_df = styled_df.map(style_dso, subset=[dso_c])
 
-        # 🚀 [수정] 표의 높이를 데이터 개수에 맞춰 동적으로 늘림 (내부 스크롤바 제거)
-        # 행 개수 * 35px(기본 행 높이) + 120px(다중 헤더 및 여백)
         dynamic_height = len(show_df) * 35 + 120
 
-        st.dataframe(styled_df, use_container_width=True, hide_index=True, height=dynamic_height)
+        # 🚀 [핵심] 스파크라인을 그리는 column_config 옵션 적용!
+        st.dataframe(
+            styled_df, 
+            use_container_width=True, 
+            hide_index=True, 
+            height=dynamic_height,
+            column_config={
+                ("기본 정보", "12개월 추이"): st.column_config.LineChartColumn(
+                    "📈 1년 잔액 흐름",
+                    width="medium",
+                    help="최근 12개월 동안의 미수금 잔액 변동 추이입니다. 오른쪽이 최신입니다."
+                )
+            }
+        )
 
     except Exception as e:
         st.error(f"오류: {e}")
