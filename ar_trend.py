@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 
 def run():
     # 담당자 매핑
@@ -67,7 +66,7 @@ def run():
         for col in ['잔액', '매출', '수금']:
             if col not in df_pivot.columns: df_pivot[col] = 0
 
-        # 🚀 3. VBA 원본 DSO 로직 완벽 복원 (최근 12개월 누적 합산 방식)
+        # 3. DSO 12개월 누적 로직
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         dso_data = []
         
@@ -77,7 +76,7 @@ def run():
                 sub = group[group['기준월'].isin(target_m)]
                 s_sum = sub['매출'].sum()
                 b_sum = sub['잔액'].sum()
-                if s_sum < 1: return 9999 # VBA의 "F" (매출 없음)
+                if s_sum < 1: return 9999 
                 return int(round((b_sum / s_sum) * 30))
                 
             d0 = get_12m_dso(0) if len(month_list) > 0 else 0
@@ -101,10 +100,9 @@ def run():
         else:
             df_m0['전월 매출'] = df_m0['전월 수금'] = df_m0['전월 잔액'] = 0
 
-        # DSO 합치기
         df_m0 = pd.merge(df_m0, df_dso, on='거래처명', how='left')
 
-        # 5. 사이드바 필터 (거래처 검색 삭제 완료)
+        # 5. 사이드바 필터
         st.sidebar.markdown("### 🔍 분석 조건")
         st.sidebar.info(f"**기준월:** {m0}")
         
@@ -117,7 +115,9 @@ def run():
         st.sidebar.markdown("---")
         st.sidebar.markdown("### ⚠️ 위험 채권 필터")
         hide_zero = st.sidebar.checkbox("✅ 잔액 0원 거래처 숨기기", value=True)
-        min_dso = st.sidebar.slider("최소 당월 회수일수(DSO) 기준", 0, 120, 0, step=15)
+        
+        # 🚀 [수정] DSO 슬라이더 기본값을 45로 변경 (가운데 숫자 45)
+        min_dso = st.sidebar.slider("최소 당월 회수일수(DSO) 기준", 0, 120, 45, step=15)
 
         st.sidebar.markdown("---")
         st.sidebar.markdown("### 📊 목록 정렬 기준")
@@ -135,7 +135,7 @@ def run():
         if min_dso > 0:
             display_df = display_df[display_df['당월 DSO'] >= min_dso]
 
-        # 6. 상단 KPI 및 차트
+        # 6. 상단 KPI
         total_balance = display_df['당월 잔액'].sum()
         total_sales = display_df['당월 매출'].sum()
         c1, c2, c3 = st.columns(3)
@@ -149,22 +149,9 @@ def run():
             st.success("🎉 조건에 해당하는 내역이 없습니다!")
             return
 
-        # 7. 미수금 상위 차트 (슬림 + 간격 자동 조절)
-        top10 = display_df.sort_values('당월 잔액', ascending=False).head(10)
-        y_ax = alt.Axis(labelLimit=300, labelFontSize=14, title='', labelPadding=10)
-        chart_h = max(300, len(top10) * 45) 
+        # (그래프 삭제 완료 🧹)
 
-        rank_chart = alt.Chart(top10).mark_bar(size=25, cornerRadius=5, color="#E74C3C", opacity=0.9).encode(
-            x=alt.X('당월 잔액:Q', title='당월 미수금 잔액 (원)'),
-            y=alt.Y('거래처명:N', sort='-x', axis=y_ax),
-            tooltip=['거래처명', alt.Tooltip('당월 잔액', format=',')]
-        )
-        text_label = rank_chart.mark_text(align='left', dx=5, fontSize=13, fontWeight='bold', color='#555').encode(
-            text=alt.Text('당월 잔액:Q', format=',')
-        )
-        st.altair_chart((rank_chart + text_label).properties(height=chart_h), use_container_width=True)
-
-        # 8. 상세 리포트
+        # 7. 상세 리포트
         st.subheader(f"📋 {sort_option.split(' ')[0]} 채권 상세 리포트")
         
         if "당월 잔액순" in sort_option: sorted_df = display_df.sort_values(by='당월 잔액', ascending=False)
@@ -181,7 +168,6 @@ def run():
         
         show_df = sorted_df[cols].copy()
         
-        # 🚀 [로직 완벽 구현] DSO 포맷팅 (9999->F, >365->▲)
         def format_dso(val):
             if val == 9999: return "F"
             elif val > 365: return "▲"
@@ -193,7 +179,6 @@ def run():
         for c in dso_cols: show_df[c] = show_df[c].apply(format_dso)
         for c in krw_cols: show_df[c] = show_df[c].apply(lambda x: f"{int(x):,}")
 
-        # 🚀 [UI 핵심] Pandas MultiIndex를 활용한 병합된 헤더(계층형 표) 만들기
         multi_cols = []
         for c in show_df.columns:
             if c in ['거래처명', manager_col]: multi_cols.append(("기본 정보", c))
@@ -203,26 +188,27 @@ def run():
         
         show_df.columns = pd.MultiIndex.from_tuples(multi_cols)
 
-        # 🚀 [UI 핵심] VBA 색상 로직 복원 (>45 노랑, >90 빨강)
         def style_dso(val):
             if val in ["▲", "F"]: return 'background-color: #FFCCCC; color: #000; font-weight: bold;'
             try:
                 v = int(val.replace('일', ''))
-                if v > 90: return 'background-color: #FFCCCC; color: #000; font-weight: bold;' # 연한 빨강
-                elif v > 45: return 'background-color: #FFFFCC; color: #000; font-weight: bold;' # 연한 노랑
+                if v > 90: return 'background-color: #FFCCCC; color: #000; font-weight: bold;' 
+                elif v > 45: return 'background-color: #FFFFCC; color: #000; font-weight: bold;' 
             except:
                 pass
             return ''
 
-        # 15px 글자 크기 지정 + 색상 칠하기 적용
         styled_df = show_df.style.set_properties(**{'font-size': '15px', 'text-align': 'right'})\
                            .set_properties(subset=[("기본 정보", "거래처명")], **{'text-align': 'left'})
         
-        # DSO 3형제 열에만 색상 함수 적용
         for dso_c in [c for c in show_df.columns if "매출채권회수일수" in c[0]]:
             styled_df = styled_df.map(style_dso, subset=[dso_c])
 
-        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+        # 🚀 [수정] 표의 높이를 데이터 개수에 맞춰 동적으로 늘림 (내부 스크롤바 제거)
+        # 행 개수 * 35px(기본 행 높이) + 120px(다중 헤더 및 여백)
+        dynamic_height = len(show_df) * 35 + 120
+
+        st.dataframe(styled_df, use_container_width=True, hide_index=True, height=dynamic_height)
 
     except Exception as e:
         st.error(f"오류: {e}")
