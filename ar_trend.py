@@ -1,40 +1,28 @@
 import streamlit as st
 import pandas as pd
-import gspread
-import json
-from oauth2client.service_account import ServiceAccountCredentials
+import pandas.io.formats.style
 
 def run(load_data_func):
+    # 담당자 매핑
     MANAGER_MAP = {
         "001": "001:이계성", "002": "002:이계흥", "004": "004:황일용",
         "00026": "00026:신의명", "007": "007:정상영", "009": "009:이경옥"
     }
     MANAGER_ORDER = ["001:이계성", "002:이계흥", "004:황일용", "00026:신의명", "007:정상영", "009:이경옥"]
 
-    # 🚀 [디자인] 헤더 고정 및 표 스타일 개선을 위한 CSS
-    st.markdown("""
-        <style>
-        .stDataFrame [data-testid="stTable"] { font-size: 15px; }
-        /* 헤더 고정 스타일 */
-        thead tr th { position: sticky; top: 0; background-color: #f0f2f6; z-index: 1; }
-        </style>
-    """, unsafe_allow_html=True)
+    st.title("💳 채권(미수금) 현황 분석기")
 
-    st.title("💳 채권(미수금) 분석 관제탑")
-
-    # 메모 데이터 로드
+    # 메모 데이터 로드 (구글 시트)
     try:
         df_memo_gs = load_data_func("ar_memo")
-        if df_memo_gs.empty: df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
     except:
-        st.error("'ar_memo' 시트를 로드할 수 없습니다.")
-        return
+        df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
 
-    uploaded_file = st.file_uploader("이카운트 엑셀 파일 업로드", type=['csv', 'xlsx', 'xls'])
+    uploaded_file = st.file_uploader("이카운트 [월별채권증감내역] 업로드", type=['csv', 'xlsx', 'xls'])
     if not uploaded_file: return
 
     try:
-        # 데이터 로드 로직 (이전과 동일)
+        # 데이터 로드 로직
         if uploaded_file.name.endswith('.csv'):
             try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
             except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
@@ -57,105 +45,102 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1 = month_list[0], (month_list[1] if len(month_list) > 1 else None)
         
-        # 12개월 추이 (스파크라인)
+        # 12개월 추이 스파크라인 데이터
         past_12 = sorted(month_list[:12])
-        trend_series = df_pivot[df_pivot['기준월'].isin(past_12)].sort_values('기준월').groupby('거래처명')['잔액'].apply(list).reset_index(name='trend_data')
+        trend_series = df_pivot[df_pivot['기준월'].isin(past_12)].sort_values('기준월').groupby('거래처명')['잔액'].apply(list).reset_index(name='trend')
 
-        # DSO 및 증감 분석 데이터 생성
+        # 분석 데이터 생성
         final_list = []
         for trader, group in df_pivot.groupby('거래처명'):
-            # DSO (12개월 누적)
-            def get_dso(m_list):
-                sub = group[group['기준월'].isin(m_list)]
+            def get_dso(offset):
+                target = month_list[offset : offset+12]
+                sub = group[group['기준월'].isin(target)]
                 s, b = sub['매출'].sum(), sub['잔액'].sum()
                 return 9999 if s < 1 else int(round((b/s)*30))
             
-            d0 = get_dso(month_list[0:12])
-            d1 = get_dso(month_list[1:13]) if len(month_list) > 1 else 0
-            
-            # 전월/당월 데이터
+            d0, d1, d2 = get_dso(0), get_dso(1), get_dso(2)
             curr = group[group['기준월'] == m0].iloc[0]
             prev = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
-            
-            def fmt_diff(c, p):
-                diff = c - (p if p else 0)
-                mark = "🔺" if diff > 0 else ("🔻" if diff < 0 else "-")
-                return f"{int(c):,} ({mark} {abs(int(diff)):,})"
 
             final_list.append({
                 '거래처명': trader,
                 '담당자': curr[manager_col] if manager_col else "미지정",
-                '📈 추이': trend_series[trend_series['거래처명']==trader]['trend_data'].iloc[0],
-                '💰 매출 (전월대비)': fmt_diff(curr['매출'], prev['매출'] if prev is not None else 0),
-                '📥 수금 (전월대비)': fmt_diff(curr['수금'], prev['수금'] if prev is not None else 0),
-                '🚨 잔액 (현시점)': fmt_diff(curr['잔액'], prev['잔액'] if prev is not None else 0),
-                'DSO_val': d0,
-                'DSO_diff': d0 - d1 if d1 != 9999 and d0 != 9999 else 0
+                '📈 추이': trend_series[trend_series['거래처명']==trader]['trend'].iloc[0],
+                '전월_매출': int(prev['매출']) if prev is not None else 0,
+                '전월_수금': int(prev['수금']) if prev is not None else 0,
+                '전월_잔액': int(prev['잔액']) if prev is not None else 0,
+                '당월_매출': int(curr['매출']),
+                '당월_수금': int(curr['수금']),
+                '당월_잔액': int(curr['잔액']),
+                'DSO_당월': d0, 'DSO_전월': d1, 'DSO_전전월': d2
             })
 
         res_df = pd.DataFrame(final_list)
 
-        # 사이드바 필터
-        st.sidebar.markdown("### 🔍 필터 및 정렬")
-        min_dso = st.sidebar.slider("DSO 필터", 0, 120, 45, step=15)
-        sort_opt = st.sidebar.radio("정렬 기준", ["잔액 많은 순", "DSO 위험 순", "가나다 순"])
+        # 🚀 [복구] 사이드바 담당자 선택
+        st.sidebar.markdown("### 🔍 필터 설정")
+        if manager_col:
+            m_list = ["전체보기"] + [m for m in MANAGER_ORDER if m in res_df['담당자'].unique()]
+            selected_manager = st.sidebar.selectbox("1. 담당자 선택", m_list)
+            if selected_manager != "전체보기":
+                res_df = res_df[res_df['담당자'] == selected_manager]
         
-        # 필터 적용
-        display_df = res_df[res_df['DSO_val'] >= min_dso].copy()
-        
-        # DSO 상태 텍스트화
-        def get_dso_status(row):
-            v, diff = row['DSO_val'], row['DSO_diff']
-            base = "🔴 F(장기)" if v == 9999 else (f"🔴 {v}일" if v > 90 else (f"🟡 {v}일" if v > 45 else f"🟢 {v}일"))
-            d_mark = f" (+{diff})" if diff > 0 else (f" ({diff})" if diff < 0 else "")
-            return base + d_mark
+        min_dso = st.sidebar.slider("2. DSO 필터 (45일 이상)", 0, 120, 45, step=15)
+        res_df = res_df[(res_df['당월_잔액'] > 0) & (res_df['DSO_당월'] >= min_dso)]
 
-        display_df['매출채권 회수현황 (DSO)'] = display_df.apply(get_dso_status, axis=1)
+        # 🚀 [UI] 다중 헤더(병합) 구조 만들기
+        display_df = res_df.copy()
+        
+        # 신호등 및 기호 로직
+        def fmt_dso(v):
+            if v == 9999: return "🔴 F"
+            if v > 365: return "🔴 ▲"
+            return f"🔴 {v}일" if v > 90 else (f"🟡 {v}일" if v > 45 else f"🟢 {v}일")
+
+        display_df['🚨 당월'] = display_df['DSO_당월'].apply(fmt_dso)
+        display_df['🚨 전월'] = display_df['DSO_전월'].apply(fmt_dso)
+        display_df['🚨 전전월'] = display_df['DSO_전전월'].apply(fmt_dso)
         
         # 메모 매칭
         display_df = pd.merge(display_df, df_memo_gs[['거래처명', '메모']], on='거래처명', how='left').fillna({'메모': ""})
+
+        # 컬럼 구조 재편 (병합용 튜플 생성)
+        columns = [
+            ("기본 정보", "거래처명"), ("기본 정보", "담당자"), ("기본 정보", "📈 추이"),
+            ("전월 (원)", "매출"), ("전월 (원)", "수금"), ("전월 (원)", "잔액"),
+            ("당월 (원)", "매출"), ("당월 (원)", "수금"), ("당월 (원)", "잔액"),
+            ("DSO 회수일수", "전전월"), ("DSO 회수일수", "전월"), ("DSO 회수일수", "당월"),
+            ("비고", "영업 메모")
+        ]
         
-        # 정렬
-        if sort_opt == "잔액 많은 순":
-            display_df['sort_val'] = display_df['🚨 잔액 (현시점)'].str.extract(r'(\d+)').astype(float)
-            display_df = display_df.sort_values('sort_val', ascending=False)
-        elif sort_opt == "DSO 위험 순":
-            display_df = display_df.sort_values('DSO_val', ascending=False)
-        else:
-            display_df = display_df.sort_values('거래처명')
+        final_table = display_df[[
+            '거래처명', '담당자', '📈 추이', 
+            '전월_매출', '전월_수금', '전월_잔액', 
+            '당월_매출', '당월_수금', '당월_잔액',
+            '🚨 전전월', '🚨 전월', '🚨 당월', '메모'
+        ]]
+        final_table.columns = pd.MultiIndex.from_tuples(columns)
 
-        # 🚀 [UI] 최종 표 출력
+        # 🚀 [UI 핵심] 조회 전용으로 설정하여 병합 헤더와 그래프 동시 구현
         st.subheader(f"📋 채권 상세 리포트 ({m0} 기준)")
-        st.caption("💡 수치 옆 (🔺/🔻)는 전월 대비 증감액입니다. 메모를 수정한 후 하단 저장 버튼을 눌러주세요.")
-
-        edited_df = st.data_editor(
-            display_df[['거래처명', '담당자', '📈 추이', '💰 매출 (전월대비)', '📥 수금 (전월대비)', '🚨 잔액 (현시점)', '매출채권 회수현황 (DSO)', '메모']],
+        st.dataframe(
+            final_table,
             use_container_width=True,
             hide_index=True,
-            height=600, # 헤더 고정 효과를 위해 적절한 높이 설정
+            height=600,
             column_config={
-                "📈 추이": st.column_config.LineChartColumn(width="small"),
-                "메모": st.column_config.TextColumn("📝 영업 의견/메모", width="large", disabled=False),
-                "거래처명": st.column_config.Column(width="medium"),
-                "매출채권 회수현황 (DSO)": st.column_config.Column(width="medium")
-            },
-            disabled=['거래처명', '담당자', '📈 추이', '💰 매출 (전월대비)', '📥 수금 (전월대비)', '🚨 잔액 (현시점)', '매출채권 회수현황 (DSO)']
+                ("기본 정보", "📈 추이"): st.column_config.LineChartColumn(width="medium"),
+                ("전월 (원)", "매출"): st.column_config.NumberColumn(format="%d"),
+                ("전월 (원)", "수금"): st.column_config.NumberColumn(format="%d"),
+                ("전월 (원)", "잔액"): st.column_config.NumberColumn(format="%d"),
+                ("당월 (원)", "매출"): st.column_config.NumberColumn(format="%d"),
+                ("당월 (원)", "수금"): st.column_config.NumberColumn(format="%d"),
+                ("당월 (원)", "잔액"): st.column_config.NumberColumn(format="%d"),
+            }
         )
 
-        # 저장 로직
-        if st.button("💾 메모 내용 구글 시트에 저장하기"):
-            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-            creds_dict = json.loads(st.secrets["gcp_service_account"])
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-            client = gspread.authorize(creds)
-            doc = client.open("통합재고관리")
-            sheet = doc.worksheet("ar_memo")
-            
-            save_data = edited_df[['거래처명', '메모']].values.tolist()
-            sheet.clear()
-            sheet.update([['거래처명', '메모']] + save_data)
-            st.success("✅ 메모가 성공적으로 저장되었습니다!")
-            st.cache_data.clear()
+        # 메모 수정은 하단에서 따로 하거나 팝업으로 처리하는 방식 제안
+        st.info("💡 메모 수정 기능은 병합 헤더와 기술적 충돌로 인해 별도의 입력창을 준비 중입니다.")
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
