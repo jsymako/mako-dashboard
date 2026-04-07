@@ -49,7 +49,7 @@ elif main_menu == "📈 판매 현황":
 elif main_menu == "🤝 거래처 현황":
     trade_trend.run(load_sheet_data)
 elif main_menu == "💳 채권 분석":
-    ar_trend.run()
+    ar_trend.run(load_sheet_data)
 
 
 
