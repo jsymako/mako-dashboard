@@ -66,7 +66,7 @@ def run():
         for col in ['잔액', '매출', '수금']:
             if col not in df_pivot.columns: df_pivot[col] = 0
 
-        # 3. DSO 및 스파크라인 로직
+        # 3. DSO 및 스파크라인(1년 흐름) 데이터 생성
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         past_12_months = sorted(month_list[:12]) 
         
@@ -132,7 +132,6 @@ def run():
             ["당월 잔액순 (많은 순)", "당월 DSO순 (위험순)", "가나다순 (거래처명)"]
         )
 
-        # 필터 적용
         display_df = df_m0.copy()
         if manager_col and selected_manager != "전체보기":
             display_df = display_df[display_df[manager_col] == selected_manager]
@@ -157,7 +156,7 @@ def run():
 
         # 7. 상세 리포트
         st.subheader(f"📋 {sort_option.split(' ')[0]} 채권 상세 리포트")
-        st.caption("💡 표 맨 우측의 **'메모 (더블클릭)'** 칸을 더블클릭하시면 자유롭게 내용을 입력하고 저장하실 수 있습니다.")
+        st.caption("💡 표 맨 우측의 **'📝 메모장'** 칸을 더블클릭하시면 자유롭게 내용을 입력하고 저장하실 수 있습니다.")
         
         if "당월 잔액순" in sort_option: sorted_df = display_df.sort_values(by='당월 잔액', ascending=False)
         elif "가나다순" in sort_option: sorted_df = display_df.sort_values(by='거래처명', ascending=True)
@@ -176,6 +175,7 @@ def run():
         
         show_df = sorted_df[cols].copy()
         
+        # 신호등 이모지 적용
         def format_dso(val):
             if val == 9999: return "🔴 F(장기)"
             elif val > 365: return "🔴 ▲ (>365)"
@@ -190,34 +190,52 @@ def run():
         for c in dso_cols: show_df[c] = show_df[c].apply(format_dso)
         for c in krw_cols: show_df[c] = show_df[c].apply(lambda x: f"{int(x):,}")
 
-        # 다중 헤더 묶기
-        multi_cols = []
-        for c in show_df.columns:
-            if c in ['거래처명', manager_col, '12개월 추이']: multi_cols.append(("기본 정보", c))
-            elif '전월' in c and 'DSO' not in c: multi_cols.append(("전월 (단위: 원)", c.replace('전월 ', '')))
-            elif '당월' in c and 'DSO' not in c: multi_cols.append(("당월 (단위: 원)", c.replace('당월 ', '')))
-            elif 'DSO' in c: multi_cols.append(("회수일수", c.replace(' DSO', '')))
-            elif '메모' in c: multi_cols.append(("의견", c))
-        
-        show_df.columns = pd.MultiIndex.from_tuples(multi_cols)
+        # 🚀 [핵심] 제목 병합 기능을 포기하는 대신, 직관적인 이름표(Prefix)로 대체!
+        rename_dict = {
+            '12개월 추이': '📈 1년 흐름',
+            '전월 매출': '⏮️ [전월] 매출',
+            '전월 수금': '⏮️ [전월] 수금',
+            '전월 잔액': '⏮️ [전월] 잔액',
+            '당월 매출': '⬇️ [당월] 매출',
+            '당월 수금': '⬇️ [당월] 수금',
+            '당월 잔액': '⬇️ [당월] 잔액',
+            '전전월 DSO': '🚨 회수(전전월)',
+            '전월 DSO': '🚨 회수(전월)',
+            '당월 DSO': '🚨 회수(당월)',
+            '메모 (더블클릭)': '📝 메모장'
+        }
+        show_df.rename(columns=rename_dict, inplace=True)
 
-        # 🚀 [에러 수정] 튜플을 스트림릿이 알아듣는 문자열로 변환하여 적용 (str_key)
+        # 🚀 색상 칠하기 로직 (이모지 기반)
+        def style_dso(val):
+            val_str = str(val)
+            if "🔴" in val_str: return 'background-color: #FFCCCC; color: #000; font-weight: bold;'
+            if "🟡" in val_str: return 'background-color: #FFFFCC; color: #000; font-weight: bold;'
+            return ''
+
+        styled_df = show_df.style.set_properties(**{'font-size': '15px', 'text-align': 'right'})\
+                           .set_properties(subset=['거래처명'], **{'text-align': 'left'})
+        
+        # 신호등 칸에만 색상 적용
+        dso_renamed = ['🚨 회수(전전월)', '🚨 회수(전월)', '🚨 회수(당월)']
+        for dso_c in dso_renamed:
+            styled_df = styled_df.map(style_dso, subset=[dso_c])
+
+        # 🚀 스트림릿의 컬럼 세부 설정 (스파크라인 & 메모장 활성화)
         config_dict = {}
         for c in show_df.columns:
-            str_key = str(c) # 🌟 핵심! 스트림릿이 에러를 뱉지 않게 문자열로 포장해줍니다.
-            
-            if "12개월 추이" in c[1]:
-                config_dict[str_key] = st.column_config.LineChartColumn("📈 1년 잔액 흐름", width="medium")
-            elif "메모" in c[1]:
-                config_dict[str_key] = st.column_config.TextColumn("📝 메모", disabled=False)
+            if c == '📈 1년 흐름':
+                config_dict[c] = st.column_config.LineChartColumn("📈 1년 잔액 흐름", width="medium")
+            elif c == '📝 메모장':
+                config_dict[c] = st.column_config.TextColumn("📝 메모장", disabled=False) # 👈 이것만 수정 가능!
             else:
-                config_dict[str_key] = st.column_config.Column(disabled=True)
+                config_dict[c] = st.column_config.Column(disabled=True) # 나머지는 잠금
 
         dynamic_height = max(400, len(show_df) * 35 + 150)
 
-        # st.data_editor 출력
+        # 🚀 st.data_editor로 출력!
         st.data_editor(
-            show_df, 
+            styled_df, 
             use_container_width=True, 
             hide_index=True, 
             height=dynamic_height,
