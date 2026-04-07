@@ -36,25 +36,33 @@ def run(load_data_func):
         df[['안전재고량', '최대판매가', '최소판매가']] = df[['안전재고량', '최대판매가', '최소판매가']].fillna(0)
 
         # 2. 사이드바 필터 설정
+        st.sidebar.markdown("### 🔍 조회 조건")
         brand_list = ["전체보기"] + sorted(list(df['브랜드'].dropna().unique()))
-        selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
+        selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
+
+        # 🚀 [추가] 브랜드에 종속되는 품목 선택 기능
+        prod_df = df if selected_brand == "전체보기" else df[df['브랜드'] == selected_brand]
+        product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
+        selected_product = st.sidebar.selectbox("2. 품목 선택", product_list)
 
         st.sidebar.markdown("---")
 
-        view_target = st.sidebar.radio("조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
+        view_target = st.sidebar.radio("3. 조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
-            st.session_state.coupang_start_date = today - relativedelta(days=14)
+            # 🚀 [수정] 기본값을 14일 전에서 1개월 전으로 변경
+            st.session_state.coupang_start_date = today - relativedelta(months=1)
         
         start_date = st.sidebar.date_input("시작 일", key="coupang_start_date", format="YYYY/MM/DD")
         end_date = st.sidebar.date_input("종료 일", value=today, format="YYYY/MM/DD")
         
-        
-
+        # 🚀 [추가] 품목 선택 필터 적용
         filtered_df = df.copy()
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
+        if selected_product != "전체보기":
+            filtered_df = filtered_df[filtered_df['품목명'] == selected_product]
             
         mask = (filtered_df['일자'].dt.date >= start_date) & (filtered_df['일자'].dt.date <= end_date)
         display_df = filtered_df.loc[mask].copy()
@@ -82,22 +90,32 @@ def run(load_data_func):
         # ==========================================
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
         
-        # 라벨이 차트 밖으로 잘리지 않도록 X축(날짜)의 오른쪽 여백 공간을 계산합니다.
         x_min = display_df['일자'].min()
         x_max = display_df['일자'].max()
-        padding_days = max(3, int((x_max - x_min).days * 0.25)) # 전체 기간의 25%만큼 여백 추가
+        padding_days = max(3, int((x_max - x_min).days * 0.25))
         x_max_padded = x_max + datetime.timedelta(days=padding_days)
         
-        common_x = alt.X('일자:T', title='', axis=alt.Axis(format='%m/%d', labelFontSize=14), scale=alt.Scale(domain=[x_min, x_max_padded]))
+        # 🚀 [수정] 날짜가 짧을 때 X축이 12시간 단위로 쪼개져서 중복 표시되는 버그 수정
+        diff_days = (x_max_padded - x_min).days
+        # 날짜 간격이 14일 미만으로 짧을 경우, 눈금 개수를 일수와 동일하게 강제 고정합니다.
+        tick_config = diff_days if 0 < diff_days <= 14 else None
+        
+        common_x = alt.X(
+            '일자:T', 
+            title='', 
+            axis=alt.Axis(format='%m/%d', labelFontSize=14, tickCount=tick_config), 
+            scale=alt.Scale(domain=[x_min, x_max_padded])
+        )
 
-        # 각 품목별로 가장 마지막 날짜의 데이터를 추출하여 그 위치에 글씨를 띄웁니다.
         label_idx = display_df.groupby('품목명')['일자'].idxmax()
         label_df = display_df.loc[label_idx]
 
+        # 차트 제목에 품목명도 함께 표시되도록 디테일 추가
+        title_prefix = selected_product if selected_product != '전체보기' else (selected_brand if selected_brand != '전체보기' else '전체')
+
         if view_target in ["📦 재고량 추이", "📊 모두 보기"]:
-            st.subheader(f"📦 {selected_brand if selected_brand != '전체보기' else '전체'} 재고량 변동 흐름")
+            st.subheader(f"📦 {title_prefix} 재고량 변동 흐름")
             
-            # 선 차트 생성 (기본 범례 제거: legend=None)
             stock_line = alt.Chart(display_df).mark_line(point=True).encode(
                 x=common_x,
                 y=alt.Y('재고:Q', title='재고 수량 (개)', axis=common_axis),
@@ -105,7 +123,6 @@ def run(load_data_func):
                 tooltip=['일자:T', '브랜드', '품목명', '재고']
             )
             
-            # 글자 라벨 생성
             stock_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(
                 x=common_x,
                 y='재고:Q',
@@ -113,16 +130,13 @@ def run(load_data_func):
                 color='품목명:N'
             )
             
-            # 선 + 글자 합치기
             st.altair_chart((stock_line + stock_label).properties(height=450), use_container_width=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
         if view_target in ["💰 판매가 변동", "📊 모두 보기"]:
-            st.subheader(f"💰 {selected_brand if selected_brand != '전체보기' else '전체'} 판매가 변동 흐름")
+            st.subheader(f"💰 {title_prefix} 판매가 변동 흐름")
             
-            
-            # 선 차트 생성
             price_line = alt.Chart(display_df).mark_line(point=True).encode(
                 x=common_x,
                 y=alt.Y('판매가:Q', title='판매가 (원)', axis=common_axis, scale=alt.Scale(zero=False)),
@@ -130,7 +144,6 @@ def run(load_data_func):
                 tooltip=['일자:T', '브랜드', '품목명', '판매가']
             )
             
-            # 글자 라벨 생성
             price_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(
                 x=common_x,
                 y='판매가:Q',
