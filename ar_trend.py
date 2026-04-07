@@ -27,7 +27,7 @@ def run(load_data_func):
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 0px 5px 10px 5px; 
+            padding: 0px 5px 5px 5px; 
             margin-bottom: 5px;
         }
         .title-txt { font-size: 1.5rem; font-weight: 900; color: #000; }
