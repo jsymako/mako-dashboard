@@ -16,24 +16,21 @@ def run(load_data_func):
     st.title("🤝 거래처별 판매 현황")
 
     try:
-        # 1. 데이터 로드 및 마스터 결합 🚀
+        # 1. 데이터 로드 및 마스터 결합
         df_trade_raw = load_data_func("trade_record")
         df_item = load_data_func("ecount_item_data")
         
-        # 거래처 원본 정리
         df_trade_raw.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액']
         df_trade_raw['일자'] = pd.to_datetime(df_trade_raw['일자'], errors='coerce')
         df_trade_raw['수량'] = pd.to_numeric(df_trade_raw['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_trade_raw['공급가액'] = pd.to_numeric(df_trade_raw['공급가액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_trade_raw = df_trade_raw.dropna(subset=['일자'])
         
-        # 품목 마스터 정리 및 병합
         df_item_master = df_item[['품목코드', '이름', '브랜드']].copy()
         df_item_master.rename(columns={'이름': '공식품목명'}, inplace=True)
         
         df_trade = pd.merge(df_trade_raw, df_item_master, on='품목코드', how='left')
         
-        # 마스터에 없는 품목 예외 처리
         df_trade['브랜드'] = df_trade['브랜드'].fillna('기타(미지정)')
         df_trade['공식품목명'] = df_trade['공식품목명'].fillna(df_trade['품목명'])
         
@@ -43,7 +40,6 @@ def run(load_data_func):
         # 2. 사이드바 필터
         st.sidebar.markdown("### 🔍 조회 조건")
         
-        # 🚀 [변경 1] Multiselect: 여러 거래처 검색 및 선택 (태그 형태)
         trader_list = sorted(list(df_trade['거래처명'].dropna().unique()))
         selected_traders = st.sidebar.multiselect(
             "1. 거래처 선택 (검색 가능)", 
@@ -52,15 +48,12 @@ def run(load_data_func):
             placeholder="비워두면 전체 거래처 조회"
         )
         
-        # 거래처가 선택되었으면 해당 거래처들이 산 브랜드만 필터링, 아니면 전체 브랜드
         temp_df = df_trade if not selected_traders else df_trade[df_trade['거래처명'].isin(selected_traders)]
         
-        # 🚀 [변경 2] 브랜드 필터로 교체
         brand_list = ["전체보기"] + sorted(list(temp_df['브랜드'].dropna().unique()))
         selected_brand = st.sidebar.selectbox("2. 브랜드 선택", brand_list)
 
         st.sidebar.markdown("---")
-
         view_mode = st.sidebar.radio("3. 분석 모드", ["월별 현황", "일별 현황"], index=0)
 
         # 공통 필터 적용
@@ -70,7 +63,6 @@ def run(load_data_func):
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
 
-        # 🚀 [핵심 1] 동적 그룹핑: 전체보기면 '브랜드', 브랜드를 고르면 '품목'으로 변신!
         group_field = '브랜드' if selected_brand == "전체보기" else '공식품목명'
 
         # 3. 모드별 날짜 세팅 및 필터링
@@ -163,7 +155,6 @@ def run(load_data_func):
         trader_title = "전체 거래처" if not selected_traders else ", ".join(selected_traders)
         st.subheader(f"📉 {trader_title} 거래액 추이")
         
-        # 🚀 [핵심 2] 거래처를 특정해서 골랐을 땐 선 그래프가 거래처별로 쪼개져서 그려집니다!
         color_encoding = alt.Color('거래처명:N', legend=alt.Legend(title="거래처")) if selected_traders else alt.value("#2E86C1")
         
         if selected_traders:
@@ -190,43 +181,39 @@ def run(load_data_func):
             ).properties(height=350)
             st.altair_chart(line_chart, use_container_width=True)
 
-        # 6. 교차 분석 랭킹 (브랜드 or 품목)
-        # 전체보기일 땐 '브랜드 랭킹', 특정 브랜드를 선택 시 '품목 랭킹'으로 자동 변환!
-        st.subheader(f"📊 {trader_title} 내 {group_field} 순위 (매출액 기준)")
+        # 🚀 6. 관점 전환이 가능한 교차 랭킹 차트
+        st.markdown("---")
         
-        sum_df = display_df.groupby([group_field])[['공급가액', '수량']].sum().reset_index().sort_values(by='공급가액', ascending=False).head(15) 
+        # 스위치(라디오 버튼) 추가: 가로로 예쁘게 배치
+        rank_mode = st.radio(
+            "🏆 순위 분석 관점", 
+            ["어떤 품목이 많이 팔렸나? (품목/브랜드 랭킹)", "누가 많이 사갔나? (거래처 랭킹)"], 
+            horizontal=True
+        )
+        
+        # 🚀 사용자가 선택한 모드에 따라 차트의 축(Y)과 제목이 즉시 바뀝니다!
+        if "품목" in rank_mode:
+            rank_field = group_field # 전체보기일 땐 브랜드명, 브랜드를 선택했을 땐 공식품목명
+            st.subheader(f"📊 {trader_title} 내 [{rank_field}] 매출 순위 (TOP 15)")
+        else:
+            rank_field = '거래처명'
+            brand_title = "전체 품목" if selected_brand == "전체보기" else selected_brand
+            st.subheader(f"📊 [{brand_title}] 매출 견인 거래처 순위 (TOP 15)")
+            
+        # 선택된 축(rank_field) 기준으로 데이터를 합산
+        sum_df = display_df.groupby([rank_field])[['공급가액', '수량']].sum().reset_index()
+        sum_df = sum_df.sort_values(by='공급가액', ascending=False).head(15) 
+        
         y_ax = alt.Axis(labelLimit=500, labelFontSize=14, title='', labelPadding=10)
         chart_h = max(300, len(sum_df) * 45)
 
         st.altair_chart(alt.Chart(sum_df).mark_bar(color="#E74C3C").encode(
             x=alt.X('공급가액:Q', title='총 거래액 (원)'), 
-            y=alt.Y(f'{group_field}:N', sort='-x', axis=y_ax),
-            tooltip=[group_field, '공급가액', '수량']
+            y=alt.Y(f'{rank_field}:N', sort='-x', axis=y_ax),
+            tooltip=[rank_field, '공급가액', '수량']
         ).properties(height=chart_h), use_container_width=True)
 
-        # 7. 상세 데이터 표
-        st.markdown("---")
-        st.subheader("📋 상세 모니터링 표")
-        
-        show_df = display_df.copy()
-        show_df['표시값'] = show_df.apply(lambda r: f"{int(r['공급가액']):,}원 ({int(r['수량'])}개)", axis=1)
-        
-        pivot_col = '월' if view_mode == "월별 현황" else '일자'
-        if view_mode == "일별 현황": show_df['일자'] = show_df['일자'].dt.strftime('%m/%d')
-        
-        # 🚀 [핵심 3] 피벗 테이블도 거래처 + 동적(브랜드 or 품목명)으로 변경
-        pivot_df = show_df.pivot_table(
-            index=['거래처명', group_field],
-            columns=pivot_col,
-            values='표시값',
-            aggfunc=lambda x: ' '.join(x)
-        ).reset_index()
-
-        date_cols = sorted([col for col in pivot_df.columns if col not in ['거래처명', group_field]], reverse=True)
-        final_cols = ['거래처명', group_field] + date_cols
-        pivot_df = pivot_df[final_cols].fillna("-")
-
-        st.dataframe(pivot_df, use_container_width=True, hide_index=True)
+        # (상세 데이터 표는 요청에 따라 완벽하게 삭제되었습니다 🧹)
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
