@@ -8,6 +8,7 @@ import json
 import own_stock
 import coupang_stock
 import sales_trend
+import trade_trend
 
 st.set_page_config(page_title="통합재고관리", page_icon="", layout="wide")
 
@@ -25,7 +26,7 @@ def load_sheet_data(worksheet_name):
     return df
 
 st.sidebar.title("마코펫 통합재고관리")
-main_menu = st.sidebar.radio("MENU", ["📦 자사 재고 현황", "🚀 쿠팡 재고 현황", "📈 판매 현황"])
+menu = st.sidebar.radio("MENU", ["자사 재고", "쿠팡 재고", "판매 현황", "거래처 현황"])
 st.sidebar.markdown("---")
 
 # 🚀 각 파일의 run 함수에 load_sheet_data 함수 자체를 전달함
@@ -35,6 +36,8 @@ elif main_menu == "🚀 쿠팡 재고 현황":
     coupang_stock.run(load_sheet_data)
 elif main_menu == "📈 판매 현황":
     sales_trend.run(load_sheet_data)
+elif menu == "거래처 현황":
+    trade_trend.run(load_sheet_data)
 
 
 
