@@ -9,50 +9,49 @@ def run(load_data_func):
         "001": "이계성", "002": "이계흥", "004": "황일용",
         "00026": "신의명", "007": "정상영", "009": "이경옥"
     }
-    
-    # 🎨 [CSS] 관제탑 카드 최적화 스타일
+
+    # 🎨 [CSS] 초슬림 카드 및 레이아웃 최적화
     st.markdown("""
         <style>
         .ar-container {
-            border: 2px solid #2c3e50;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 25px;
-            background-color: #fcfcfc;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #fff;
         }
         .header-row {
             display: flex;
-            justify-content: flex-start;
             align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 8px;
         }
-        .title-txt { font-size: 1.15rem; font-weight: 800; color: #1a1a1a; }
-        .mgr-txt { font-size: 0.85rem; color: #666; background: #eee; padding: 2px 8px; border-radius: 4px; }
-        .data-box { background: #fff; border: 1px solid #e1e4e8; border-radius: 5px; padding: 10px; height: 100%; }
-        .label-txt { font-size: 0.75rem; color: #888; font-weight: bold; margin-bottom: 3px; }
-        .val-txt { font-size: 1rem; font-weight: 700; color: #222; }
-        .diff-up { color: #d9534f; font-size: 0.8rem; font-weight: bold; }
-        .diff-down { color: #0275d8; font-size: 0.8rem; font-weight: bold; }
-        .dso-tag { padding: 3px 6px; border-radius: 3px; font-weight: bold; font-size: 0.85rem; }
+        .title-txt { font-size: 1.1rem; font-weight: 800; color: #000; }
+        .mgr-txt { font-size: 0.8rem; color: #555; background: #f0f0f0; padding: 1px 6px; border-radius: 3px; }
+        .data-column { background: #f9f9f9; border: 1px solid #eee; border-radius: 4px; padding: 8px; }
+        .row-item { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; }
+        .label-sm { color: #888; }
+        .val-sm { font-weight: 700; }
+        .diff-up { color: #d9534f; font-size: 0.75rem; font-weight: bold; }
+        .diff-down { color: #0275d8; font-size: 0.75rem; font-weight: bold; }
         </style>
     """, unsafe_allow_html=True)
 
-    # 1. 데이터 로드 및 전처리 (이전 로직 활용)
+    st.title("💳 채권 현황 분석 관제탑")
+
+    # 1. 데이터 로드 및 전처리
     try:
         df_memo_gs = load_data_func("ar_memo")
     except:
         df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
 
-    uploaded_file = st.file_uploader("파일을 업로드하세요", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
+    uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
     if not uploaded_file:
-        st.warning("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
+        st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
         return
 
     try:
-        # 데이터 정제 파트 (축약본)
+        # 데이터 정제 로직
         if uploaded_file.name.endswith('.csv'):
             try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
             except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
@@ -75,13 +74,12 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1 = month_list[0], (month_list[1] if len(month_list) > 1 else None)
 
-        # 사이드바 필터링
-        st.sidebar.subheader("🔍 필터링")
+        # 사이드바 설정
+        st.sidebar.subheader("🔍 분석 조건")
         sel_m = st.sidebar.selectbox("담당자", ["전체보기"] + sorted(list(df_pivot[manager_col].unique()))) if manager_col else "전체보기"
-        min_dso = st.sidebar.slider("최소 DSO", 0, 120, 45, 15)
+        min_dso = st.sidebar.slider("DSO 필터", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("정렬", ["잔액순", "가나다순"])
 
-        # 가공 데이터 생성
         cards_data = []
         for trader, group in df_pivot.groupby('거래처명'):
             def get_dso(off):
@@ -109,58 +107,91 @@ def run(load_data_func):
         if not final_df.empty:
             final_df = final_df.sort_values('j_c', ascending=False) if sort_opt == "잔액순" else final_df.sort_values('name')
 
-        # 🚀 [UI] 카드 렌더링
-        for _, row in final_df.iterrows():
-            st.markdown(f"""
-                <div class="ar-container">
-                    <div class="header-row">
-                        <span class="title-txt">{row['name']}</span>
-                        <span class="mgr-txt">👤 {row['mgr']}</span>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+            # 🚀 [UI] 상단 전체 현황(KPI)
+            c1, c2, c3 = st.columns(3)
+            c1.metric("💰 총 미수잔액", f"{int(final_df['j_c'].sum() / 10000):,}만 원")
+            c2.metric("📈 당월 총 매출", f"{int(final_df['m_c'].sum() / 10000):,}만 원")
+            c3.metric("🚨 대상 업체수", f"{len(final_df)}개")
+            st.markdown("---")
 
-            # 카드 내부 그리드 (그래프 | 실적비교 | DSO)
-            c_graph, c_compare, c_dso = st.columns([1.2, 2.5, 1.3])
+            # 🚀 [UI] 개별 카드 렌더링
+            for _, row in final_df.iterrows():
+                st.markdown(f"""
+                    <div class="ar-container">
+                        <div class="header-row">
+                            <span class="title-txt">{row['name']}</span>
+                            <span class="mgr-txt">👤 {row['mgr']}</span>
+                        </div>
+                """, unsafe_allow_html=True)
 
-            with c_graph:
-                st.markdown('<p class="label-txt">📈 12개월 잔액 추이</p>', unsafe_allow_html=True)
-                st.line_chart(row['trend'], height=100, use_container_width=True)
+                c_graph, c_compare, c_dso = st.columns([1, 2.5, 1.2])
 
-            with c_compare:
-                st.markdown('<p class="label-txt">📊 실적 비교 (전월 ➡️ 당월)</p>', unsafe_allow_html=True)
-                cols = st.columns(3)
-                names = [("매출", 'm'), ("수금", 's'), ("잔액", 'j')]
-                for i, (lab, k) in enumerate(names):
-                    curr_val, prev_val = row[f'{k}_c'], row[f'{k}_p']
-                    diff = curr_val - prev_val
-                    diff_str = f"<span class='diff-up'>▲{int(diff):,}</span>" if diff > 0 else f"<span class='diff-down'>▼{abs(int(diff)):,}</span>"
-                    cols[i].markdown(f"""
-                        <div class="data-box">
-                            <div class="label-txt">{lab}</div>
-                            <div style="font-size:0.75rem; color:#999; text-decoration:line-through;">{int(prev_val):,}</div>
-                            <div class="val-txt">{int(curr_val):,}</div>
-                            <div>{diff_str}</div>
+                with c_graph:
+                    st.line_chart(row['trend'], height=90, use_container_width=True)
+
+                with c_compare:
+                    c_prev, c_curr = st.columns(2)
+                    with c_prev:
+                        st.markdown(f"""
+                            <div class="data-column">
+                                <div style="font-size:0.7rem; color:#888; font-weight:bold; margin-bottom:5px;">⏮️ 전월 실적</div>
+                                <div class="row-item"><span class="label-sm">매출</span><span class="val-sm">{int(row['m_p']):,}</span></div>
+                                <div class="row-item"><span class="label-sm">수금</span><span class="val-sm">{int(row['s_p']):,}</span></div>
+                                <div class="row-item"><span class="label-sm">잔액</span><span class="val-sm">{int(row['j_p']):,}</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                    with c_curr:
+                        def get_diff(c, p):
+                            diff = c - p
+                            return f"<span class='diff-up'>▲{int(diff):,}</span>" if diff > 0 else f"<span class='diff-down'>▼{abs(int(diff)):,}</span>"
+                        
+                        st.markdown(f"""
+                            <div class="data-column" style="border-color:#333;">
+                                <div style="font-size:0.7rem; color:#333; font-weight:bold; margin-bottom:5px;">⬇️ 당월 실적(증감)</div>
+                                <div class="row-item"><span class="label-sm">매출</span><span class="val-sm">{int(row['m_c']):,} {get_diff(row['m_c'], row['m_p'])}</span></div>
+                                <div class="row-item"><span class="label-sm">수금</span><span class="val-sm">{int(row['s_c']):,} {get_diff(row['s_c'], row['s_p'])}</span></div>
+                                <div class="row-item"><span class="label-sm" style="color:#d9534f;">잔액</span><span class="val-sm" style="color:#d9534f;">{int(row['j_c']):,} {get_diff(row['j_c'], row['j_p'])}</span></div>
+                            </div>
+                        """, unsafe_allow_html=True)
+
+                with c_dso:
+                    def get_dso_tag(v):
+                        c = "#d9534f" if v > 90 or v == 9999 else ("#f0ad4e" if v > 45 else "#5cb85c")
+                        t = "F" if v == 9999 else f"{v}d"
+                        return f'<span style="color:{c}; font-weight:bold;">{t}</span>'
+                    
+                    st.markdown(f"""
+                        <div style="text-align:right; font-size:0.8rem; line-height:1.6;">
+                            <div style="color:#888;">DSO 흐름</div>
+                            <div>{get_dso_tag(row['d2'])} ➔ {get_dso_tag(row['d1'])} ➔ <span style="font-size:1.1rem;">{get_dso_tag(row['d0'])}</span></div>
                         </div>
                     """, unsafe_allow_html=True)
 
-            with c_dso:
-                st.markdown('<p class="label-txt">🚨 DSO (3개월)</p>', unsafe_allow_html=True)
-                def get_dso_html(v):
-                    c = "#ff4b4b" if v > 90 or v == 9999 else ("#ffa500" if v > 45 else "#00c853")
-                    t = "F(장기)" if v == 9999 else f"{v}일"
-                    return f'<span style="color:{c}; font-weight:bold;">{t}</span>'
-                
-                st.markdown(f"**당월:** {get_dso_html(row['d0'])}", unsafe_allow_html=True)
-                st.markdown(f"<small>전월: {row['d1']}일</small><br><small>전전월: {row['d2']}일</small>", unsafe_allow_html=True)
+                # 🚀 메모 및 개별 저장 버튼
+                memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
+                m_col, b_col = st.columns([5, 1])
+                with m_col:
+                    memo_input = st.text_input(f"메모 입력 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
+                with b_col:
+                    if st.button("💾", key=f"save_{row['name']}", help="이 업체 메모만 즉시 저장"):
+                        # 구글 시트 개별 업데이트 로직
+                        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                        creds_dict = json.loads(st.secrets["gcp_service_account"])
+                        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+                        client = gspread.authorize(creds)
+                        doc = client.open("통합재고관리")
+                        sheet = doc.worksheet("ar_memo")
+                        
+                        # 기존 메모 로드 후 해당 행만 수정하거나 전체 업데이트
+                        all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
+                        all_memos[row['name']] = memo_input
+                        
+                        new_data = [[k, v] for k, v in all_memos.items()]
+                        sheet.clear()
+                        sheet.update([['거래처명', '메모']] + new_data)
+                        st.toast(f"{row['name']} 저장 완료!", icon="✅")
 
-            # 메모장 및 저장
-            memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
-            st.text_input(f"📝 {row['name']} 메모", value=memo_v, key=f"memo_{row['name']}")
-
-        if st.button("💾 모든 메모 일괄 저장"):
-            # 저장 로직 생략
-            st.success("✅ 저장 완료")
+                st.markdown("</div>", unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"오류: {e}")
