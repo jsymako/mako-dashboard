@@ -95,15 +95,28 @@ def run(load_data_func):
         padding_days = max(3, int((x_max - x_min).days * 0.25))
         x_max_padded = x_max + datetime.timedelta(days=padding_days)
         
-        # 🚀 [수정] 날짜가 짧을 때 X축이 12시간 단위로 쪼개져서 중복 표시되는 버그 수정
-        diff_days = (x_max_padded - x_min).days
-        # 날짜 간격이 14일 미만으로 짧을 경우, 눈금 개수를 일수와 동일하게 강제 고정합니다.
-        tick_config = diff_days if 0 < diff_days <= 14 else None
+        # ==========================================
+        # 4. 메인 시각화 (🚀 직접 라벨링 방식 적용)
+        # ==========================================
+        common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
         
+        x_min = display_df['일자'].min()
+        x_max = display_df['일자'].max()
+        padding_days = max(3, int((x_max - x_min).days * 0.25))
+        x_max_padded = x_max + datetime.timedelta(days=padding_days)
+        
+        # 🚀 [수정] X축 눈금(Tick) 옵션을 동적으로 생성합니다.
+        axis_options = {'format': '%m/%d', 'labelFontSize': 14}
+        diff_days = (x_max_padded - x_min).days
+        
+        # 날짜 간격이 14일 이하로 짧을 때만 tickCount 옵션을 추가 (하루에 하나씩!)
+        if 0 < diff_days <= 14:
+            axis_options['tickCount'] = diff_days
+            
         common_x = alt.X(
             '일자:T', 
             title='', 
-            axis=alt.Axis(format='%m/%d', labelFontSize=14, tickCount=tick_config), 
+            axis=alt.Axis(**axis_options), # 🌟 None 에러 없이 딕셔너리 풀기로 안전하게 적용
             scale=alt.Scale(domain=[x_min, x_max_padded])
         )
 
