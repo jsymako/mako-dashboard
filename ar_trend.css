@@ -74,7 +74,7 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
 /* 1. 거래처명 (ex. 주식회사 반창고) */
 .title-txt { 
     font-size: 1.6rem !important;     /* 글자 크기 */
-    font-weight: 800 !important;      /* 글자 굵기 (400~900) */
+    font-weight: 600 !important;      /* 글자 굵기 (400~900) */
     color: #111111 !important;        /* 글자 색상 (완전 검은색은 #000) */
     letter-spacing: -0.5px !important;/* 자간 (글자 사이 간격, 좁히면 묵직해 보임) */
 }
@@ -107,7 +107,7 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
 /* 5. 금액 숫자 (ex. 126,939,470) */
 .val-xl { 
     font-size: 1.45rem !important; 
-    font-weight: 800 !important;      /* 숫자는 두껍게! */
+    font-weight: 600 !important;      /* 숫자는 두껍게! */
     color: #111111 !important; 
     letter-spacing: -0.5px !important;/* 숫자는 자간을 좁혀야 가독성이 좋습니다 */
 }
@@ -123,8 +123,8 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
     vertical-align: middle !important; 
 }
 .data-column b { /* '275일' 글자 타겟팅 */
-    font-size: 1.2rem !important; 
-    font-weight: 800 !important; 
+    font-size: 1.4rem !important; 
+    font-weight: 600 !important; 
     color: #333333 !important; 
     vertical-align: middle !important;
 }
@@ -134,6 +134,6 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
     font-size: 1.1rem !important; 
     color: #000000 !important; 
     text-align: center !important; 
-    font-weight: 800 !important;
+    font-weight: 600 !important;
     margin-bottom: 10px !important;
 }
