@@ -1,0 +1,68 @@
+/* =========================================
+   💳 채권 분석 전용 (ar_trend.css)
+   (아이콘 깨짐을 방지한 정밀 타겟팅 폰트 적용)
+========================================= */
+
+/* 프리텐다드(Pretendard) 폰트 불러오기 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+
+/* 🚀 [핵심] span, div 등 시스템이 쓰는 태그는 건드리지 않고, 진짜 '글자' 태그에만 폰트 적용 */
+h1, h2, h3, h4, h5, h6, p, label, li, table, button, input {
+    font-family: 'Pretendard', sans-serif !important;
+}
+
+/* [1] 공통 텍스트 및 레이아웃 */
+.main .block-container { font-size: 1.0rem; }
+p { font-size: 1.0rem; }
+h1 { font-size: 1.8rem !important; font-weight: 800 !important; }
+h2 { font-size: 1.5rem !important; font-weight: 700 !important; }
+h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
+
+/* =========================================
+   [2] 사이드바: 위젯 및 제목 폰트/간격
+========================================= */
+/* 위젯 메인 타이틀 */
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+    font-size: 1.25rem !important;  
+    font-weight: 600 !important;    
+    color: #2C3E50 !important;      
+    margin-bottom: 5px !important;  
+}
+
+/* 라디오 옵션 */
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
+    font-size: 1.1rem !important;   
+    font-weight: 400 !important;    
+    color: #495057 !important;      
+}
+
+/* 셀렉트박스 글자 */
+[data-testid="stSidebar"] div[data-baseweb="select"] { 
+    font-size: 1.1rem !important;
+    font-weight: 400 !important;
+}
+
+/* 사이드바 H1 ~ H4 제목 디자인 */
+[data-testid="stSidebar"] h1 { font-size: 1.8rem !important; font-weight: 600 !important; color: #2C3E50 !important; margin-bottom: 15px !important; }
+[data-testid="stSidebar"] h2 { font-size: 1.5rem !important; font-weight: 600 !important; color: #2C3E50 !important; margin-bottom: 12px !important; }
+[data-testid="stSidebar"] h3 { font-size: 1.2rem !important; font-weight: 300 !important; color: #34495E !important; margin-bottom: 10px !important; }
+[data-testid="stSidebar"] h4 { font-size: 1.0rem !important; font-weight: 500 !important; color: #2C3E50 !important; margin-bottom: 8px !important; margin-top: 10px !important; }
+
+/* =========================================
+   [3] 메인 화면: KPI 지표 및 탭
+========================================= */
+/* KPI 지표 상단 제목 */
+[data-testid="stMetricLabel"] > div { font-weight: 800 !important; font-size: 1.2rem !important; color: #1E1E1E !important; }
+
+/* KPI 지표 메인 수치 */
+[data-testid="stMetricValue"] > div { font-weight: 400 !important; font-size: 2.4rem !important; }
+
+/* 보조 수치 및 캡션 */
+.stCaption, [data-testid="stCaptionContainer"] { 
+    font-size: 1.6rem !important; font-weight: 700 !important; 
+    line-height: 1.6 !important; color: #007BFF !important; background-color: #f0f8ff; 
+    padding: 8px 12px; border-radius: 8px; border: 1px solid #d1e9ff; display: inline-block; margin-top: 5px;
+}
+
+/* 탭 메뉴 */
+button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !important; }
