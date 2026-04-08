@@ -24,7 +24,7 @@ def run(load_data_func):
         .ar-container {
             border: 2px solid #222;
             border-radius: 10px;
-            padding: 5px;
+            padding: 15px;
             margin-bottom: 20px;
             background-color: #fff;
         }
