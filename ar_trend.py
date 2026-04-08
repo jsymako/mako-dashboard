@@ -63,6 +63,18 @@ def run(load_data_func):
         .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+
+        /* 파일 업로더 버튼 글자 겹침 강제 해결 */
+        [data-testid="stFileUploader"] button {
+            color: transparent !important; /* 기존 겹치는 글자 투명하게 숨기기 */
+        }
+        [data-testid="stFileUploader"] button::after {
+            content: "파일 선택"; /* 원하는 버튼 이름으로 변경 가능 */
+            color: #333 !important;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
         </style>
     """, unsafe_allow_html=True)
 
