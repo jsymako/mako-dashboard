@@ -30,8 +30,8 @@ st.sidebar.title("마코펫 통합재고관리")
 
 # 🚀 1. 메뉴판 글씨를 조건문과 똑같이 이모지까지 포함해서 적어줍니다! (거래처 현황도 🤝 추가)
 main_menu = st.sidebar.radio("MENU", [
-    "📦 자사 재고 현황", 
-    "🚀 쿠팡 재고 현황", 
+    "📦 자사 재고", 
+    "🚀 쿠팡 재고", 
     "📈 판매 현황", 
     "🤝 거래처 현황",
     "💳 채권 분석"
@@ -40,9 +40,9 @@ main_menu = st.sidebar.radio("MENU", [
 st.sidebar.markdown("---")
 
 # 🚀 2. if 조건문도 메뉴판 글씨와 100% 동일하게 맞춰줍니다.
-if main_menu == "📦 자사 재고 현황":
+if main_menu == "📦 자사 재고":
     own_stock.run(load_sheet_data) 
-elif main_menu == "🚀 쿠팡 재고 현황":
+elif main_menu == "🚀 쿠팡 재고":
     coupang_stock.run(load_sheet_data)
 elif main_menu == "📈 판매 현황":
     sales_trend.run(load_sheet_data)
