@@ -3,7 +3,6 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-from streamlit_option_menu import option_menu
 
 # 🚀 메뉴별 파일 임포트
 import own_stock
@@ -12,7 +11,7 @@ import sales_trend
 import trade_trend
 import ar_trend
 
-st.set_page_config(page_title="통합재고관리", page_icon="", layout="wide")
+st.set_page_config(page_title="통합재고관리", page_icon="📦", layout="wide")
 
 # 🚀 공통 데이터 로드 함수
 @st.cache_data(ttl=600)
@@ -27,71 +26,68 @@ def load_sheet_data(worksheet_name):
     df = pd.DataFrame(data[1:], columns=data[0])
     return df
 
-
 # -----------------------------------------------------------------
 # 🚀 1. 사이드바 구성 (로고 + Pills 메뉴 + 커스텀 CSS)
 # -----------------------------------------------------------------
 with st.sidebar:
-    # 로고가 있다면 아래 주석을 풀고 사용하세요
     st.image("mako_logo.png", use_container_width=True) 
     
     st.title("통합관리")
 
-    # 🎨 [CSS] 알약(Pills) 버튼 세로형 배치 및 커스텀 스타일링
     st.markdown("""
         <style>
-        /* 1. 알약 버튼을 감싸는 보이지 않는 부모 박스를 찾아 세로(Column)로 강제 정렬 */
-        div:has(> button[data-testid^="stBaseButton-pill"]) {
+        /* 🚀 1. 펼치기(>) 아이콘 살리고 "Open sidebar" 글자만 완벽 제거 */
+        [data-testid="collapsedControl"] {
+            font-size: 0px !important; /* 텍스트 크기를 0으로 만들어 흔적도 없이 지움 */
+        }
+        [data-testid="collapsedControl"] svg {
+            width: 1.5rem !important;  /* 지워지지 않게 아이콘 크기 강제 고정 */
+            height: 1.5rem !important; 
+            fill: #333333 !important;  /* 아이콘 색상 진하게 */
+        }
+
+        /* 🚀 2. 알약(Pills) 버튼 세로 정렬 (100% 확실한 타겟팅) */
+        section[data-testid="stSidebar"] div[role="group"] {
             display: flex !important;
-            flex-direction: column !important; /* 세로 정렬의 핵심 */
-            gap: 10px !important; /* 버튼 사이의 간격 */
+            flex-direction: column !important; /* 세로 정렬 */
+            gap: 10px !important; /* 버튼 간격 */
             width: 100% !important;
         }
 
-        /* 2. 개별 알약 버튼 디자인 (정확한 버튼 고유 ID 타겟팅) */
-        button[data-testid^="stBaseButton-pill"] {
+        /* 🚀 3. 개별 알약 버튼 디자인 */
+        section[data-testid="stSidebar"] div[role="group"] button {
             width: 100% !important; 
-            justify-content: flex-start !important; /* 왼쪽 정렬 */
-            padding-left: 10px !important; /* 왼쪽 여백 */
+            justify-content: flex-start !important; /* 글자 왼쪽 정렬 */
+            padding: 10px 20px !important; 
             border-radius: 8px !important; 
-            border: 2px solid #dddddd !important; /* 테두리 굵기 */
+            border: 2px solid #dddddd !important; 
             background-color: #ffffff !important; 
-            font-size: 2.0rem !important; /* 2.05rem은 너무 클 수 있어 살짝 줄였습니다. 필요시 늘리세요! */
             transition: all 0.2s ease-in-out !important; 
         }
+        
+        section[data-testid="stSidebar"] div[role="group"] button p {
+            font-size: 1.15rem !important; /* 너무 크면 잘릴 수 있어 1.15로 세팅 */
+            margin: 0 !important;
+        }
 
-        /* 3. 마우스를 올렸을 때(Hover)의 디자인 */
-        button[data-testid^="stBaseButton-pill"]:hover {
+        /* 🚀 4. 마우스 올렸을 때 (Hover) */
+        section[data-testid="stSidebar"] div[role="group"] button:hover {
             border-color: #d9534f !important; 
             background-color: #fdf2f2 !important; 
         }
 
-        /* 4. 선택된(Active) 상태일 때의 버튼 및 글자 디자인 */
-        button[data-testid="stBaseButton-pillsActive"] {
-            background-color: #d9534f !important; /* 선택되면 배경을 빨간색으로 */
+        /* 🚀 5. 선택된(Active) 상태일 때 */
+        section[data-testid="stSidebar"] div[role="group"] button[aria-pressed="true"] {
+            background-color: #d9534f !important; 
             border-color: #d9534f !important;
         }
-        
-        button[data-testid="stBaseButton-pillsActive"] p {
-            font-weight: 600 !important; 
-            color: #ffffff !important; /* 선택되면 글자를 흰색으로 확 띄게 */
+        section[data-testid="stSidebar"] div[role="group"] button[aria-pressed="true"] p {
+            font-weight: 800 !important; 
+            color: #ffffff !important; /* 글자를 흰색으로 확 띄게 */
         }
-
-        
-        /* 🚀 사이드바 접기/펼치기 버튼에서 튀어나오는 불필요한 글자 완벽 제거 */
-        [data-testid="collapsedControl"] {
-            color: transparent !important; /* 텍스트(글자)를 완전히 투명하게 숨김 */
-        }
-        
-        [data-testid="collapsedControl"] svg {
-            color: #333333 !important; /* 대신 > 모양의 아이콘 색상은 진하게 복구 */
-            fill: #333333 !important;
-        }
-
         </style>
     """, unsafe_allow_html=True)
     
-    # 🚀 트렌디한 알약(Pills) 버튼 적용! (이제 세로로 나옵니다)
     main_menu = st.pills(
         "MENU", 
         [
@@ -102,7 +98,7 @@ with st.sidebar:
             "💳 채권 분석"
         ],
         default="📦 자사 재고",
-        label_visibility="collapsed" # "MENU"라는 작은 글씨가 거슬리면 이걸로 숨길 수 있습니다.
+        label_visibility="collapsed" 
     )
 
 st.sidebar.markdown("---")
@@ -120,4 +116,3 @@ elif main_menu == "🤝 거래처 현황":
     trade_trend.run(load_sheet_data)
 elif main_menu == "💳 채권 분석":
     ar_trend.run(load_sheet_data)
-
