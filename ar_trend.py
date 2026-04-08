@@ -190,7 +190,7 @@ def run(load_data_func):
                             """, unsafe_allow_html=True)
 
                 with col_graph:
-                    st.markdown('<p style="font-size:1.0rem; color:#000; text-align:center; font-weight:900;">📈 12개월 추이</p>', unsafe_allow_html=True)
+                    st.markdown('<div class="graph-title">📈 12개월간 잔액 추이</div>', unsafe_allow_html=True)
                     st.line_chart(row['trend'], height=240, use_container_width=True)
 
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
