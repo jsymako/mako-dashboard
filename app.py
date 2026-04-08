@@ -4,6 +4,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 from streamlit_option_menu import option_menu 
+import datetime
+import holidays # 🚀 공휴일 체크용 라이브러리 추가
 
 # 🚀 메뉴별 파일 임포트
 import own_stock
@@ -76,7 +78,7 @@ with st.sidebar:
 st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------
-# 🚀 3. 메인 대시보드 (최신 날짜 & 영업일 누락 체크)
+# 🚀 3. 메인 대시보드 (공휴일 완벽 패스 & 채권 예외 처리)
 # -----------------------------------------------------------------
 def render_dashboard():
     st.title("🏠 통합재고관리 관제센터")
@@ -97,19 +99,21 @@ def render_dashboard():
         </style>
     """, unsafe_allow_html=True)
 
-    # 연결할 시트 정보
     modules = {
-        "자사 재고": {"sheet_name": "자사재고", "icon": "📦"},
-        "쿠팡 재고": {"sheet_name": "쿠팡재고", "icon": "🚀"},
-        "판매 현황": {"sheet_name": "판매현황", "icon": "📈"},
-        "거래처 현황": {"sheet_name": "거래처현황", "icon": "🤝"},
-        "채권 분석": {"sheet_name": "ar_memo", "icon": "💳"} 
+        "자사 재고": {"sheet_name": "ecount_stock", "icon": "📦", "check_date": True},
+        "쿠팡 재고": {"sheet_name": "coupang_stock", "icon": "🚀", "check_date": True},
+        "판매 현황": {"sheet_name": "sales_record", "icon": "📈", "check_date": True},
+        "거래처 현황": {"sheet_name": "trade_record", "icon": "🤝", "check_date": True},
+        "채권 분석": {"sheet_name": "ar_memo", "icon": "💳", "check_date": False} # 🚀 채권분석은 날짜 체크 완전 제외!
     }
 
-    # 🚀 최근 7일 중 '영업일(월~금)'만 계산
+    # 🚀 최근 7일(달력 기준) 생성 후, 주말 및 공휴일 발라내기
     today = pd.Timestamp.now().normalize()
     past_week = pd.date_range(end=today, periods=7, freq='D')
-    business_days = past_week[past_week.weekday < 5] # 0=월, 4=금
+    kr_holidays = holidays.KR(years=range(today.year - 1, today.year + 1))
+    
+    # 월~금(weekday < 5)이면서 한국 공휴일이 아닌 날만 '진짜 영업일'로 추출
+    valid_business_days = [bd for bd in past_week if bd.weekday() < 5 and bd.date() not in kr_holidays]
 
     cols = st.columns(3)
     for idx, (m_name, m_info) in enumerate(modules.items()):
@@ -119,72 +123,73 @@ def render_dashboard():
             df = load_sheet_data(m_info["sheet_name"])
             
             if df is not None and not df.empty:
-                # 🚀 '일자', '날짜' 등 날짜를 나타내는 컬럼을 자동으로 찾음
-                date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일'])), None)
-                
-                if date_col:
-                    # 날짜 형식 파싱
-                    parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
+                # 🚀 날짜 체크가 필요한 모듈 (자사, 쿠팡, 판매, 거래처)
+                if m_info["check_date"]:
+                    date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일'])), None)
                     
-                    if not parsed_dates.empty:
-                        latest_date = parsed_dates.max()
-                        latest_date_str = latest_date.strftime('%Y-%m-%d')
-                        unique_dates_set = set(parsed_dates.dt.strftime('%Y-%m-%d'))
+                    if date_col:
+                        parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
                         
-                        # 🚀 영업일 중 데이터가 없는 날짜(누락일) 추출
-                        missing_days = []
-                        for bd in business_days:
-                            bd_str = bd.strftime('%Y-%m-%d')
-                            if bd_str not in unique_dates_set:
-                                missing_days.append(bd.strftime('%m/%d(%a)'))
-                        
-                        if missing_days:
-                            missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{', '.join(missing_days)}</span>"
-                            icon_status = "⚠️ 누락 확인"
-                            icon_class = "status-warn"
-                        else:
-                            missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음 (완벽)</span>"
-                            icon_status = "🟢 정상 수신중"
-                            icon_class = "status-ok"
+                        if not parsed_dates.empty:
+                            latest_date = parsed_dates.max()
+                            latest_date_str = latest_date.strftime('%Y-%m-%d')
+                            unique_dates_set = set(parsed_dates.dt.strftime('%Y-%m-%d'))
+                            
+                            # 진짜 영업일 중 누락된 날짜만 찾기
+                            missing_days = []
+                            for bd in valid_business_days:
+                                bd_str = bd.strftime('%Y-%m-%d')
+                                if bd_str not in unique_dates_set:
+                                    missing_days.append(bd.strftime('%m/%d(%a)'))
+                            
+                            if missing_days:
+                                missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{', '.join(missing_days)}</span>"
+                                icon_status = "⚠️ 누락 확인"
+                                icon_class = "status-warn"
+                            else:
+                                missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음 (완벽)</span>"
+                                icon_status = "🟢 정상 수신중"
+                                icon_class = "status-ok"
 
-                        st.markdown(f"""
-                            <div class="dash-card">
-                                <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                <div style="margin-bottom: 8px;">연동 상태: <span class="{icon_class}">{icon_status}</span></div>
-                                <div>최신 데이터: <span class="dash-stat">{latest_date_str}</span></div>
-                                <div class="sub-text">
-                                    <b>🔍 최근 7일(영업일) 검증:</b><br>{missing_str}
+                            st.markdown(f"""
+                                <div class="dash-card">
+                                    <div class="dash-title">{m_info['icon']} {m_name}</div>
+                                    <div style="margin-bottom: 8px;">연동 상태: <span class="{icon_class}">{icon_status}</span></div>
+                                    <div>최신 데이터: <span class="dash-stat">{latest_date_str}</span></div>
+                                    <div class="sub-text">
+                                        <b>🔍 7일 내 누락(휴일 제외):</b><br>{missing_str}
+                                    </div>
                                 </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                            <div class="dash-card">
-                                <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                <div>연동 상태: <span class="status-ok">🟢 정상</span></div>
-                                <div class="sub-text">날짜 데이터를 변환할 수 없습니다.</div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                                <div class="dash-card">
+                                    <div class="dash-title">{m_info['icon']} {m_name}</div>
+                                    <div>연동 상태: <span class="status-warn">⚠️ 날짜 파싱 오류</span></div>
+                                </div>
+                            """, unsafe_allow_html=True)
+                
+                # 🚀 날짜 체크가 필요 없는 모듈 (채권 분석)
                 else:
-                    # 채권 분석(메모장)처럼 날짜 컬럼이 아예 없는 시트의 경우
                     st.markdown(f"""
                         <div class="dash-card">
                             <div class="dash-title">{m_info['icon']} {m_name}</div>
-                            <div>연동 상태: <span class="status-ok">🟢 정상</span></div>
-                            <div class="sub-text">날짜 기록을 관리하지 않는 시트입니다.</div>
+                            <div>연동 상태: <span class="status-ok">🟢 정상 수신중</span></div>
+                            <div class="sub-text" style="color: #666; font-style: italic;">
+                                날짜 누락 검사 대상이 아닙니다. (메모 등 수동 관리)
+                            </div>
                         </div>
                     """, unsafe_allow_html=True)
+            
+            # 시트 연결 실패 시
             else:
                 st.markdown(f"""
                     <div class="dash-card">
                         <div class="dash-title">{m_info['icon']} {m_name}</div>
                         <div>연동 상태: <span class="status-err">🔴 점검 필요</span></div>
-                        <div class="sub-text">구글 시트명 불일치 또는 데이터가 없습니다.</div>
+                        <div class="sub-text">시트명 불일치 또는 데이터가 없습니다.</div>
                     </div>
                 """, unsafe_allow_html=True)
-                
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.info("💡 **알림:** 누락일 검증은 주말(토, 일)을 제외한 평일 데이터를 기준으로 체크합니다. 추후 한국 법정 공휴일까지 예외 처리하도록 고도화할 수 있습니다.")
 
 # -----------------------------------------------------------------
 # 🚀 4. 메뉴 선택에 따른 화면 전환
