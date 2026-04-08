@@ -32,11 +32,11 @@ def run(load_data_func):
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 0px 5px 10px 5px; 
+            padding: 0px 0px 0px 0px; 
             margin-bottom: 10px;
         }
         .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
-        .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
+        .mgr-txt { font-size: 1.1rem; font-weight: bold; }
         
         .data-column { 
             background: #ffffff; 
@@ -156,7 +156,7 @@ def run(load_data_func):
                     <div class="ar-container">
                         <div class="header-row">
                             <span class="title-txt">{row['name']}</span>
-                            <span class="mgr-txt">담당: {row['mgr']}</span>
+                            <span class="mgr-txt">🙍‍♂️ {row['mgr']}</span>
                         </div>
                 """, unsafe_allow_html=True)
 
