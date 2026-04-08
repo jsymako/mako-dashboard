@@ -42,8 +42,8 @@ with st.sidebar:
         default_index=0,           
         styles={
             "container": {"padding": "0!important"},
-            "icon": {"color": "#333", "font-size": "25px"}, 
-            "nav-link": {"font-size": "25px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
+            "icon": {"color": "#333", "font-size": "20px"}, 
+            "nav-link": {"font-size": "20px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
             "nav-link-selected": {"background-color": "#d9534f", "color": "white"},
         }
     )
