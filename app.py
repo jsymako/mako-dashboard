@@ -51,11 +51,11 @@ with st.sidebar:
         div[data-testid="stPills"] button {
             width: 100% !important; /* 가로 길이를 사이드바에 꽉 차게 */
             justify-content: flex-start !important; /* 글자를 왼쪽으로 정렬 (가운데 정렬 원하시면 center로 변경) */
-            padding-left: 20px !important; /* 왼쪽 여백 */
-            border-radius: 8px !important; /* 모서리 둥글기 (0으로 하면 네모난 버튼이 됨) */
-            border: 1px solid #dddddd !important; /* 테두리 굵기와 색상 */
+            padding-left: 30px !important; /* 왼쪽 여백 */
+            border-radius: 4px !important; /* 모서리 둥글기 (0으로 하면 네모난 버튼이 됨) */
+            border: 2px solid #dddddd !important; /* 테두리 굵기와 색상 */
             background-color: #ffffff !important; /* 평상시 배경색 */
-            font-size: 1.05rem !important; /* 글자 크기 */
+            font-size: 2.05rem !important; /* 글자 크기 */
             transition: all 0.2s ease-in-out !important; /* 마우스 올릴 때 부드러운 효과 */
         }
 
