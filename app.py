@@ -27,27 +27,28 @@ def load_sheet_data(worksheet_name):
     df = pd.DataFrame(data[1:], columns=data[0])
     return df
 
-st.sidebar.image("mako_logo.png", use_container_width=True)
 
-st.sidebar.title("통합관리시스템")
 
-main_menu = option_menu(
-        menu_title="통합관리",      # 메뉴 제목
+with st.sidebar:
+    # 로고가 있다면 아래 주석을 풀고 사용하세요
+    st.image("mako_logo.png", use_container_width=True) 
+    
+    # ⚠️ 아래 main_menu 변수는 무조건 들여쓰기(Tab 1번)가 되어 있어야 합니다!
+    main_menu = option_menu(
+        menu_title="통합관리",      
         options=["자사 재고", "쿠팡 재고", "판매 현황", "거래처 현황", "채권 분석"],
-        icons=["box-seam", "rocket", "graph-up", "people", "credit-card"], # 부트스트랩 아이콘 이름
-        menu_icon="cast",          # 메인 메뉴 아이콘
-        default_index=0,           # 기본 선택 인덱스
+        icons=["box-seam", "rocket", "graph-up", "people", "credit-card"], 
+        menu_icon="cast",          
+        default_index=0,           
         styles={
             "container": {"padding": "0!important", "background-color": "#fafafa"},
             "icon": {"color": "#333", "font-size": "18px"}, 
             "nav-link": {"font-size": "15px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
-            "nav-link-selected": {"background-color": "#d9534f", "color": "white"}, # 👈 선택된 메뉴 색상 (빨간색 톤)
+            "nav-link-selected": {"background-color": "#d9534f", "color": "white"},
         }
     )
-
 st.sidebar.markdown("---")
 
-# 🚀 2. if 조건문도 메뉴판 글씨와 100% 동일하게 맞춰줍니다.
 if main_menu == "자사 재고":
     own_stock.run(load_sheet_data) 
 elif main_menu == "쿠팡 재고":
@@ -58,7 +59,6 @@ elif main_menu == "거래처 현황":
     trade_trend.run(load_sheet_data)
 elif main_menu == "채권 분석":
     ar_trend.run(load_sheet_data)
-
 
 
 
