@@ -35,15 +35,15 @@ with st.sidebar:
     
     # ⚠️ 아래 main_menu 변수는 무조건 들여쓰기(Tab 1번)가 되어 있어야 합니다!
     main_menu = option_menu(
-        menu_title="통합관리",      
+        menu_title="통합관리시스템",      
         options=["자사 재고", "쿠팡 재고", "판매 현황", "거래처 현황", "채권 분석"],
         icons=["box-seam", "rocket", "graph-up", "people", "credit-card"], 
         menu_icon="cast",          
         default_index=0,           
         styles={
-            "container": {"padding": "0!important", "background-color": "#fafafa"},
-            "icon": {"color": "#333", "font-size": "18px"}, 
-            "nav-link": {"font-size": "15px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
+            "container": {"padding": "0!important"},
+            "icon": {"color": "#333", "font-size": "25px"}, 
+            "nav-link": {"font-size": "25px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
             "nav-link-selected": {"background-color": "#d9534f", "color": "white"},
         }
     )
