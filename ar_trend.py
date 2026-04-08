@@ -9,8 +9,8 @@ def run(load_data_func):
     try:
         with open("sales_trend.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-        except FileNotFoundError:
-            pass
+    except FileNotFoundError:
+        pass
         
     # 🚀 요청하신 담당자 리스트로만 딱 고정 (008 등 제외)
     MANAGER_MAP = {
