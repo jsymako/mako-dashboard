@@ -5,6 +5,13 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
+
+    try:
+        with open("sales_trend.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+        
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
         "00026": "신의명", "007": "정상영", "009": "이경옥"
@@ -43,13 +50,13 @@ def run(load_data_func):
             justify-content: space-between;
         }
         .col-title { 
-            font-size: 1.3rem; font-weight: 900; margin-bottom: 15px; 
+            font-size: 1.3rem; font-weight: 600; margin-bottom: 15px; 
             text-align: center; color: #000; border-bottom: 3px solid #333; padding-bottom: 5px; 
         }
         .row-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         
         .label-xl { font-size: 1.1rem; color: #555; font-weight: 600; }
-        .val-xl { font-size: 1.4rem; font-weight: 900; color: #111; }
+        .val-xl { font-size: 1.4rem; font-weight: 600; color: #111; }
         
         .diff-up { color: #d9534f; font-weight: bold; font-size: 1.0rem; }
         .diff-down { color: #0055ff; font-weight: bold; font-size: 1.0rem; } 
