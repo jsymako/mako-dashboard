@@ -22,13 +22,7 @@ def run(load_data_func):
     # 🎨 [CSS] 헤더 라인 제거 및 글자 크기 극대화
     st.markdown("""
         <style>
-        .ar-container {
-            border: 2px solid #222;
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #fff;
-        }
+        
         /* 헤더 박스 라인 제거 및 슬림화 */
         .header-row {
             display: flex;
