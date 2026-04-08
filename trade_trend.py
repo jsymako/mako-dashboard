@@ -38,11 +38,10 @@ def run(load_data_func):
         df_trade['월'] = df_trade['일자'].dt.strftime('%Y년 %m월')
 
         # 2. 사이드바 필터
-        st.sidebar.markdown("### 🔍 조회 조건")
         
         trader_list = sorted(list(df_trade['거래처명'].dropna().unique()))
         selected_traders = st.sidebar.multiselect(
-            "1. 거래처 선택 (검색 가능)", 
+            "거래처 선택", 
             options=trader_list,
             default=[],
             placeholder="비워두면 전체 거래처 조회"
@@ -51,10 +50,10 @@ def run(load_data_func):
         temp_df = df_trade if not selected_traders else df_trade[df_trade['거래처명'].isin(selected_traders)]
         
         brand_list = ["전체보기"] + sorted(list(temp_df['브랜드'].dropna().unique()))
-        selected_brand = st.sidebar.selectbox("2. 브랜드 선택", brand_list)
+        selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
 
         st.sidebar.markdown("---")
-        view_mode = st.sidebar.radio("3. 분석 모드", ["월별 현황", "일별 현황"], index=0)
+        view_mode = st.sidebar.radio("분석 모드", ["월별 현황", "일별 현황"], index=0)
 
         # 공통 필터 적용
         filtered_df = df_trade.copy()
