@@ -5,24 +5,16 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
-
-    try:
-        with open("sales_trend.css", "r", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
-        
-    # 🚀 요청하신 담당자 리스트로만 딱 고정 (008 등 제외)
+    # 🚀 요청하신 담당자 리스트 고정
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
         "00026": "신의명", "007": "정상영", "009": "이경옥"
     }
     MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 헤더 라인 제거 및 글자 크기 극대화
+    # 🎨 [CSS] 겹침 현상 해결 및 선 제거
     st.markdown("""
         <style>
-
         .ar-container {
             border: 2px solid #222;
             border-radius: 10px;
@@ -30,8 +22,6 @@ def run(load_data_func):
             margin-bottom: 10px;
             background-color: #fff;
         }
-        
-         /* 헤더 박스 라인 제거 및 슬림화 */
         .header-row {
             display: flex;
             align-items: center;
@@ -39,17 +29,16 @@ def run(load_data_func):
             padding: 0px 5px 0px 5px; 
             margin-bottom: 0px;
         }
-       
         .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
         .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
         
-        /* 데이터 박스 디자인 */
+        /* 🚀 데이터 박스 높이 연장 (200px -> 240px) 하여 겹침 해결 */
         .data-column { 
             background: #ffffff; 
             border: 1px solid #e0e0e0; 
             border-radius: 8px; 
             padding: 15px;
-            height: 200px; /* 높이 고정 */
+            height: 240px; 
         }
         .col-title { 
             font-size: 1.3rem; font-weight: 900; margin-bottom: 15px; 
@@ -57,7 +46,6 @@ def run(load_data_func):
         }
         .row-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         
-        /* 대왕 글자 설정 */
         .label-xl { font-size: 1.1rem; color: #555; font-weight: 600; }
         .val-xl { font-size: 1.4rem; font-weight: 900; color: #111; }
         
@@ -77,13 +65,11 @@ def run(load_data_func):
         df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
 
     uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
-
     if not uploaded_file:
         st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
         return
 
     try:
-        # 1. 데이터 로드 및 "누계" 행 사전 차단 🛡️
         if uploaded_file.name.endswith('.csv'):
             try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
             except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
@@ -94,7 +80,6 @@ def run(load_data_func):
         df_raw.columns = df_raw.iloc[header_idx]
         df = df_raw.iloc[header_idx+1:].reset_index(drop=True)
         
-        # "소계", "누계", "합계" 등 불필요한 행 제거
         df = df[~df['거래처명'].astype(str).str.contains('계|합계|누계', na=False)]
         df['거래처명'] = df['거래처명'].ffill()
         
@@ -110,18 +95,12 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
-        # -----------------------------------------------------------------
-        # 2. 사이드바 (누락된 체크박스 및 정렬 조건 복구)
-        # -----------------------------------------------------------------
+        # 사이드바
         st.sidebar.subheader("🔍 필터")
         valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
         sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
-        
-        # 🚀 복구 완료: 잔액 0원 숨기기 체크박스
-        hide_zero = st.sidebar.checkbox("당월 잔액 0원 숨기기", value=True)
+        hide_zero = st.sidebar.checkbox("✅ 당월 잔액 0원 숨기기", value=True)
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
-        
-        # 🚀 복구 완료: DSO 위험순 정렬 추가
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
         cards_data = []
@@ -134,7 +113,6 @@ def run(load_data_func):
             d0 = get_dso(0)
             curr = group[group['기준월'] == m0].iloc[0]
             
-            # 🚀 필터링 로직 수정 (체크박스 반영)
             if hide_zero and curr['잔액'] <= 0: continue
             if d0 < min_dso: continue
             if sel_m != "전체보기" and curr[manager_col] != sel_m: continue
@@ -152,7 +130,6 @@ def run(load_data_func):
 
         final_df = pd.DataFrame(cards_data)
         if not final_df.empty:
-            # 🚀 정렬 로직 수정 (DSO 정렬 반영)
             if sort_opt == "잔액순":
                 final_df = final_df.sort_values('j0', ascending=False)
             elif sort_opt == "DSO 위험순":
@@ -160,7 +137,6 @@ def run(load_data_func):
             else:
                 final_df = final_df.sort_values('name')
 
-            # 전체 요약
             c1, c2, c3 = st.columns(3)
             c1.metric("💰 총 미수잔액", f"{int(final_df['j0'].sum() / 10000):,}만")
             c2.metric("📈 당월 총 매출", f"{int(final_df['m0'].sum() / 10000):,}만")
@@ -199,6 +175,7 @@ def run(load_data_func):
 
                     for col, title, m, s, j, d, j_diff in month_data:
                         with col:
+                            # 🚀 DSO 윗부분의 불필요한 점선(dashed line) 제거 및 여백 확보
                             st.markdown(f"""
                                 <div class="data-column">
                                     <div class="col-title">{title}</div>
@@ -206,7 +183,7 @@ def run(load_data_func):
                                     <div class="row-item"><span class="label-xl">수금</span><span class="val-xl">{int(s):,}</span></div>
                                     <div class="row-item"><span class="label-xl">잔액</span><span class="val-xl">{int(j):,}</span></div>
                                     <div style="text-align:right; font-size:0.9rem; height:18px;">{j_diff}</div>
-                                    <div style="text-align:center; margin-top:12px; border-top:1px dashed #ccc; padding-top:12px;">
+                                    <div style="text-align:center; margin-top:15px;">
                                         {get_dso_html(d)}
                                     </div>
                                 </div>
@@ -216,7 +193,6 @@ def run(load_data_func):
                     st.markdown('<p style="font-size:1.0rem; color:#000; text-align:center; font-weight:900;">📈 12개월 추이</p>', unsafe_allow_html=True)
                     st.line_chart(row['trend'], height=170, use_container_width=True)
 
-                # 🚀 메모 저장
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
                 m_col, b_col = st.columns([6, 1])
