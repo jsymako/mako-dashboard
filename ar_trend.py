@@ -7,6 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 def run(load_data_func):
 
 
+
         
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
