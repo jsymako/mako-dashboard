@@ -63,8 +63,8 @@ def run(load_data_func):
     # =================================================================
     # 🚀 [UI 혁신] 뚱뚱한 박스를 안 보이게 접어두는 얇은 바(Expander) 적용
     # =================================================================
-    with st.expander("📂 분석할 이카운트 엑셀 파일 업로드 (여기를 클릭하세요!)", expanded=True):
-        uploaded_file = st.file_uploader("", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
+    
+    uploaded_file = st.file_uploader("", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
 
     if not uploaded_file:
         st.info("👆 위 탭을 열어서 파일을 끌어다 놓아주세요. (글자 겹침 문제가 완벽히 사라집니다.)")
