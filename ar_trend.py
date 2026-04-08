@@ -6,7 +6,12 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
 
-
+# 🚀 방금 만든 안전한 'ar_trend.css'를 불러옵니다.
+    try:
+        with open("ar_trend.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
 
         
     MANAGER_MAP = {
