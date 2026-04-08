@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+from streamlit_option_menu import option_menu # 👈 완벽한 세로 메뉴를 위한 라이브러리
 
 # 🚀 메뉴별 파일 임포트
 import own_stock
@@ -27,95 +28,75 @@ def load_sheet_data(worksheet_name):
     return df
 
 # -----------------------------------------------------------------
-# 🚀 1. 사이드바 구성 (로고 + Pills 메뉴 + 절대 실패 없는 CSS)
+# 🚀 1. 사이드바 열기/닫기 글자 "완전 박멸" CSS
+# -----------------------------------------------------------------
+st.markdown("""
+    <style>
+    /* 기존 버튼 안의 모든 글자, 아이콘(SVG)을 완전히 삭제하고 깔끔한 ❯ 화살표만 남김 */
+    [data-testid="collapsedControl"] {
+        color: transparent !important;
+        background: transparent !important;
+    }
+    [data-testid="collapsedControl"] * {
+        display: none !important; 
+    }
+    [data-testid="collapsedControl"]::after {
+        content: "❯" !important;
+        font-size: 24px !important;
+        font-weight: 900 !important;
+        color: #333333 !important;
+        display: block !important;
+        margin-left: 10px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------------------------------
+# 🚀 2. 사이드바 구성 (스트레스 없는 완벽한 세로 메뉴)
 # -----------------------------------------------------------------
 with st.sidebar:
     st.image("mako_logo.png", use_container_width=True) 
     st.title("통합관리")
 
-    st.markdown("""
-        <style>
-        /* =========================================================
-           🚨 1. 사이드바 열기 글자 완벽 삭제 & 아이콘만 살리기
-        ========================================================= */
-        [data-testid="collapsedControl"] {
-            color: transparent !important;
-            background-color: transparent !important;
+    # CSS 꼼수 없이 자체적으로 완벽하게 세로 정렬 및 디자인을 지원하는 메뉴!
+    main_menu = option_menu(
+        menu_title=None, # "MENU"라는 글자 숨김 (더 깔끔함)
+        options=["📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "🤝 거래처 현황", "💳 채권 분석"],
+        icons=["", "", "", "", ""], # 이모지를 썼으므로 자체 아이콘은 뺌
+        default_index=0,
+        styles={
+            # 메뉴 배경 
+            "container": {"padding": "0!important", "background-color": "transparent", "border": "none"},
+            # 개별 버튼 폰트 및 박스 디자인 (여기서 수치만 바꾸시면 100% 적용됩니다)
+            "nav-link": {
+                "font-size": "1.3rem",       # 👈 글자 크기 확실하게 커집니다
+                "text-align": "left",        # 왼쪽 정렬
+                "margin": "0px 0px 10px 0px",# 버튼 사이 간격
+                "padding": "15px 20px",      # 버튼 내부 여백
+                "border-radius": "8px",      # 둥근 모서리
+                "border": "2px solid #ddd",  # 테두리
+                "color": "#333",             # 평상시 글자색
+                "font-weight": "bold"
+            },
+            # 마우스 올렸을 때
+            "nav-link-hover": {
+                "background-color": "#fdf2f2", 
+                "border-color": "#d9534f"
+            },
+            # 클릭해서 선택되었을 때 (빨간 배경 + 흰 글씨)
+            "nav-link-selected": {
+                "background-color": "#d9534f", 
+                "color": "white", 
+                "font-weight": "900", 
+                "border-color": "#d9534f"
+            },
         }
-        [data-testid="collapsedControl"] * {
-            color: transparent !important; 
-        }
-        [data-testid="collapsedControl"] svg {
-            color: #333333 !important; 
-            fill: #333333 !important;
-            width: 1.8rem !important;
-            height: 1.8rem !important;
-            visibility: visible !important;
-        }
-
-        /* =========================================================
-           🚨 2. 알약(Pills) 버튼 무조건 한 줄에 하나씩(세로) 정렬
-        ========================================================= */
-        div[data-testid="stPills"] > div {
-            display: flex !important;
-            flex-direction: column !important; /* 세로 정렬의 핵심 */
-            width: 100% !important;
-            gap: 8px !important;
-        }
-
-        /* 개별 버튼 가로 100% 꽉 채우기 및 디자인 */
-        div[data-testid="stPills"] button {
-            width: 100% !important; 
-            min-width: 100% !important; /* 강제로 가로를 꽉 채움 */
-            display: flex !important;
-            justify-content: flex-start !important; /* 텍스트 왼쪽 정렬 */
-            padding: 12px 20px !important; 
-            border-radius: 8px !important; 
-            border: 2px solid #dddddd !important; 
-            background-color: #ffffff !important; 
-        }
-        
-        div[data-testid="stPills"] button p {
-            font-size: 2.15rem !important; 
-            color: #333333 !important;
-            margin: 0 !important;
-        }
-
-        /* 마우스 올렸을 때 (Hover) */
-        div[data-testid="stPills"] button:hover {
-            border-color: #d9534f !important; 
-            background-color: #fdf2f2 !important; 
-        }
-
-        /* 선택된(Active) 상태일 때 */
-        div[data-testid="stPills"] button[aria-pressed="true"] {
-            background-color: #d9534f !important; 
-            border-color: #d9534f !important;
-        }
-        div[data-testid="stPills"] button[aria-pressed="true"] p {
-            font-weight: 800 !important; 
-            color: #ffffff !important; /* 흰색 글씨 */
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    main_menu = st.pills(
-        "MENU", 
-        [
-            "📦 자사 재고", 
-            "🚀 쿠팡 재고", 
-            "📈 판매 현황", 
-            "🤝 거래처 현황",
-            "💳 채권 분석"
-        ],
-        default="📦 자사 재고",
-        label_visibility="collapsed" 
     )
 
 st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------
-# 🚀 2. 메뉴 선택에 따른 화면 전환
+# 🚀 3. 메뉴 선택에 따른 화면 전환
 # -----------------------------------------------------------------
 if main_menu == "📦 자사 재고" or main_menu is None:
     own_stock.run(load_sheet_data) 
