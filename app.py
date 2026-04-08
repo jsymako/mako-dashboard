@@ -104,10 +104,10 @@ def render_dashboard():
     # 🚀 구글 시트 연결 상태 체크 (대표님의 실제 시트 이름에 맞게 수정 필요)
     # 속도를 위해 캐시된 데이터를 살짝 찔러보기만 합니다.
     modules = {
-        "자사 재고": {"sheet_name": "자사재고", "icon": "📦"},
-        "쿠팡 재고": {"sheet_name": "쿠팡재고", "icon": "🚀"},
-        "판매 현황": {"sheet_name": "판매현황", "icon": "📈"},
-        "거래처 현황": {"sheet_name": "거래처현황", "icon": "🤝"},
+        "자사 재고": {"sheet_name": "ecount_stock", "icon": "📦"},
+        "쿠팡 재고": {"sheet_name": "coupang_stock", "icon": "🚀"},
+        "판매 현황": {"sheet_name": "sales_record", "icon": "📈"},
+        "거래처 현황": {"sheet_name": "trade_record", "icon": "🤝"},
         "채권 분석": {"sheet_name": "ar_memo", "icon": "💳"} # ar_trend에서 쓰는 메모 시트 기준
     }
 
