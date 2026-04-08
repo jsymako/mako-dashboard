@@ -28,7 +28,7 @@ def load_sheet_data(worksheet_name):
 
 st.sidebar.image("mako_logo.png", use_container_width=True)
 
-st.sidebar.title("통합관리")
+st.sidebar.title("통합관리시스템")
 
 # 🚀 1. 메뉴판 글씨를 조건문과 똑같이 이모지까지 포함해서 적어줍니다! (거래처 현황도 🤝 추가)
 main_menu = st.sidebar.radio("MENU", [
