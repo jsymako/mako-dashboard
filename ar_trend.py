@@ -9,8 +9,8 @@ def run(load_data_func):
     try:
         with open("sales_trend.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
+        except FileNotFoundError:
+            pass
         
     # 🚀 요청하신 담당자 리스트로만 딱 고정 (008 등 제외)
     MANAGER_MAP = {
@@ -77,6 +77,7 @@ def run(load_data_func):
         df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
 
     uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
+
     if not uploaded_file:
         st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
         return
