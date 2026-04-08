@@ -18,7 +18,7 @@ def run(load_data_func):
     }
     MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 데이터 카드 디자인 + 크롬 번역기 충돌 완벽 차단 방어막
+    # 🎨 [CSS] 불필요한 업로더 꼼수 코드를 싹 날리고, 버튼 완전 삭제 코드로 교체!
     st.markdown("""
         <style>
         .ar-container {
@@ -64,39 +64,15 @@ def run(load_data_func):
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
 
-        /* =========================================================
-           🚨 파일 업로더 "자동 번역기 충돌(글자 겹침)" 완벽 차단 CSS
-           ========================================================= */
-        
-        /* 1. 드롭존 내의 쓸데없는 영어 텍스트(Drag and drop 등) 완전 숨김 */
-        [data-testid="stFileUploadDropzone"] > div > div > span,
-        [data-testid="stFileUploadDropzone"] > div > div > small {
+        /* 🚀 [최종 해결책] 겹침의 주범인 '버튼'과 '용량제한 글자'를 화면에서 아예 없애버림 */
+        [data-testid="stFileUploadDropzone"] button,
+        [data-testid="stFileUploadDropzone"] small {
             display: none !important;
         }
-
-        /* 2. 문제의 영어 버튼 글자 크기를 0으로 만들어서 번역기 귀신 삭제 */
-        [data-testid="stFileUploadDropzone"] button {
-            font-size: 0px !important; 
-            color: transparent !important;
-        }
-        
-        /* 기존 버튼 안의 태그 내용물까지 전부 삭제 */
-        [data-testid="stFileUploadDropzone"] button * {
-            display: none !important;
-        }
-
-        /* 3. 우리가 원하는 깔끔한 한글 직접 박아넣기 */
-        [data-testid="stFileUploadDropzone"] button::after {
-            content: "📂 엑셀 파일 선택하기" !important;
-            font-size: 14px !important;
-            color: #333 !important;
-            display: block !important;
-            visibility: visible !important;
-        }
-
-        /* 4. 파일 업로드 후 나타나는 'adc' 같은 잔여 텍스트 차단 */
-        [data-testid="stFileUploader"] label {
-            display: none !important;
+        /* 박스를 조금 더 슬림하게 */
+        [data-testid="stFileUploadDropzone"] {
+            padding: 20px !important;
+            background-color: #f8f9fa;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -110,7 +86,7 @@ def run(load_data_func):
 
     uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
     if not uploaded_file:
-        st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
+        st.info("📊 위 점선 박스를 클릭하여 이카운트 엑셀 파일을 업로드해 주세요.")
         return
 
     try:
