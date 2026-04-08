@@ -64,16 +64,21 @@ def run(load_data_func):
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
 
-        /* 파일 업로더 버튼 글자 겹침 강제 해결 */
+        /* 🚀 파일 업로더 버튼 글자 겹침 완벽 해결 */
         [data-testid="stFileUploader"] button {
-            color: transparent !important; /* 기존 겹치는 글자 투명하게 숨기기 */
+            color: transparent !important; 
+            position: relative !important; /* 여기가 핵심! 버튼을 기준점으로 고정 */
         }
         [data-testid="stFileUploader"] button::after {
-            content: "파일 선택"; /* 원하는 버튼 이름으로 변경 가능 */
+            content: "파일 선택"; 
             color: #333 !important;
             position: absolute;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
+            white-space: nowrap; /* 글자가 밑으로 깨지지 않게 방지 */
+            font-size: 1rem;
+            font-weight: 600;
         }
         </style>
     """, unsafe_allow_html=True)
