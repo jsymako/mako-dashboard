@@ -29,35 +29,43 @@ def load_sheet_data(worksheet_name):
 
 
 
+# -----------------------------------------------------------------
+# 🚀 1. 사이드바 구성 (로고 + Pills 메뉴)
+# -----------------------------------------------------------------
 with st.sidebar:
     # 로고가 있다면 아래 주석을 풀고 사용하세요
     st.image("mako_logo.png", use_container_width=True) 
     
-    # ⚠️ 아래 main_menu 변수는 무조건 들여쓰기(Tab 1번)가 되어 있어야 합니다!
-    main_menu = option_menu(
-             
-        options=["자사 재고", "쿠팡 재고", "판매 현황", "거래처 현황", "채권 분석"],
-        icons=["box-seam", "rocket", "graph-up", "people", "credit-card"], 
-        menu_icon="cast",          
-        default_index=0,           
-        styles={
-            "container": {"padding": "0!important"},
-            "icon": {"color": "#333", "font-size": "20px"}, 
-            "nav-link": {"font-size": "20px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
-            "nav-link-selected": {"background-color": "#d9534f", "color": "white"},
-        }
+    st.title("통합관리")
+    
+    # 🚀 트렌디한 알약(Pills) 모양 버튼 적용!
+    main_menu = st.pills(
+        "MENU", 
+        [
+            "📦 자사 재고", 
+            "🚀 쿠팡 재고", 
+            "📈 판매 현황", 
+            "🤝 거래처 현황",
+            "💳 채권 분석"
+        ],
+        default="📦 자사 재고" # 처음 켰을 때 기본 선택값
     )
+
 st.sidebar.markdown("---")
 
-if main_menu == "자사 재고":
+# -----------------------------------------------------------------
+# 🚀 2. 메뉴 선택에 따른 화면 전환 (이모지 포함 필수!)
+# -----------------------------------------------------------------
+# 아무것도 선택하지 않았을 때(None) 에러가 나지 않도록 방어 코드 추가
+if main_menu == "📦 자사 재고" or main_menu is None:
     own_stock.run(load_sheet_data) 
-elif main_menu == "쿠팡 재고":
+elif main_menu == "🚀 쿠팡 재고":
     coupang_stock.run(load_sheet_data)
-elif main_menu == "판매 현황":
+elif main_menu == "📈 판매 현황":
     sales_trend.run(load_sheet_data)
-elif main_menu == "거래처 현황":
+elif main_menu == "🤝 거래처 현황":
     trade_trend.run(load_sheet_data)
-elif main_menu == "채권 분석":
+elif main_menu == "💳 채권 분석":
     ar_trend.run(load_sheet_data)
 
 
