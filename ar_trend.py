@@ -24,7 +24,7 @@ def run(load_data_func):
         .ar-container {
             border: 2px solid #222;
             border-radius: 10px;
-            padding: 15px;
+            padding: 5px;
             margin-bottom: 20px;
             background-color: #fff;
         }
@@ -33,7 +33,7 @@ def run(load_data_func):
             align-items: center;
             gap: 15px;
             padding: 0px 0px 0px 0px; 
-            margin-bottom: 10px;
+            margin-bottom: 0px;
         }
         .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
         .mgr-txt { font-size: 1.1rem; font-weight: bold; }
