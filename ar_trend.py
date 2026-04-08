@@ -63,35 +63,58 @@ def run(load_data_func):
         .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-
-        /* 🚀 파일 업로더를 얇고 세련된 '슬림 바' 형태로 디자인 완전 변경 */
-        [data-testid="stFileUploadDropzone"] {
-            padding: 2px 15px !important; /* 위아래 여백을 대폭 줄여서 얇은 바(Bar) 형태로 만듦 */
-            min-height: 50px !important;  /* 뚱뚱한 박스 높이 압축 */
-            background-color: #f8f9fa !important; /* 깔끔한 연회색 배경 */
-            border: 2px dashed #ced4da !important; /* 세련된 점선 */
-            border-radius: 12px !important; /* 둥근 모서리 */
+/* 1. 업로드 박스를 아주 얇은 '한 줄'로 압축 */
+        section[data-testid="stFileUploadDropzone"] {
+            min-height: 45px !important;
+            padding: 0px !important;
+            background-color: #f8f9fa !important;
+            border: 2px dashed #adb5bd !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             transition: all 0.2s ease !important;
         }
 
-        /* 마우스 올렸을 때 반응 */
-        [data-testid="stFileUploadDropzone"]:hover {
+        /* 2. Drag and drop 등 불필요한 텍스트 흔적도 없이 삭제 */
+        section[data-testid="stFileUploadDropzone"] > div > div {
+            display: none !important;
+        }
+
+        /* 3. 기존 버튼 글자(번역 충돌 원인) 투명하게 날리기 */
+        section[data-testid="stFileUploadDropzone"] button {
+            color: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: relative !important;
+        }
+
+        /* 4. 우리가 원하는 깔끔한 글자만 강제 주입 */
+        section[data-testid="stFileUploadDropzone"] button::after {
+            content: "📂 분석할 엑셀 파일 선택하기 (클릭)" !important;
+            color: #333333 !important;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.05rem !important;
+            font-weight: 700 !important;
+            white-space: nowrap !important;
+        }
+
+        /* 마우스 올렸을 때 색상 변화 */
+        section[data-testid="stFileUploadDropzone"]:hover {
             background-color: #e9ecef !important;
-            border-color: #adb5bd !important;
+            border-color: #495057 !important;
         }
 
-        /* 업로드 안내 문구 (Drag and drop...) 폰트 사이즈 조정 */
-        [data-testid="stFileUploadDropzone"] div {
-            font-size: 0.9rem !important;
-            color: #495057 !important;
+        /* 5. 🚨 업로드 완료 후 나타나는 [X] 삭제 버튼 보호 (절대 겹치지 않음) */
+        [data-testid="stUploadedFile"] button {
+            color: inherit !important;
         }
-
-        /* 🚀 업로드 완료 후 나타나는 파일 정보 박스 디자인 */
-        [data-testid="stUploadedFile"] {
-            border-radius: 8px !important;
-            background-color: #e3f2fd !important; /* 성공 느낌의 연한 파란색 배경 */
-            border: 1px solid #90caf9 !important;
-            margin-top: -10px !important; /* 공간 절약 */
+        [data-testid="stUploadedFile"] button::after {
+            display: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
