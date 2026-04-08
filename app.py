@@ -75,7 +75,7 @@ with st.sidebar:
                 "color": "#333", "font-weight": "normal"
             },
             "nav-link-hover": {"background-color": "#fdf2f2", "border-color": "#d9534f"},
-            "nav-link-selected": {"background-color": "#d9534f", "color": "white", "font-weight": "900", "border-color": "#d9534f"},
+            "nav-link-selected": {"background-color": "#d9534f", "color": "white", "font-weight": "600", "border-color": "#d9534f"},
         }
     )
 
