@@ -18,7 +18,7 @@ def run(load_data_func):
     }
     MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 데이터 카드 디자인만 남기고, 엉망이던 파일 업로드 CSS는 전면 삭제!
+    # 🎨 [CSS] 데이터 카드 디자인 + 크롬 번역기 충돌 완벽 차단 방어막
     st.markdown("""
         <style>
         .ar-container {
@@ -63,6 +63,41 @@ def run(load_data_func):
         .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+
+        /* =========================================================
+           🚨 파일 업로더 "자동 번역기 충돌(글자 겹침)" 완벽 차단 CSS
+           ========================================================= */
+        
+        /* 1. 드롭존 내의 쓸데없는 영어 텍스트(Drag and drop 등) 완전 숨김 */
+        [data-testid="stFileUploadDropzone"] > div > div > span,
+        [data-testid="stFileUploadDropzone"] > div > div > small {
+            display: none !important;
+        }
+
+        /* 2. 문제의 영어 버튼 글자 크기를 0으로 만들어서 번역기 귀신 삭제 */
+        [data-testid="stFileUploadDropzone"] button {
+            font-size: 0px !important; 
+            color: transparent !important;
+        }
+        
+        /* 기존 버튼 안의 태그 내용물까지 전부 삭제 */
+        [data-testid="stFileUploadDropzone"] button * {
+            display: none !important;
+        }
+
+        /* 3. 우리가 원하는 깔끔한 한글 직접 박아넣기 */
+        [data-testid="stFileUploadDropzone"] button::after {
+            content: "📂 엑셀 파일 선택하기" !important;
+            font-size: 14px !important;
+            color: #333 !important;
+            display: block !important;
+            visibility: visible !important;
+        }
+
+        /* 4. 파일 업로드 후 나타나는 'adc' 같은 잔여 텍스트 차단 */
+        [data-testid="stFileUploader"] label {
+            display: none !important;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -73,7 +108,6 @@ def run(load_data_func):
     except:
         df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
 
-    # 🚀 순정 업로더 사용 (번역기만 끄시면 글자 겹침 없이 아주 예쁘게 나옵니다)
     uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
     if not uploaded_file:
         st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
