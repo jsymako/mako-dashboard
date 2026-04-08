@@ -77,6 +77,17 @@ with st.sidebar:
             color: #ffffff !important; /* 선택되면 글자를 흰색으로 확 띄게 */
         }
 
+        
+        /* 🚀 사이드바 접기/펼치기 버튼에서 튀어나오는 불필요한 글자 완벽 제거 */
+        [data-testid="collapsedControl"] {
+            color: transparent !important; /* 텍스트(글자)를 완전히 투명하게 숨김 */
+        }
+        
+        [data-testid="collapsedControl"] svg {
+            color: #333333 !important; /* 대신 > 모양의 아이콘 색상은 진하게 복구 */
+            fill: #333333 !important;
+        }
+
         </style>
     """, unsafe_allow_html=True)
     
