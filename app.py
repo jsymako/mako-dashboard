@@ -82,22 +82,23 @@ with st.sidebar:
 st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------
-# 🚀 3. 메인 대시보드 (2열 구조 & 높이 고정)
+# 🚀 3. 메인 대시보드 (2열 구조 & 높이 고정 & 여백 추가)
 # -----------------------------------------------------------------
 def render_dashboard():
     st.title("🏠 통합재고관리 관제센터")
     st.markdown("각 데이터 연동 상태와 최근 크롤링 누락 여부를 확인합니다.")
     
-    # 🚀 CSS 업데이트: height 고정(230px) 및 내용물 위아래 분산 정렬(flex)
+    # 🚀 CSS 업데이트: margin-bottom을 추가하여 카드 자체가 아래로 여유를 가지게 함
     st.markdown("""
         <style>
         .dash-card {
             border: 1px solid #e0e0e0; 
             border-radius: 10px; 
             padding: 20px; 
+            margin-bottom: 10px; /* 🚀 위아래 카드 사이의 여백 추가 */
             background: #fff; 
             box-shadow: 2px 2px 10px rgba(0,0,0,0.05); 
-            height: 230px; /* 카드의 높이를 무조건 동일하게 고정 */
+            height: 230px; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -125,7 +126,7 @@ def render_dashboard():
     
     # 🚀 그리드를 2개씩 끊어서(2열) 출력
     for i in range(0, len(module_items), 2):
-        cols = st.columns(2) # 3열 -> 2열로 변경
+        cols = st.columns(2)
         for j in range(2):
             if i + j < len(module_items):
                 m_name, m_info = module_items[i + j]
@@ -137,7 +138,6 @@ def render_dashboard():
                         if df is not None and not df.empty:
                             date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일', '시간', '일시', '업데이트'])), None)
                             
-                            # 🎯 [자사 재고] 최근 업데이트 일시만
                             if m_info["type"] == "latest_only":
                                 latest_str = "확인 불가"
                                 if date_col:
@@ -158,7 +158,6 @@ def render_dashboard():
                                     </div>
                                 """, unsafe_allow_html=True)
 
-                            # 🎯 [나머지] 7일 누락일 체크
                             elif m_info["type"] == "missing_check":
                                 if date_col:
                                     parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
@@ -224,6 +223,9 @@ def render_dashboard():
                                 <div class="sub-text" style="color:red; font-size:0.8rem;">데이터 구조 오류가 발생했습니다.</div>
                             </div>
                         """, unsafe_allow_html=True)
+        
+        # 🚀 1행이 끝나면 물리적인 띄어쓰기(공백)를 강제로 추가하여 행간을 넓힘
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
 # 🚀 4. 메뉴 선택에 따른 화면 전환
