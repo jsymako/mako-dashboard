@@ -5,6 +5,13 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
+
+    try:
+        with open("sales_trend.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+        
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
         "00026": "신의명", "007": "정상영", "009": "이경옥"
@@ -102,7 +109,7 @@ def run(load_data_func):
         st.sidebar.subheader("🔍 필터")
         valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
         sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
-        hide_zero = st.sidebar.checkbox("✅ 당월 잔액 0원 숨기기", value=True)
+        hide_zero = st.sidebar.checkbox("당월 잔액 0원 숨기기", value=True)
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
