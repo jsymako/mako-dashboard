@@ -36,14 +36,13 @@ def run(load_data_func):
         df[['안전재고량', '최대판매가', '최소판매가']] = df[['안전재고량', '최대판매가', '최소판매가']].fillna(0)
 
         # 2. 사이드바 필터 설정
-        st.sidebar.markdown("### 🔍 조회 조건")
         brand_list = ["전체보기"] + sorted(list(df['브랜드'].dropna().unique()))
-        selected_brand = st.sidebar.selectbox("1. 브랜드 선택", brand_list)
+        selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
 
         # 🚀 [추가] 브랜드에 종속되는 품목 선택 기능
         prod_df = df if selected_brand == "전체보기" else df[df['브랜드'] == selected_brand]
         product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
-        selected_product = st.sidebar.selectbox("2. 품목 선택", product_list)
+        selected_product = st.sidebar.selectbox("품목 선택", product_list)
 
         st.sidebar.markdown("---")
 
