@@ -108,7 +108,7 @@ def render_dashboard():
         .status-ok { color: #5cb85c; font-weight: normal; font-size: 1.2rem; }
         .status-err { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
         .status-warn { color: #f0ad4e; font-weight: bold; font-size: 1.2rem; }
-        .sub-text { font-size: 0.9rem; margin-top: 5px; background: #f8f9fa; padding: 12px; border-radius: 6px; }
+        .sub-text { font-size: 1.1rem; margin-top: 5px; background: #f8f9fa; padding: 12px; border-radius: 6px; }
         </style>
     """, unsafe_allow_html=True)
 
