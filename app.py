@@ -70,9 +70,9 @@ with st.sidebar:
         styles={
             "container": {"padding": "0!important", "background-color": "transparent", "border": "none"},
             "nav-link": {
-                "font-size": "1.25rem", "text-align": "left", "margin": "0px 0px 8px 0px",
-                "padding": "12px 15px", "border-radius": "8px", "border": "2px solid #ddd", 
-                "color": "#333", "font-weight": "bold"
+                "font-size": "1.40rem", "text-align": "left", "margin": "0px 0px 8px 0px",
+                "padding": "10px 12px", "border-radius": "8px", "border": "2px solid #ddd", 
+                "color": "#333", "font-weight": "normal"
             },
             "nav-link-hover": {"background-color": "#fdf2f2", "border-color": "#d9534f"},
             "nav-link-selected": {"background-color": "#d9534f", "color": "white", "font-weight": "900", "border-color": "#d9534f"},
