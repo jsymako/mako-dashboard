@@ -5,20 +5,13 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
-
-    try:
-        with open("sales_trend.css", "r", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
-        
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
         "00026": "신의명", "007": "정상영", "009": "이경옥"
     }
     MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 자동 높이 조절(겹침 해결) 및 쨍한 파란색 적용
+    # 🎨 [CSS] 유지: 자동 높이 조절 및 파란색 적용
     st.markdown("""
         <style>
         .ar-container {
@@ -38,7 +31,6 @@ def run(load_data_func):
         .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
         .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
         
-        /* 🚀 겹침 완벽 해결: 고정 높이(height) 삭제, 최소 높이(min-height)와 flex 레이아웃 적용 */
         .data-column { 
             background: #ffffff; 
             border: 1px solid #e0e0e0; 
@@ -60,7 +52,6 @@ def run(load_data_func):
         .val-xl { font-size: 1.4rem; font-weight: 900; color: #111; }
         
         .diff-up { color: #d9534f; font-weight: bold; font-size: 1.0rem; }
-        /* 🚀 잔액 감소 시 눈에 확 띄는 쨍한 파란색 적용 */
         .diff-down { color: #0055ff; font-weight: bold; font-size: 1.0rem; } 
         .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
@@ -109,7 +100,7 @@ def run(load_data_func):
         st.sidebar.subheader("🔍 필터")
         valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
         sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
-        hide_zero = st.sidebar.checkbox("당월 잔액 0원 숨기기", value=True)
+        hide_zero = st.sidebar.checkbox("✅ 당월 잔액 0원 숨기기", value=True)
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
@@ -170,7 +161,6 @@ def run(load_data_func):
                     def get_diff_text(c, p):
                         diff = c - p
                         if diff == 0: return ""
-                        # 🚀 음수(감소)일 때 명확히 파란색 클래스(.diff-down) 지정
                         return f"<span class='diff-up'>(🔺{int(diff):,})</span>" if diff > 0 else f"<span class='diff-down'>(🔻{abs(int(diff)):,})</span>"
 
                     def get_dso_html(v):
@@ -186,7 +176,6 @@ def run(load_data_func):
 
                     for col, title, m, s, j, d, j_diff in month_data:
                         with col:
-                            # 🚀 박스를 상단부(데이터)와 하단부(DSO)로 나누어 Flex 공간을 꽉 채우게 만듦
                             st.markdown(f"""
                                 <div class="data-column">
                                     <div>
@@ -204,7 +193,8 @@ def run(load_data_func):
 
                 with col_graph:
                     st.markdown('<p style="font-size:1.0rem; color:#000; text-align:center; font-weight:900;">📈 12개월 추이</p>', unsafe_allow_html=True)
-                    st.line_chart(row['trend'], height=170, use_container_width=True)
+                    # 🚀 그래프의 높이를 170에서 240으로 늘려 옆 박스들과 높이 라인을 맞춤!
+                    st.line_chart(row['trend'], height=240, use_container_width=True)
 
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
