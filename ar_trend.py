@@ -70,7 +70,7 @@ def run(load_data_func):
             position: relative !important; /* 여기가 핵심! 버튼을 기준점으로 고정 */
         }
         [data-testid="stFileUploader"] button::after {
-            content: "파일 선택"; 
+            content: "파일 업로드"; 
             color: #333 !important;
             position: absolute;
             top: 50%;
@@ -83,7 +83,7 @@ def run(load_data_func):
         </style>
     """, unsafe_allow_html=True)
 
-    st.title("💳 채권 현황 3개월 통합 관제")
+    st.title("💳 채권 분석")
 
     try:
         df_memo_gs = load_data_func("ar_memo")
