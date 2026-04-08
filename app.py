@@ -98,7 +98,7 @@ def render_dashboard():
             margin-bottom: 10px; /* 🚀 위아래 카드 사이의 여백 추가 */
             background: #fff; 
             box-shadow: 2px 2px 10px rgba(0,0,0,0.05); 
-            height: 230px; 
+            height: 240px; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
