@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+from streamlit_option_menu import option_menu
 
 # 🚀 메뉴별 파일 임포트
 import own_stock
@@ -30,7 +31,7 @@ st.sidebar.image("mako_logo.png", use_container_width=True)
 
 st.sidebar.title("통합관리시스템")
 
-main_menu = main_menu(
+main_menu = option_menu(
         menu_title="통합관리",      # 메뉴 제목
         options=["자사 재고", "쿠팡 재고", "판매 현황", "거래처 현황", "채권 분석"],
         icons=["box-seam", "rocket", "graph-up", "people", "credit-card"], # 부트스트랩 아이콘 이름
