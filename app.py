@@ -26,6 +26,8 @@ def load_sheet_data(worksheet_name):
     df = pd.DataFrame(data[1:], columns=data[0])
     return df
 
+st.sidebar.image("logo.png", use_container_width=True)
+
 st.sidebar.title("통합관리")
 
 # 🚀 1. 메뉴판 글씨를 조건문과 똑같이 이모지까지 포함해서 적어줍니다! (거래처 현황도 🤝 추가)
