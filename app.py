@@ -26,7 +26,7 @@ def load_sheet_data(worksheet_name):
     df = pd.DataFrame(data[1:], columns=data[0])
     return df
 
-st.sidebar.image("logo.png", use_container_width=True)
+st.sidebar.image("mako_logo.png", use_container_width=True)
 
 st.sidebar.title("통합관리")
 
