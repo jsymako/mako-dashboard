@@ -18,36 +18,21 @@ def run(load_data_func):
     }
     MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 불필요한 업로더 꼼수 코드를 싹 날리고, 버튼 완전 삭제 코드로 교체!
+    # 🎨 [CSS] 데이터 카드 디자인 (업로더 관련 억지 CSS는 없습니다)
     st.markdown("""
         <style>
         .ar-container {
-            border: 2px solid #222;
-            border-radius: 10px;
-            padding: 5px;
-            margin-bottom: 20px;
-            background-color: #fff;
+            border: 2px solid #222; border-radius: 10px; padding: 5px; margin-bottom: 20px; background-color: #fff;
         }
         .header-row {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 0px 0px 0px 5px; 
-            margin-bottom: 0px;
+            display: flex; align-items: center; gap: 15px; padding: 0px 0px 0px 5px; margin-bottom: 0px;
         }
         .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
         .mgr-txt { font-size: 1.1rem; font-weight: bold; }
         
         .data-column { 
-            background: #ffffff; 
-            border: 1px solid #e0e0e0; 
-            border-radius: 8px; 
-            padding: 15px;
-            min-height: 260px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px;
+            min-height: 260px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;
         }
         .col-title { 
             font-size: 1.3rem; font-weight: 600; margin-bottom: 15px; 
@@ -63,17 +48,6 @@ def run(load_data_func):
         .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-
-        /* 🚀 [최종 해결책] 겹침의 주범인 '버튼'과 '용량제한 글자'를 화면에서 아예 없애버림 */
-        [data-testid="stFileUploadDropzone"] button,
-        [data-testid="stFileUploadDropzone"] small {
-            display: none !important;
-        }
-        /* 박스를 조금 더 슬림하게 */
-        [data-testid="stFileUploadDropzone"] {
-            padding: 20px !important;
-            background-color: #f8f9fa;
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -84,9 +58,14 @@ def run(load_data_func):
     except:
         df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
 
-    uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
+    # =================================================================
+    # 🚀 [UI 혁신] 뚱뚱한 박스를 안 보이게 접어두는 얇은 바(Expander) 적용
+    # =================================================================
+    with st.expander("📂 분석할 이카운트 엑셀 파일 업로드 (여기를 클릭하세요!)", expanded=True):
+        uploaded_file = st.file_uploader("", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
+
     if not uploaded_file:
-        st.info("📊 위 점선 박스를 클릭하여 이카운트 엑셀 파일을 업로드해 주세요.")
+        st.info("👆 위 탭을 열어서 파일을 끌어다 놓아주세요. (글자 겹침 문제가 완벽히 사라집니다.)")
         return
 
     try:
