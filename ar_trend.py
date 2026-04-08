@@ -5,40 +5,43 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
-    # 🚀 요청하신 담당자 리스트 고정
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
         "00026": "신의명", "007": "정상영", "009": "이경옥"
     }
     MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 겹침 현상 해결 및 선 제거
+    # 🎨 [CSS] 자동 높이 조절(겹침 해결) 및 쨍한 파란색 적용
     st.markdown("""
         <style>
         .ar-container {
             border: 2px solid #222;
             border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
             background-color: #fff;
         }
         .header-row {
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 0px 5px 0px 5px; 
-            margin-bottom: 0px;
+            padding: 0px 5px 10px 5px; 
+            margin-bottom: 10px;
         }
         .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
         .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
         
-        /* 🚀 데이터 박스 높이 연장 (200px -> 240px) 하여 겹침 해결 */
+        /* 🚀 겹침 완벽 해결: 고정 높이(height) 삭제, 최소 높이(min-height)와 flex 레이아웃 적용 */
         .data-column { 
             background: #ffffff; 
             border: 1px solid #e0e0e0; 
             border-radius: 8px; 
             padding: 15px;
-            height: 240px; 
+            min-height: 260px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .col-title { 
             font-size: 1.3rem; font-weight: 900; margin-bottom: 15px; 
@@ -50,10 +53,11 @@ def run(load_data_func):
         .val-xl { font-size: 1.4rem; font-weight: 900; color: #111; }
         
         .diff-up { color: #d9534f; font-weight: bold; font-size: 1.0rem; }
-        .diff-down { color: #0275d8; font-weight: bold; font-size: 1.0rem; }
+        /* 🚀 잔액 감소 시 눈에 확 띄는 쨍한 파란색 적용 */
+        .diff-down { color: #0055ff; font-weight: bold; font-size: 1.0rem; } 
         .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
-        .memo-section { margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; }
+        .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -95,7 +99,6 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
-        # 사이드바
         st.sidebar.subheader("🔍 필터")
         valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
         sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
@@ -160,6 +163,7 @@ def run(load_data_func):
                     def get_diff_text(c, p):
                         diff = c - p
                         if diff == 0: return ""
+                        # 🚀 음수(감소)일 때 명확히 파란색 클래스(.diff-down) 지정
                         return f"<span class='diff-up'>(🔺{int(diff):,})</span>" if diff > 0 else f"<span class='diff-down'>(🔻{abs(int(diff)):,})</span>"
 
                     def get_dso_html(v):
@@ -175,15 +179,17 @@ def run(load_data_func):
 
                     for col, title, m, s, j, d, j_diff in month_data:
                         with col:
-                            # 🚀 DSO 윗부분의 불필요한 점선(dashed line) 제거 및 여백 확보
+                            # 🚀 박스를 상단부(데이터)와 하단부(DSO)로 나누어 Flex 공간을 꽉 채우게 만듦
                             st.markdown(f"""
                                 <div class="data-column">
-                                    <div class="col-title">{title}</div>
-                                    <div class="row-item"><span class="label-xl">매출</span><span class="val-xl">{int(m):,}</span></div>
-                                    <div class="row-item"><span class="label-xl">수금</span><span class="val-xl">{int(s):,}</span></div>
-                                    <div class="row-item"><span class="label-xl">잔액</span><span class="val-xl">{int(j):,}</span></div>
-                                    <div style="text-align:right; font-size:0.9rem; height:18px;">{j_diff}</div>
-                                    <div style="text-align:center; margin-top:15px;">
+                                    <div>
+                                        <div class="col-title">{title}</div>
+                                        <div class="row-item"><span class="label-xl">매출</span><span class="val-xl">{int(m):,}</span></div>
+                                        <div class="row-item"><span class="label-xl">수금</span><span class="val-xl">{int(s):,}</span></div>
+                                        <div class="row-item"><span class="label-xl">잔액</span><span class="val-xl">{int(j):,}</span></div>
+                                        <div style="text-align:right; font-size:0.9rem; min-height:22px;">{j_diff}</div>
+                                    </div>
+                                    <div style="text-align:center; margin-top:10px; border-top:1px dashed #ccc; padding-top:12px;">
                                         {get_dso_html(d)}
                                     </div>
                                 </div>
