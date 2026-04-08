@@ -5,6 +5,13 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
+
+    try:
+        with open("sales_trend.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+        
     # 🚀 요청하신 담당자 리스트로만 딱 고정 (008 등 제외)
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
@@ -107,7 +114,7 @@ def run(load_data_func):
         sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
         
         # 🚀 복구 완료: 잔액 0원 숨기기 체크박스
-        hide_zero = st.sidebar.checkbox("✅ 당월 잔액 0원 숨기기", value=True)
+        hide_zero = st.sidebar.checkbox("당월 잔액 0원 숨기기", value=True)
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         
         # 🚀 복구 완료: DSO 위험순 정렬 추가
