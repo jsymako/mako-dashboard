@@ -103,7 +103,7 @@ def render_dashboard():
             flex-direction: column;
             justify-content: space-between;
         }
-        .dash-title { font-size: 1.25rem; font-weight: 600; color: #111; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .dash-title { font-size: 1.4rem; font-weight: 600; color: #111; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .dash-stat { font-size: 1.4rem; font-weight: 600; color: #0275d8; }
         .status-ok { color: #5cb85c; font-weight: normal; font-size: 1.2rem; }
         .status-err { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
