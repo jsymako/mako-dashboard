@@ -67,7 +67,7 @@ def run(load_data_func):
     uploaded_file = st.file_uploader("", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
 
     if not uploaded_file:
-        st.info("👆 위 탭을 열어서 파일을 끌어다 놓아주세요. (글자 겹침 문제가 완벽히 사라집니다.)")
+        st.info("👆 이카운트 생성 DATA파일을 업로드 해주세요.")
         return
 
     try:
