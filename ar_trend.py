@@ -6,24 +6,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
 
-    try:
-        with open("sales_trend.css", "r", encoding="utf-8") as f:
-            st.markdown(f"""
-                <style>
-                {f.read()}
-                
-                /* 🚨 외부 CSS의 폰트 덮어쓰기로부터 스트림릿 기본 아이콘을 보호 (arrow_down, add 등 깨짐 완벽 방지) */
-                .material-symbols-rounded, .material-symbols-outlined, [data-testid="stIconMaterial"], .stIcon {{
-                    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Icons' !important;
-                    font-feature-settings: 'liga' !important;
-                    font-variant-ligatures: normal !important;
-                    text-transform: none !important;
-                    letter-spacing: normal !important;
-                }}
-                </style>
-            """, unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
+
         
     MANAGER_MAP = {
         "001": "이계성", "002": "이계흥", "004": "황일용",
