@@ -76,7 +76,7 @@ with st.sidebar:
         }
         
         div[data-testid="stPills"] button p {
-            font-size: 1.15rem !important; 
+            font-size: 2.15rem !important; 
             color: #333333 !important;
             margin: 0 !important;
         }
