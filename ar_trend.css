@@ -66,3 +66,74 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 
 /* 탭 메뉴 */
 button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !important; }
+
+/* =========================================
+   [4] 채권 분석 카드 내부 '글자' 미세 튜닝
+========================================= */
+
+/* 1. 거래처명 (ex. 주식회사 반창고) */
+.title-txt { 
+    font-size: 1.6rem !important;     /* 글자 크기 */
+    font-weight: 800 !important;      /* 글자 굵기 (400~900) */
+    color: #111111 !important;        /* 글자 색상 (완전 검은색은 #000) */
+    letter-spacing: -0.5px !important;/* 자간 (글자 사이 간격, 좁히면 묵직해 보임) */
+}
+
+/* 2. 담당자 이름 (ex. 👨‍💼 황일용) */
+.mgr-txt { 
+    font-size: 1.1rem !important; 
+    font-weight: 600 !important; 
+    color: #555555 !important;        /* 살짝 진한 회색으로 위계 조절 */
+    margin-left: 8px !important;      /* 거래처명과의 띄어쓰기 간격 */
+}
+
+/* 3. 카드 내부 월별 타이틀 (ex. 2026/02 (당월)) */
+.col-title { 
+    font-size: 1.3rem !important; 
+    font-weight: 700 !important; 
+    color: #000000 !important; 
+    border-bottom: 3px solid #333333 !important; /* 밑줄 굵기와 색상 */
+    padding-bottom: 8px !important;              /* 글자와 밑줄 사이의 간격 */
+    margin-bottom: 15px !important;              /* 밑줄과 아래 '매출' 글자 사이의 간격 */
+}
+
+/* 4. 라벨 (매출, 수금, 잔액) */
+.label-xl { 
+    font-size: 1.1rem !important; 
+    font-weight: 600 !important; 
+    color: #666666 !important;        /* 너무 튀지 않게 회색 처리 */
+}
+
+/* 5. 금액 숫자 (ex. 126,939,470) */
+.val-xl { 
+    font-size: 1.45rem !important; 
+    font-weight: 800 !important;      /* 숫자는 두껍게! */
+    color: #111111 !important; 
+    letter-spacing: -0.5px !important;/* 숫자는 자간을 좁혀야 가독성이 좋습니다 */
+}
+
+/* 6. 전월 대비 증감액 (🔻, 🔺) */
+.diff-up { color: #d9534f !important; font-weight: 700 !important; font-size: 0.95rem !important; }
+.diff-down { color: #0055ff !important; font-weight: 700 !important; font-size: 0.95rem !important; } 
+
+/* 7. 하단 DSO 신호등 및 회전일 텍스트 (ex. 🔴 275일) */
+.traffic-light { 
+    font-size: 1.4rem !important; 
+    margin-right: 5px !important; 
+    vertical-align: middle !important; 
+}
+.data-column b { /* '275일' 글자 타겟팅 */
+    font-size: 1.2rem !important; 
+    font-weight: 800 !important; 
+    color: #333333 !important; 
+    vertical-align: middle !important;
+}
+
+/* 8. 그래프 제목 (ex. 📈 12개월 추이) */
+.graph-title {
+    font-size: 1.1rem !important; 
+    color: #000000 !important; 
+    text-align: center !important; 
+    font-weight: 800 !important;
+    margin-bottom: 10px !important;
+}
