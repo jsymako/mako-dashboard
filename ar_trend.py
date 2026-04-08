@@ -64,21 +64,34 @@ def run(load_data_func):
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
 
-        /* 🚀 파일 업로더 버튼 글자 겹침 완벽 해결 (업로드 후 X 버튼 겹침 방지) */
-        [data-testid="stFileUploadDropzone"] button {
-            color: transparent !important; 
-            position: relative !important; 
+        /* 🚀 파일 업로더를 얇고 세련된 '슬림 바' 형태로 디자인 완전 변경 */
+        [data-testid="stFileUploadDropzone"] {
+            padding: 2px 15px !important; /* 위아래 여백을 대폭 줄여서 얇은 바(Bar) 형태로 만듦 */
+            min-height: 50px !important;  /* 뚱뚱한 박스 높이 압축 */
+            background-color: #f8f9fa !important; /* 깔끔한 연회색 배경 */
+            border: 2px dashed #ced4da !important; /* 세련된 점선 */
+            border-radius: 12px !important; /* 둥근 모서리 */
+            transition: all 0.2s ease !important;
         }
-        [data-testid="stFileUploadDropzone"] button::after {
-            content: "파일 업로드"; 
-            color: #333 !important;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            white-space: nowrap; 
-            font-size: 1rem;
-            font-weight: 600;
+
+        /* 마우스 올렸을 때 반응 */
+        [data-testid="stFileUploadDropzone"]:hover {
+            background-color: #e9ecef !important;
+            border-color: #adb5bd !important;
+        }
+
+        /* 업로드 안내 문구 (Drag and drop...) 폰트 사이즈 조정 */
+        [data-testid="stFileUploadDropzone"] div {
+            font-size: 0.9rem !important;
+            color: #495057 !important;
+        }
+
+        /* 🚀 업로드 완료 후 나타나는 파일 정보 박스 디자인 */
+        [data-testid="stUploadedFile"] {
+            border-radius: 8px !important;
+            background-color: #e3f2fd !important; /* 성공 느낌의 연한 파란색 배경 */
+            border: 1px solid #90caf9 !important;
+            margin-top: -10px !important; /* 공간 절약 */
         }
         </style>
     """, unsafe_allow_html=True)
