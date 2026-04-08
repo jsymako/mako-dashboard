@@ -23,14 +23,7 @@ def run(load_data_func):
     st.markdown("""
         <style>
         
-        /* 헤더 박스 라인 제거 및 슬림화 */
-        .header-row {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 0px 5px 0px 5px; 
-            margin-bottom: 0px;
-        }
+       
         .title-txt { font-size: 1.5rem; font-weight: 600; color: #000; }
         .mgr-txt { font-size: 1.1rem; color: #d9534f; font-weight: bold; }
         
