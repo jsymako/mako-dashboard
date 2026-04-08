@@ -96,10 +96,9 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
-        st.sidebar.subheader("🔍 필터")
         valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
         sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
-        hide_zero = st.sidebar.checkbox("✅ 당월 잔액 0원 숨기기", value=True)
+        hide_zero = st.sidebar.checkbox("당월 잔액 0원 숨기기", value=True)
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
