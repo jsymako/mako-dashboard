@@ -18,7 +18,7 @@ def run(load_data_func):
     }
     MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
 
-    # 🎨 [CSS] 유지: 자동 높이 조절 및 파란색 적용
+    # 🎨 [CSS] 데이터 카드 디자인만 남기고, 엉망이던 파일 업로드 CSS는 전면 삭제!
     st.markdown("""
         <style>
         .ar-container {
@@ -63,59 +63,6 @@ def run(load_data_func):
         .traffic-light { font-size: 1.5rem; margin-right: 5px; }
         
         .memo-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-/* 1. 업로드 박스를 아주 얇은 '한 줄'로 압축 */
-        section[data-testid="stFileUploadDropzone"] {
-            min-height: 45px !important;
-            padding: 0px !important;
-            background-color: #f8f9fa !important;
-            border: 2px dashed #adb5bd !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            transition: all 0.2s ease !important;
-        }
-
-        /* 2. Drag and drop 등 불필요한 텍스트 흔적도 없이 삭제 */
-        section[data-testid="stFileUploadDropzone"] > div > div {
-            display: none !important;
-        }
-
-        /* 3. 기존 버튼 글자(번역 충돌 원인) 투명하게 날리기 */
-        section[data-testid="stFileUploadDropzone"] button {
-            color: transparent !important;
-            background-color: transparent !important;
-            border: none !important;
-            width: 100% !important;
-            height: 100% !important;
-            position: relative !important;
-        }
-
-        /* 4. 우리가 원하는 깔끔한 글자만 강제 주입 */
-        section[data-testid="stFileUploadDropzone"] button::after {
-            content: "📂 분석할 엑셀 파일 선택하기 (클릭)" !important;
-            color: #333333 !important;
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.05rem !important;
-            font-weight: 700 !important;
-            white-space: nowrap !important;
-        }
-
-        /* 마우스 올렸을 때 색상 변화 */
-        section[data-testid="stFileUploadDropzone"]:hover {
-            background-color: #e9ecef !important;
-            border-color: #495057 !important;
-        }
-
-        /* 5. 🚨 업로드 완료 후 나타나는 [X] 삭제 버튼 보호 (절대 겹치지 않음) */
-        [data-testid="stUploadedFile"] button {
-            color: inherit !important;
-        }
-        [data-testid="stUploadedFile"] button::after {
-            display: none !important;
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -126,6 +73,7 @@ def run(load_data_func):
     except:
         df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
 
+    # 🚀 순정 업로더 사용 (번역기만 끄시면 글자 겹침 없이 아주 예쁘게 나옵니다)
     uploaded_file = st.file_uploader("파일 업로드", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
     if not uploaded_file:
         st.info("📊 분석할 이카운트 엑셀 파일을 업로드해 주세요.")
@@ -253,7 +201,6 @@ def run(load_data_func):
 
                 with col_graph:
                     st.markdown('<p style="font-size:1.0rem; color:#000; text-align:center; font-weight:900;">📈 12개월 추이</p>', unsafe_allow_html=True)
-                    # 🚀 그래프의 높이를 170에서 240으로 늘려 옆 박스들과 높이 라인을 맞춤!
                     st.line_chart(row['trend'], height=240, use_container_width=True)
 
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
