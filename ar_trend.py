@@ -83,13 +83,12 @@ def run(load_data_func):
         df_raw.columns = df_raw.iloc[header_idx]
         df = df_raw.iloc[header_idx+1:].reset_index(drop=True)
         
-        # 🚀 "소계", "누계", "합계" 등 불필요한 행 제거
+        # "소계", "누계", "합계" 등 불필요한 행 제거
         df = df[~df['거래처명'].astype(str).str.contains('계|합계|누계', na=False)]
         df['거래처명'] = df['거래처명'].ffill()
         
         manager_col = next((c for c in df.columns if '담당자' in str(c)), None)
         if manager_col:
-            # 🚀 하드코딩된 MANAGER_MAP에 있는 담당자만 유효하게 처리
             df[manager_col] = df[manager_col].ffill().astype(str).str.strip().apply(lambda x: MANAGER_MAP.get(x, "기타/미지정"))
 
         month_cols = [c for c in df.columns if '20' in str(c) and ('/' in str(c) or '-' in str(c))]
@@ -100,12 +99,19 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
-        # 2. 사이드바 (정해진 담당자만 노출)
+        # -----------------------------------------------------------------
+        # 2. 사이드바 (누락된 체크박스 및 정렬 조건 복구)
+        # -----------------------------------------------------------------
         st.sidebar.subheader("🔍 필터")
         valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
         sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
-        min_dso = st.sidebar.slider("DSO 필터", 0, 120, 45, 15)
-        sort_opt = st.sidebar.radio("정렬", ["잔액순", "가나다순"])
+        
+        # 🚀 복구 완료: 잔액 0원 숨기기 체크박스
+        hide_zero = st.sidebar.checkbox("✅ 당월 잔액 0원 숨기기", value=True)
+        min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
+        
+        # 🚀 복구 완료: DSO 위험순 정렬 추가
+        sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
         cards_data = []
         for trader, group in df_pivot.groupby('거래처명'):
@@ -116,7 +122,10 @@ def run(load_data_func):
             
             d0 = get_dso(0)
             curr = group[group['기준월'] == m0].iloc[0]
-            if d0 < min_dso or curr['잔액'] <= 0: continue
+            
+            # 🚀 필터링 로직 수정 (체크박스 반영)
+            if hide_zero and curr['잔액'] <= 0: continue
+            if d0 < min_dso: continue
             if sel_m != "전체보기" and curr[manager_col] != sel_m: continue
 
             p1 = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
@@ -132,7 +141,13 @@ def run(load_data_func):
 
         final_df = pd.DataFrame(cards_data)
         if not final_df.empty:
-            final_df = final_df.sort_values('j0', ascending=False) if sort_opt == "잔액순" else final_df.sort_values('name')
+            # 🚀 정렬 로직 수정 (DSO 정렬 반영)
+            if sort_opt == "잔액순":
+                final_df = final_df.sort_values('j0', ascending=False)
+            elif sort_opt == "DSO 위험순":
+                final_df = final_df.sort_values('d0', ascending=False)
+            else:
+                final_df = final_df.sort_values('name')
 
             # 전체 요약
             c1, c2, c3 = st.columns(3)
@@ -142,7 +157,6 @@ def run(load_data_func):
             st.markdown("---")
 
             for _, row in final_df.iterrows():
-                # 🚀 [디자인] 헤더 선만 남기고 외부 박스 제거
                 st.markdown(f"""
                     <div class="ar-container">
                         <div class="header-row">
