@@ -50,7 +50,6 @@ def run(load_data_func):
         status_list = ["전체보기", "부족", "품절", "과다", "적정"]
         selected_status = st.sidebar.selectbox("상태 필터", status_list, key="own_status_filter")
 
-        st.sidebar.markdown("---")
         months_to_look_back = st.sidebar.slider("판매 산출 기준 (개월)", 1, 12, 3, key="own_month_slider_v2")
 
         # 4. 날짜 계산 및 판매량 합산
