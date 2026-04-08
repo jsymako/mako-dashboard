@@ -85,7 +85,7 @@ st.sidebar.markdown("---")
 # 🚀 3. 메인 대시보드 (2열 구조 & 높이 고정 & 여백 추가)
 # -----------------------------------------------------------------
 def render_dashboard():
-    st.title("🏠 통합재고관리 관제센터")
+    st.title("마코펫 통합재고관리")
     st.markdown("각 데이터 연동 상태와 최근 크롤링 누락 여부를 확인합니다.")
     
     # 🚀 CSS 업데이트: margin-bottom을 추가하여 카드 자체가 아래로 여유를 가지게 함
@@ -105,7 +105,7 @@ def render_dashboard():
         }
         .dash-title { font-size: 1.25rem; font-weight: 800; color: #111; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .dash-stat { font-size: 1.4rem; font-weight: 900; color: #0275d8; }
-        .status-ok { color: #5cb85c; font-weight: bold; font-size: 0.95rem; }
+        .status-ok { color: #5cb85c; font-weight: normal; font-size: 1.95rem; }
         .status-err { color: #d9534f; font-weight: bold; font-size: 0.95rem; }
         .status-warn { color: #f0ad4e; font-weight: bold; font-size: 0.95rem; }
         .sub-text { font-size: 0.9rem; margin-top: 5px; background: #f8f9fa; padding: 12px; border-radius: 6px; }
