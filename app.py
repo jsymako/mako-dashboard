@@ -105,9 +105,9 @@ def render_dashboard():
         }
         .dash-title { font-size: 1.25rem; font-weight: 600; color: #111; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .dash-stat { font-size: 1.4rem; font-weight: 600; color: #0275d8; }
-        .status-ok { color: #5cb85c; font-weight: normal; font-size: 1.55rem; }
-        .status-err { color: #d9534f; font-weight: bold; font-size: 1.55rem; }
-        .status-warn { color: #f0ad4e; font-weight: bold; font-size: 1.55rem; }
+        .status-ok { color: #5cb85c; font-weight: normal; font-size: 1.2rem; }
+        .status-err { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
+        .status-warn { color: #f0ad4e; font-weight: bold; font-size: 1.2rem; }
         .sub-text { font-size: 0.9rem; margin-top: 5px; background: #f8f9fa; padding: 12px; border-radius: 6px; }
         </style>
     """, unsafe_allow_html=True)
