@@ -52,11 +52,11 @@ with st.sidebar:
         button[data-testid^="stBaseButton-pill"] {
             width: 100% !important; 
             justify-content: flex-start !important; /* 왼쪽 정렬 */
-            padding-left: 30px !important; /* 대표님이 설정하신 왼쪽 여백 */
+            padding-left: 10px !important; /* 왼쪽 여백 */
             border-radius: 8px !important; 
-            border: 2px solid #dddddd !important; /* 대표님이 설정하신 테두리 굵기 */
+            border: 2px solid #dddddd !important; /* 테두리 굵기 */
             background-color: #ffffff !important; 
-            font-size: 1.1rem !important; /* 2.05rem은 너무 클 수 있어 살짝 줄였습니다. 필요시 늘리세요! */
+            font-size: 2.0rem !important; /* 2.05rem은 너무 클 수 있어 살짝 줄였습니다. 필요시 늘리세요! */
             transition: all 0.2s ease-in-out !important; 
         }
 
@@ -73,7 +73,7 @@ with st.sidebar:
         }
         
         button[data-testid="stBaseButton-pillsActive"] p {
-            font-weight: 900 !important; 
+            font-weight: 600 !important; 
             color: #ffffff !important; /* 선택되면 글자를 흰색으로 확 띄게 */
         }
         </style>
