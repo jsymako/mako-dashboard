@@ -40,34 +40,41 @@ with st.sidebar:
     # 🎨 [CSS] 알약(Pills) 버튼 세로형 배치 및 커스텀 스타일링
     st.markdown("""
         <style>
-        /* 1. 알약 버튼들을 가로가 아닌 '세로(한 줄에 하나씩)'로 강제 정렬 */
-        div[data-testid="stPills"] > div {
+        /* 1. 알약 버튼을 감싸는 보이지 않는 부모 박스를 찾아 세로(Column)로 강제 정렬 */
+        div:has(> button[data-testid^="stBaseButton-pill"]) {
             display: flex !important;
             flex-direction: column !important; /* 세로 정렬의 핵심 */
-            gap: 8px !important; /* 버튼 사이의 위아래 간격 */
+            gap: 10px !important; /* 버튼 사이의 간격 */
+            width: 100% !important;
         }
 
-        /* 2. 개별 알약 버튼 디자인 (여기서 색상/모양을 마음대로 수정하세요!) */
-        div[data-testid="stPills"] button {
-            width: 100% !important; /* 가로 길이를 사이드바에 꽉 차게 */
-            justify-content: flex-start !important; /* 글자를 왼쪽으로 정렬 (가운데 정렬 원하시면 center로 변경) */
-            padding-left: 30px !important; /* 왼쪽 여백 */
-            border-radius: 4px !important; /* 모서리 둥글기 (0으로 하면 네모난 버튼이 됨) */
-            border: 2px solid #dddddd !important; /* 테두리 굵기와 색상 */
-            background-color: #ffffff !important; /* 평상시 배경색 */
-            font-size: 2.05rem !important; /* 글자 크기 */
-            transition: all 0.2s ease-in-out !important; /* 마우스 올릴 때 부드러운 효과 */
+        /* 2. 개별 알약 버튼 디자인 (정확한 버튼 고유 ID 타겟팅) */
+        button[data-testid^="stBaseButton-pill"] {
+            width: 100% !important; 
+            justify-content: flex-start !important; /* 왼쪽 정렬 */
+            padding-left: 30px !important; /* 대표님이 설정하신 왼쪽 여백 */
+            border-radius: 8px !important; 
+            border: 2px solid #dddddd !important; /* 대표님이 설정하신 테두리 굵기 */
+            background-color: #ffffff !important; 
+            font-size: 1.1rem !important; /* 2.05rem은 너무 클 수 있어 살짝 줄였습니다. 필요시 늘리세요! */
+            transition: all 0.2s ease-in-out !important; 
         }
 
         /* 3. 마우스를 올렸을 때(Hover)의 디자인 */
-        div[data-testid="stPills"] button:hover {
-            border-color: #d9534f !important; /* 마우스 올렸을 때 테두리 색상 */
-            background-color: #fdf2f2 !important; /* 마우스 올렸을 때 배경색 (연한 빨강) */
+        button[data-testid^="stBaseButton-pill"]:hover {
+            border-color: #d9534f !important; 
+            background-color: #fdf2f2 !important; 
         }
 
-        /* 4. 선택된(Active) 상태일 때 스트림릿 기본색(빨강 등)을 유지하면서 글자만 조정하고 싶을 때 */
-        div[data-testid="stPills"] button[aria-pressed="true"] p {
-            font-weight: 800 !important; /* 선택된 메뉴 글자를 아주 굵게! */
+        /* 4. 선택된(Active) 상태일 때의 버튼 및 글자 디자인 */
+        button[data-testid="stBaseButton-pillsActive"] {
+            background-color: #d9534f !important; /* 선택되면 배경을 빨간색으로 */
+            border-color: #d9534f !important;
+        }
+        
+        button[data-testid="stBaseButton-pillsActive"] p {
+            font-weight: 900 !important; 
+            color: #ffffff !important; /* 선택되면 글자를 흰색으로 확 띄게 */
         }
         </style>
     """, unsafe_allow_html=True)
