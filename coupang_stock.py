@@ -44,7 +44,7 @@ def run(load_data_func):
         product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
         selected_product = st.sidebar.selectbox("품목 선택", product_list)
 
-        st.sidebar.markdown("---")
+
 
         view_target = st.sidebar.radio("조회 항목", ["📦 재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
         
