@@ -13,6 +13,7 @@ import coupang_stock
 import sales_trend
 import trade_trend
 import ar_trend
+import sales_perf
 
 st.set_page_config(page_title="통합재고관리", page_icon="🏠", layout="wide")
 
