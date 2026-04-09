@@ -78,7 +78,7 @@ with st.sidebar:
             "nav-link-selected": {"background-color": "#404141","color": "white", "font-weight": "600", "border-color": "#868889"},
         }
     )
-
+    st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------
 # 🚀 3. 메인 대시보드 (2열 구조 & 높이 고정 & 여백 추가)
