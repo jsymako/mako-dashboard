@@ -66,13 +66,13 @@ with st.sidebar:
     main_menu = option_menu(
         menu_title=None, 
         options=["🏠 메인 요약", "📊 영업 실적", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "🤝 거래처 현황", "💳 채권 분석"],
-        icons=["", "", "", "", "", ""], 
+        icons=["", "", "", "", "", "", ""],
         default_index=0, 
         styles={
             "container": {"padding": "0!important", "background-color": "transparent", "border": "none"},
             "nav-link": {
-                "font-size": "1.40rem", "text-align": "left", "margin": "0px 0px 8px 0px",
-                "padding": "10px 6px", "border-radius": "8px", "border": "2px solid #d2d4d5", 
+                "font-size": "1.40rem", "text-align": "left", "margin": "0px 0px 6px 0px",
+                "padding": "4px 10px", "border-radius": "8px", "border": "2px solid #d2d4d5", 
                 "color": "#333", "font-weight": "normal"
             },
             "nav-link-hover": {"background-color": "#2b98d8", "border-color": "#2b98d8"},
