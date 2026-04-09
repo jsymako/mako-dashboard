@@ -7,7 +7,6 @@ import altair as alt
 import os
 import holidays
 
-
 def run(load_data_func):
     
     try:
@@ -54,7 +53,7 @@ def run(load_data_func):
         if selected_product != "전체보기":
             filtered_df = filtered_df[filtered_df['공식품목명'] == selected_product]
 
-        # 🚀 [복구 완료] 3. 모드별 날짜 세팅 및 필터링
+        # 3. 모드별 날짜 세팅 및 필터링
         today = datetime.date.today()
         if view_mode == "일별 현황":
             if "trend_start_date" not in st.session_state: 
@@ -72,6 +71,9 @@ def run(load_data_func):
 
         elif view_mode == "월별 현황":
             month_list = sorted(list(df_sales['월'].unique()))
+            if not month_list:
+                st.warning("데이터가 없습니다.")
+                return
             
             start_month = st.sidebar.selectbox("시작 월", month_list, index=max(0, len(month_list)-12))
             end_month = st.sidebar.selectbox("종료 월", month_list, index=len(month_list)-1)
@@ -91,28 +93,22 @@ def run(load_data_func):
             st.warning("선택하신 조건에 데이터가 없습니다.")
             return
 
-        
-
-        # 4. KPI 상단 바 (🚀 display_df 기반으로 계산)
+        # 4. KPI 상단 바
         total_amt = display_df['공급가액'].sum()
         total_qty = display_df['수량'].sum()
         
-        # 🚀 '만 원' 단위 환산
         total_amt_man = total_amt / 10000
         
         c1, c2, c3, c4 = st.columns(4)
         
         if view_mode == "수요 예측":
-            # [순서 변경] 1. 기간(기준) -> 2. 총 판매액 -> 3. 브랜드 -> 4. 총 수량
             c1.metric("📊 기준", "최근 12개월")
-            # delta 옵션에 실제 금액을 넣고 delta_color="off"를 주면 날짜처럼 밑에 작게 회색으로 표시됩니다!
             c2.metric("💰 총 판매액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
             c3.metric("🏷️ 브랜드", selected_brand)
         else:
             avg_amt = total_amt / diff_val if diff_val > 0 else 0
             avg_amt_man = avg_amt / 10000
             
-            # [순서 변경] 1. 분석 기간 -> 2. 총 판매액 -> 3. 평균 판매액 -> 4. 총 수량
             c1.metric("📅 분석 기간", f"{diff_val}{'일' if view_mode=='일별 현황' else '개월'}", date_range_str, delta_color="off")
             c2.metric("💰 총 판매액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
             c3.metric(avg_label, f"{int(avg_amt_man):,}만 원", f"실제: {int(avg_amt):,} 원", delta_color="off")
@@ -120,38 +116,68 @@ def run(load_data_func):
         c4.metric("📦 총 수량", f"{int(total_qty):,} 개")
         st.markdown("---")
 
-        # 5. 분석 모드별 시각화 (🚀 display_df 기반으로 시각화)
-        common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
-
+        # ==========================================
+        # 🚀 5. 분석 모드별 시각화 (깔끔한 알테어 디자인 전면 적용)
+        # ==========================================
         if view_mode in ["월별 현황", "일별 현황"]:
             st.subheader(f"📉 {selected_product if selected_product != '전체보기' else '전체'} 판매 추이")
             t_line1, t_line2 = st.tabs(["💰 매출액 흐름", "📦 판매수량 흐름"])
             grp = '월' if view_mode == "월별 현황" else '일자'
             
             trend = display_df.groupby(grp)[['공급가액', '수량']].sum().reset_index()
-            with t_line1: st.line_chart(trend.set_index(grp)['공급가액'], color="#2E86C1")
-            with t_line2: st.line_chart(trend.set_index(grp)['수량'], color="#28B463")
+
+            # X축 세팅 (일별일 경우 레이블 글자 각도와 크기 조절)
+            if view_mode == "일별 현황":
+                x_axis = alt.X('일자:T', title='', axis=alt.Axis(format='%m/%d', labelFontSize=14))
+            else:
+                x_axis = alt.X('월:N', title='', axis=alt.Axis(labelAngle=0, labelFontSize=14))
+
+            with t_line1: 
+                # 밋밋했던 st.line_chart 대신 마우스를 올리면 숫자가 뜨는 둥근 점이 포함된 라인 차트
+                line1 = alt.Chart(trend).mark_line(point=True, size=3, color="#2E86C1").encode(
+                    x=x_axis, y=alt.Y('공급가액:Q', title='금액(원)'), 
+                    tooltip=[grp, alt.Tooltip('공급가액', format=',')]
+                ).properties(height=350)
+                st.altair_chart(line1, use_container_width=True)
+
+            with t_line2: 
+                line2 = alt.Chart(trend).mark_line(point=True, size=3, color="#28B463").encode(
+                    x=x_axis, y=alt.Y('수량:Q', title='수량(개)'), 
+                    tooltip=[grp, alt.Tooltip('수량', format=',')]
+                ).properties(height=350)
+                st.altair_chart(line2, use_container_width=True)
 
             group_field = '브랜드' if selected_brand == "전체보기" else '공식품목명'
             st.subheader(f"📊 {selected_brand if selected_brand != '전체보기' else '전체'} 순위 현황")
             tab_n, tab_a, tab_q = st.tabs(["📋 이름 순", "💰 매출액 순", "📦 박스 순"])
             
             sum_df = display_df.groupby([group_field])[['공급가액', '환산수량']].sum().reset_index()
-            y_ax = alt.Axis(labelLimit=500, labelFontSize=16, title='', labelPadding=20)
-            chart_h = max(400, len(sum_df) * 45)
+            
+            y_ax = alt.Axis(labelLimit=500, labelFontSize=14, title='', labelPadding=10)
+            chart_h = max(300, len(sum_df) * 45)
+
+            # 🚀 [디자인 핵심] 뚱뚱한 막대 대신 얇고 끝이 둥글며 숫자가 바로 옆에 붙는 함수
+            def get_clean_bar_chart(data, x_col, color, sort_order):
+                base = alt.Chart(data).encode(
+                    x=alt.X(f'{x_col}:Q', title=''),
+                    y=alt.Y(f'{group_field}:N', sort=sort_order, axis=y_ax),
+                    tooltip=[group_field, alt.Tooltip(x_col, format=',')]
+                )
+                
+                bar = base.mark_bar(size=25, cornerRadiusEnd=5, color=color, opacity=0.9)
+                
+                text = base.mark_text(
+                    align='left', dx=5, fontSize=13, fontWeight='bold', color='#555'
+                ).encode(text=alt.Text(f'{x_col}:Q', format=','))
+                
+                return (bar + text).properties(height=chart_h)
 
             with tab_n:
-                st.altair_chart(alt.Chart(sum_df).mark_bar(color="#95A5A6").encode(
-                    x='공급가액:Q', y=alt.Y(f'{group_field}:N', sort='ascending', axis=y_ax)
-                ).properties(height=chart_h), use_container_width=True)
+                st.altair_chart(get_clean_bar_chart(sum_df, '공급가액', '#95A5A6', 'ascending'), use_container_width=True)
             with tab_a:
-                st.altair_chart(alt.Chart(sum_df).mark_bar(color="#E74C3C").encode(
-                    x='공급가액:Q', y=alt.Y(f'{group_field}:N', sort='-x', axis=y_ax)
-                ).properties(height=chart_h), use_container_width=True)
+                st.altair_chart(get_clean_bar_chart(sum_df, '공급가액', '#E74C3C', '-x'), use_container_width=True)
             with tab_q:
-                st.altair_chart(alt.Chart(sum_df).mark_bar(color="#F39C12").encode(
-                    x='환산수량:Q', y=alt.Y(f'{group_field}:N', sort='-x', axis=y_ax)
-                ).properties(height=chart_h), use_container_width=True)
+                st.altair_chart(get_clean_bar_chart(sum_df, '환산수량', '#F39C12', '-x'), use_container_width=True)
 
         elif view_mode == "수요 예측":
             st.subheader("향후 3개월 수요 예측 분석")
@@ -171,7 +197,14 @@ def run(load_data_func):
                 f_df = pd.DataFrame(f_res)
 
                 comb = pd.concat([m_data.tail(12).reset_index().rename(columns={'수량':'값','월_dt':'날'}), f_df.rename(columns={'예측수량':'값','월_dt':'날'})])
-                st.altair_chart(alt.Chart(comb).mark_line(point=True).encode(x=alt.X('날:T', axis=alt.Axis(format='%y년 %m월')), y='값:Q').properties(height=350), use_container_width=True)
+                
+                # 🚀 수요 예측 라인 차트도 포인트를 키우고 선명하게 디자인 업그레이드!
+                forecast_chart = alt.Chart(comb).mark_line(point=True, size=3, color="#8E44AD").encode(
+                    x=alt.X('날:T', axis=alt.Axis(format='%y년 %m월', labelAngle=0, labelFontSize=14)), 
+                    y=alt.Y('값:Q', title='수량'),
+                    tooltip=[alt.Tooltip('날:T', format='%Y년 %m월'), alt.Tooltip('값:Q', format=',.1f')]
+                ).properties(height=350)
+                st.altair_chart(forecast_chart, use_container_width=True)
 
                 st.markdown("### 📋 월별 예상 수요 요약")
                 cols = st.columns(3)
