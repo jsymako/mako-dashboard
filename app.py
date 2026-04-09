@@ -156,8 +156,7 @@ def render_dashboard():
                                         </div>
                                     </div>
                                 """, unsafe_allow_html=True)
-
-                            elif m_info["type"] == "missing_check":
+                        elif m_info["type"] == "missing_check":
                                 if date_col:
                                     parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
                                     
@@ -166,9 +165,10 @@ def render_dashboard():
                                         unique_dates_set = set(parsed_dates.dt.strftime('%Y-%m-%d'))
                                         
                                         target_date = today - pd.Timedelta(days=m_info["offset"])
-                                        past_week = pd.date_range(end=target_date, periods=7, freq='D')
+                                        # 🚀 7일에서 30일로 검사 기간 확대
+                                        past_month = pd.date_range(end=target_date, periods=30, freq='D')
                                         
-                                        valid_business_days = [bd for bd in past_week if bd.weekday() < 5 and bd.date() not in kr_holidays]
+                                        valid_business_days = [bd for bd in past_month if bd.weekday() < 5 and bd.date() not in kr_holidays]
                                         
                                         missing_days = []
                                         for bd in valid_business_days:
@@ -177,7 +177,13 @@ def render_dashboard():
                                                 missing_days.append(bd.strftime('%m/%d(%a)'))
                                         
                                         if missing_days:
-                                            missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{', '.join(missing_days)}</span>"
+                                            # 🚀 누락일이 너무 길면 UI가 깨지므로 축약 처리
+                                            if len(missing_days) > 5:
+                                                display_missing = ', '.join(missing_days[:5]) + f" ...외 {len(missing_days)-5}일"
+                                            else:
+                                                display_missing = ', '.join(missing_days)
+                                                
+                                            missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{display_missing}</span>"
                                             icon_status = "⚠️ 누락 확인"
                                             icon_class = "status-warn"
                                         else:
@@ -195,12 +201,10 @@ def render_dashboard():
                                                     <div>최신 데이터: <span class="dash-stat">{latest_date_str}</span></div>
                                                 </div>
                                                 <div class="sub-text">
-                                                    <b>🔍 7일 내 누락 (기준: {target_label}):</b><br>{missing_str}
+                                                    <b>🔍 30일 내 누락 (기준: {target_label}):</b><br>{missing_str}
                                                 </div>
                                             </div>
                                         """, unsafe_allow_html=True)
-                                    else:
-                                        st.markdown(f"<div class='dash-card'><div><div class='dash-title'>{m_info['icon']} {m_name}</div><div>연동 상태: <span class='status-warn'>⚠️ 날짜 파싱 오류</span></div></div></div>", unsafe_allow_html=True)
                         else:
                             st.markdown(f"""
                                 <div class="dash-card">
