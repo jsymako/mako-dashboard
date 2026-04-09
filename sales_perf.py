@@ -13,19 +13,17 @@ def run(load_data_func):
 
 st.markdown("""
     <style>
-    [data-testid="collapsedControl"] {
-        color: transparent !important;
-        background: transparent !important;
-    }
-    [data-testid="collapsedControl"] * { display: none !important; }
-    [data-testid="collapsedControl"]::after {
-        content: "❯" !important;
-        font-size: 24px !important;
-        font-weight: 900 !important;
-        color: #333333 !important;
-        display: block !important;
-        margin-left: 10px !important;
-    }
+.block-container h1 {
+    font-size: 2.2rem !important;        /* 글자 크기 (기본보다 더 크고 시원하게) */
+    font-weight: 900 !important;         /* 글자 굵기 (가장 두껍고 단단하게) */
+    color: #111111 !important;           /* 글자 색상 (세련된 진한 검정색) */
+    
+    padding-bottom: 12px !important;     /* 글자와 밑줄 사이의 간격 */
+    border-bottom: 4px solid #2E86C1 !important; /* 🚀 제목 아래에 파란색 두꺼운 밑줄 포인트 */
+    
+    margin-bottom: 30px !important;      /* 제목과 그 아래 내용(컨텐츠) 사이의 넉넉한 여백 */
+    letter-spacing: -1px !important;     /* 자간을 살짝 좁혀서 타이틀의 밀도감 상승 */
+}
     </style>
 """, unsafe_allow_html=True)
 
