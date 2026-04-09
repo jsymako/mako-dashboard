@@ -86,7 +86,6 @@ with st.sidebar:
 # -----------------------------------------------------------------
 def render_dashboard():
     st.title("마코펫 통합조회시스템")
-    st.markdown("각 데이터 연동 상태와 최근 크롤링 누락 여부를 확인합니다.")
     
     # 🚀 CSS 업데이트: margin-bottom을 추가하여 카드 자체가 아래로 여유를 가지게 함
     st.markdown("""
