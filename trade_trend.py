@@ -157,7 +157,7 @@ def run(load_data_func):
         # 스위치(라디오 버튼) 추가: 가로로 예쁘게 배치
         rank_mode = st.radio(
             "그래프 기준", 
-            ["제품", "거래처"], 
+            ["품목", "거래처"], 
             horizontal=True
         )
         
