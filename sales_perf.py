@@ -68,7 +68,6 @@ def run(load_data_func):
             emp_list = df_target['직원명'].tolist()
             r_emp = st.selectbox("직원 선택 (목표가 등록된 직원)", ["선택하세요"] + emp_list)
             
-            # 🚀 입력 방식을 텍스트(YYYY-MM)에서 연/월 셀렉트 박스로 변경
             today_date = datetime.date.today()
             col_y, col_m = st.columns(2)
             with col_y:
@@ -76,9 +75,7 @@ def run(load_data_func):
             with col_m:
                 r_month_num = st.selectbox("해당 월", range(1, 13), index=today_date.month - 1, format_func=lambda x: f"{x}월")
             
-            # 합쳐서 YYYY-MM 형태로 내부 변환
             r_month = f"{r_year}-{r_month_num:02d}"
-            
             r_amt = st.number_input("해당 월 실적액 (원)", min_value=0, step=1000000, format="%d")
             
             if st.button("실적 저장", use_container_width=True):
@@ -141,32 +138,42 @@ def run(load_data_func):
     m_rate = (m_actual_total / m_target_total * 100) if m_target_total > 0 else 0
 
     # ==========================================
-    # 🚀 4. 전사 KPI 상단 바 
+    # 🚀 4. 전사 KPI 상단 바 (한 줄 정렬 디자인 적용)
     # ==========================================
     st.subheader(f"🎯 {curr_y}년 전사 목표 달성 현황")
     
     kpi_cols = st.columns(3)
     
+    # KPI 박스를 그리는 내부 함수 (라벨 좌측, 수치 우측 정렬)
+    def make_kpi_html(title, target, actual, rate):
+        return f"""
+        <div>
+            <h5 style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;">{title}</h5>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.95rem; color: #777; font-weight: 500;">목표액</span>
+                <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{int(target/10000):,}만 원</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-size: 0.95rem; color: #777; font-weight: 500;">실적액</span>
+                <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{int(actual/10000):,}만 원</span>
+            </div>
+            <div style="text-align: right; background-color: #fcf3f2; padding: 5px 10px; border-radius: 5px;">
+                <span style="font-size: 1.3rem; font-weight: 800; color: #E74C3C;">🔥 달성률 {rate:.1f}%</span>
+            </div>
+        </div>
+        """
+
     with kpi_cols[0]:
         with st.container(border=True):
-            st.markdown("##### 📅 연간 누적")
-            st.metric("목표액", f"{int(y_target_total/10000):,}만 원")
-            st.metric("실적액", f"{int(y_actual_total/10000):,}만 원")
-            st.markdown(f"<h3 style='color:#E74C3C; margin-top:0px;'>🔥 달성률 {y_rate:.1f}%</h3>", unsafe_allow_html=True)
+            st.markdown(make_kpi_html("📅 연간 누적", y_target_total, y_actual_total, y_rate), unsafe_allow_html=True)
 
     with kpi_cols[1]:
         with st.container(border=True):
-            st.markdown(f"##### 📊 {curr_q}분기 누적")
-            st.metric("목표액", f"{int(q_target_total/10000):,}만 원")
-            st.metric("실적액", f"{int(q_actual_total/10000):,}만 원")
-            st.markdown(f"<h3 style='color:#E74C3C; margin-top:0px;'>🔥 달성률 {q_rate:.1f}%</h3>", unsafe_allow_html=True)
+            st.markdown(make_kpi_html(f"📊 {curr_q}분기 누적", q_target_total, q_actual_total, q_rate), unsafe_allow_html=True)
 
     with kpi_cols[2]:
         with st.container(border=True):
-            st.markdown(f"##### 📆 {curr_m}월 당월")
-            st.metric("목표액", f"{int(m_target_total/10000):,}만 원")
-            st.metric("실적액", f"{int(m_actual_total/10000):,}만 원")
-            st.markdown(f"<h3 style='color:#E74C3C; margin-top:0px;'>🔥 달성률 {m_rate:.1f}%</h3>", unsafe_allow_html=True)
+            st.markdown(make_kpi_html(f"📆 {curr_m}월 당월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -177,19 +184,17 @@ def run(load_data_func):
     emp_df['분기목표액'] = emp_df['연간목표액'] / 4
     emp_df['월간목표액'] = emp_df['연간목표액'] / 12
     
-    # 월간/분기 실적 합산
     m_emp = df_m.groupby('직원명')['실적금액'].sum().reset_index().rename(columns={'실적금액': '월간실적액'})
     q_emp = df_q.groupby('직원명')['실적금액'].sum().reset_index().rename(columns={'실적금액': '분기실적액'})
     
     emp_df = pd.merge(emp_df, m_emp, on='직원명', how='left').fillna(0)
     emp_df = pd.merge(emp_df, q_emp, on='직원명', how='left').fillna(0)
     
-    # 달성률(%) 계산
     emp_df['월간달성률'] = np.where(emp_df['월간목표액'] > 0, (emp_df['월간실적액'] / emp_df['월간목표액'] * 100), 0)
     emp_df['분기달성률'] = np.where(emp_df['분기목표액'] > 0, (emp_df['분기실적액'] / emp_df['분기목표액'] * 100), 0)
 
     # ==========================================
-    # 🚀 6. 시각화 및 상세 데이터 표 (당월 vs 분기 분리 배치)
+    # 🚀 6. 시각화 및 상세 데이터 표
     # ==========================================
     def make_rate_chart(data, y_col, bar_color):
         rule = alt.Chart(pd.DataFrame({'y': [100]})).mark_rule(
@@ -215,7 +220,6 @@ def run(load_data_func):
         st.subheader(f"🧑‍💼 당월({curr_m}월) 달성률 (%)")
         st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), use_container_width=True)
         
-        # 🚀 당월 그래프 바로 아래에 당월 데이터만 표출
         st.markdown(f"##### 📋 {curr_m}월 실적 상세")
         disp_m = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
         st.dataframe(disp_m.style.format({
@@ -228,7 +232,6 @@ def run(load_data_func):
         st.subheader(f"📅 {curr_q}분기 달성률 (%)")
         st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
         
-        # 🚀 분기 그래프 바로 아래에 분기 데이터만 표출
         st.markdown(f"##### 📋 {curr_q}분기 실적 상세")
         disp_q = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
         st.dataframe(disp_q.style.format({
