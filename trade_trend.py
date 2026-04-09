@@ -52,7 +52,6 @@ def run(load_data_func):
         brand_list = ["전체보기"] + sorted(list(temp_df['브랜드'].dropna().unique()))
         selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
 
-        st.sidebar.markdown("---")
         view_mode = st.sidebar.radio("분석 모드", ["월별 현황", "일별 현황"], index=0)
 
         # 공통 필터 적용
