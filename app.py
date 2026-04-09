@@ -65,7 +65,7 @@ with st.sidebar:
 
     main_menu = option_menu(
         menu_title=None, 
-        options=["🏠 메인 요약", "📊 영업 실적", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "🤝 거래처 현황", "💳 채권 분석"],
+        options=["🏠", "📊 영업 실적", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "🤝 거래처 현황", "💳 채권 분석"],
         icons=["", "", "", "", "", "", ""],
         default_index=0, 
         styles={
@@ -85,7 +85,7 @@ with st.sidebar:
 # 🚀 3. 메인 대시보드 (2열 구조 & 높이 고정 & 여백 추가)
 # -----------------------------------------------------------------
 def render_dashboard():
-    st.title("마코펫 통합재고관리")
+    st.title("마코펫 통합조회시스템")
     st.markdown("각 데이터 연동 상태와 최근 크롤링 누락 여부를 확인합니다.")
     
     # 🚀 CSS 업데이트: margin-bottom을 추가하여 카드 자체가 아래로 여유를 가지게 함
@@ -230,7 +230,7 @@ def render_dashboard():
 # -----------------------------------------------------------------
 # 🚀 4. 메뉴 선택에 따른 화면 전환
 # -----------------------------------------------------------------
-if main_menu == "🏠 메인 요약" or main_menu is None:
+if main_menu == "🏠" or main_menu is None:
     render_dashboard()
 elif main_menu == "📦 자사 재고":
     own_stock.run(load_sheet_data) 
