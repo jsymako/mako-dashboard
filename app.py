@@ -71,10 +71,10 @@ with st.sidebar:
             "container": {"padding": "0!important", "background-color": "transparent", "border": "none"},
             "nav-link": {
                 "font-size": "1.40rem", "text-align": "left", "margin": "0px 0px 8px 0px",
-                "padding": "10px 6px", "border-radius": "8px", "border": "3px solid #ddd", 
+                "padding": "10px 6px", "border-radius": "8px", "border": "3px solid #7e7979", 
                 "color": "#333", "font-weight": "normal"
             },
-            "nav-link-hover": {"background-color": "#fdf2f2", "border-color": "#d9534f"},
+            "nav-link-hover": {"background-color": "#2b98d8", "border-color": "#d9534f"},
             "nav-link-selected": {"background-color": "#d9534f", "color": "white", "font-weight": "600", "border-color": "#d9534f"},
         }
     )
