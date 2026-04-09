@@ -9,7 +9,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
     st.title("🏆 영업 실적 분석")
-    st.markdown("직원별 목표 달성률(%)과 상세 실적을 확인합니다.")
+    st.markdown("직원별 목표 달성률(%)과 당월 및 분기 상세 실적을 확인합니다.")
 
     # 1. 데이터 로드 (시트가 없으면 자동으로 빈 데이터 생성)
     try:
@@ -30,7 +30,7 @@ def run(load_data_func):
     df_record['실적금액'] = pd.to_numeric(df_record['실적금액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
 
     # ==========================================
-    # 🚀 2. 데이터 입력 패널
+    # 🚀 2. 데이터 입력 패널 (연/월 셀렉트 박스 적용)
     # ==========================================
     with st.expander("✍️ 목표 및 월별 실적 입력 패널 열기", expanded=False):
         c1, c2 = st.columns(2)
@@ -67,7 +67,18 @@ def run(load_data_func):
             st.markdown("#### 📈 월별 실적 입력")
             emp_list = df_target['직원명'].tolist()
             r_emp = st.selectbox("직원 선택 (목표가 등록된 직원)", ["선택하세요"] + emp_list)
-            r_month = st.text_input("해당 월 (YYYY-MM 형식)", value=datetime.date.today().strftime("%Y-%m"))
+            
+            # 🚀 입력 방식을 텍스트(YYYY-MM)에서 연/월 셀렉트 박스로 변경
+            today_date = datetime.date.today()
+            col_y, col_m = st.columns(2)
+            with col_y:
+                r_year = st.selectbox("해당 연도", range(today_date.year - 2, today_date.year + 3), index=2)
+            with col_m:
+                r_month_num = st.selectbox("해당 월", range(1, 13), index=today_date.month - 1, format_func=lambda x: f"{x}월")
+            
+            # 합쳐서 YYYY-MM 형태로 내부 변환
+            r_month = f"{r_year}-{r_month_num:02d}"
+            
             r_amt = st.number_input("해당 월 실적액 (원)", min_value=0, step=1000000, format="%d")
             
             if st.button("실적 저장", use_container_width=True):
@@ -113,12 +124,10 @@ def run(load_data_func):
     df_record['월'] = pd.to_numeric(df_record['입력월'].str[5:7], errors='coerce').fillna(0).astype(int)
     df_record['분기'] = (df_record['월'] - 1) // 3 + 1
 
-    # 전사 데이터 필터링
     df_y = df_record[df_record['연도'] == curr_y]
     df_q = df_y[df_y['분기'] == curr_q]
     df_m = df_y[df_y['월'] == curr_m]
 
-    # 전사 KPI 계산
     y_target_total = df_target['연간목표액'].sum()
     q_target_total = y_target_total / 4
     m_target_total = y_target_total / 12
@@ -132,7 +141,7 @@ def run(load_data_func):
     m_rate = (m_actual_total / m_target_total * 100) if m_target_total > 0 else 0
 
     # ==========================================
-    # 🚀 4. 전사 KPI 상단 바 (연간/분기/월간 분리)
+    # 🚀 4. 전사 KPI 상단 바 
     # ==========================================
     st.subheader(f"🎯 {curr_y}년 전사 목표 달성 현황")
     
@@ -162,32 +171,31 @@ def run(load_data_func):
     st.markdown("---")
 
     # ==========================================
-    # 🚀 5. 직원별 실적 가공 (연간 및 분기)
+    # 🚀 5. 직원별 실적 가공 (당월 및 분기 분리)
     # ==========================================
     emp_df = df_target[['직원명', '연간목표액']].copy()
     emp_df['분기목표액'] = emp_df['연간목표액'] / 4
+    emp_df['월간목표액'] = emp_df['연간목표액'] / 12
     
-    # 직원별 실적 합산
-    y_emp = df_y.groupby('직원명')['실적금액'].sum().reset_index().rename(columns={'실적금액': '연간실적액'})
+    # 월간/분기 실적 합산
+    m_emp = df_m.groupby('직원명')['실적금액'].sum().reset_index().rename(columns={'실적금액': '월간실적액'})
     q_emp = df_q.groupby('직원명')['실적금액'].sum().reset_index().rename(columns={'실적금액': '분기실적액'})
     
-    emp_df = pd.merge(emp_df, y_emp, on='직원명', how='left').fillna(0)
+    emp_df = pd.merge(emp_df, m_emp, on='직원명', how='left').fillna(0)
     emp_df = pd.merge(emp_df, q_emp, on='직원명', how='left').fillna(0)
     
-    # 달성률(%) 계산 (0으로 나누는 에러 방지)
-    emp_df['연간달성률'] = np.where(emp_df['연간목표액'] > 0, (emp_df['연간실적액'] / emp_df['연간목표액'] * 100), 0)
+    # 달성률(%) 계산
+    emp_df['월간달성률'] = np.where(emp_df['월간목표액'] > 0, (emp_df['월간실적액'] / emp_df['월간목표액'] * 100), 0)
     emp_df['분기달성률'] = np.where(emp_df['분기목표액'] > 0, (emp_df['분기실적액'] / emp_df['분기목표액'] * 100), 0)
 
     # ==========================================
-    # 🚀 6. 달성률(%) 시각화 차트
+    # 🚀 6. 시각화 및 상세 데이터 표 (당월 vs 분기 분리 배치)
     # ==========================================
     def make_rate_chart(data, y_col, bar_color):
-        # 기준선 100% 라인 생성
         rule = alt.Chart(pd.DataFrame({'y': [100]})).mark_rule(
             color='#E74C3C', strokeDash=[5, 5], strokeWidth=2
         ).encode(y='y:Q')
 
-        # 막대그래프
         base = alt.Chart(data).encode(
             x=alt.X('직원명:N', title='', axis=alt.Axis(labelAngle=0, labelFontSize=14)),
             y=alt.Y(f'{y_col}:Q', title='달성률 (%)', scale=alt.Scale(domain=[0, max(110, data[y_col].max() + 10)])),
@@ -195,7 +203,6 @@ def run(load_data_func):
         )
         bar = base.mark_bar(size=40, cornerRadiusEnd=5, color=bar_color, opacity=0.8)
         
-        # 막대 위 글자 표시
         text = base.mark_text(
             align='center', baseline='bottom', dy=-5, fontSize=14, fontWeight='bold', color='#333'
         ).encode(text=alt.Text(f'{y_col}:Q', format='.1f'))
@@ -205,27 +212,27 @@ def run(load_data_func):
     col_chart1, col_chart2 = st.columns(2)
     
     with col_chart1:
-        st.subheader("🧑‍💼 연간 달성률 (%)")
-        st.altair_chart(make_rate_chart(emp_df, '연간달성률', '#2E86C1'), use_container_width=True)
+        st.subheader(f"🧑‍💼 당월({curr_m}월) 달성률 (%)")
+        st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), use_container_width=True)
+        
+        # 🚀 당월 그래프 바로 아래에 당월 데이터만 표출
+        st.markdown(f"##### 📋 {curr_m}월 실적 상세")
+        disp_m = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
+        st.dataframe(disp_m.style.format({
+            '월간목표액': '{:,.0f} 원',
+            '월간실적액': '{:,.0f} 원',
+            '월간달성률': '{:.1f} %'
+        }), use_container_width=True)
 
     with col_chart2:
         st.subheader(f"📅 {curr_q}분기 달성률 (%)")
-        st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#28B463'), use_container_width=True)
-
-    # ==========================================
-    # 🚀 7. 하단 상세 데이터 표
-    # ==========================================
-    st.markdown("---")
-    st.markdown("### 📋 직원별 목표 및 실적 상세 표")
-    
-    # 보여줄 컬럼만 정리
-    disp_df = emp_df[['직원명', '연간목표액', '연간실적액', '연간달성률', '분기목표액', '분기실적액', '분기달성률']].copy()
-    
-    st.dataframe(disp_df.style.format({
-        '연간목표액': '{:,.0f} 원',
-        '연간실적액': '{:,.0f} 원',
-        '연간달성률': '{:.1f} %',
-        '분기목표액': '{:,.0f} 원',
-        '분기실적액': '{:,.0f} 원',
-        '분기달성률': '{:.1f} %'
-    }), use_container_width=True)
+        st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
+        
+        # 🚀 분기 그래프 바로 아래에 분기 데이터만 표출
+        st.markdown(f"##### 📋 {curr_q}분기 실적 상세")
+        disp_q = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
+        st.dataframe(disp_q.style.format({
+            '분기목표액': '{:,.0f} 원',
+            '분기실적액': '{:,.0f} 원',
+            '분기달성률': '{:.1f} %'
+        }), use_container_width=True)
