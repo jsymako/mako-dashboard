@@ -175,9 +175,6 @@ def run(load_data_func):
                 <span style="font-size: 0.95rem; color: #777; font-weight: 500;">달성률</span>
                 <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{rate:.1f}%</span>
             </div>
-            <div style="text-align: right; padding: 5px 10px; border-radius: 5px;">
-                <span style="font-size: 1.3rem; font-weight: 800; color: #E74C3C;">달성률 {rate:.1f}%</span>
-            </div>
         </div>
         """
 
