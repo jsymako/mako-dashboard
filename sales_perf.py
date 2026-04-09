@@ -11,6 +11,12 @@ def run(load_data_func):
     st.title("🏆 영업 실적 분석")
     st.markdown("직원별 목표 달성률(%)과 당월 및 분기 상세 실적을 확인합니다.")
 
+    try:
+        with open("sales_trend.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
     # 1. 데이터 로드 (시트가 없으면 자동으로 빈 데이터 생성)
     try:
         df_target = load_data_func("sales_target")
