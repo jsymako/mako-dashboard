@@ -87,14 +87,13 @@ with st.sidebar:
 def render_dashboard():
     st.title("마코펫 통합조회시스템")
     
-    # 🚀 CSS 업데이트: margin-bottom을 추가하여 카드 자체가 아래로 여유를 가지게 함
     st.markdown("""
         <style>
         .dash-card {
             border: 1px solid #e0e0e0; 
             border-radius: 10px; 
             padding: 20px; 
-            margin-bottom: 10px; /* 🚀 위아래 카드 사이의 여백 추가 */
+            margin-bottom: 10px; 
             background: #fff; 
             box-shadow: 2px 2px 10px rgba(0,0,0,0.05); 
             height: 250px; 
@@ -123,7 +122,6 @@ def render_dashboard():
     
     module_items = list(modules.items())
     
-    # 🚀 그리드를 2개씩 끊어서(2열) 출력
     for i in range(0, len(module_items), 2):
         cols = st.columns(2)
         for j in range(2):
@@ -137,6 +135,7 @@ def render_dashboard():
                         if df is not None and not df.empty:
                             date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일', '시간', '일시', '업데이트'])), None)
                             
+                            # 🚀 여기서부터 들여쓰기 짝맞춤 (if와 elif 라인이 완벽하게 일치해야 합니다)
                             if m_info["type"] == "latest_only":
                                 latest_str = "확인 불가"
                                 if date_col:
@@ -156,7 +155,8 @@ def render_dashboard():
                                         </div>
                                     </div>
                                 """, unsafe_allow_html=True)
-                        elif m_info["type"] == "missing_check":
+
+                            elif m_info["type"] == "missing_check":  # 🚀 [교정됨] if와 같은 세로 선상으로 우측 4칸 이동!
                                 if date_col:
                                     parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
                                     
@@ -165,7 +165,6 @@ def render_dashboard():
                                         unique_dates_set = set(parsed_dates.dt.strftime('%Y-%m-%d'))
                                         
                                         target_date = today - pd.Timedelta(days=m_info["offset"])
-                                        # 🚀 7일에서 30일로 검사 기간 확대
                                         past_month = pd.date_range(end=target_date, periods=30, freq='D')
                                         
                                         valid_business_days = [bd for bd in past_month if bd.weekday() < 5 and bd.date() not in kr_holidays]
@@ -177,7 +176,6 @@ def render_dashboard():
                                                 missing_days.append(bd.strftime('%m/%d(%a)'))
                                         
                                         if missing_days:
-                                            # 🚀 누락일이 너무 길면 UI가 깨지므로 축약 처리
                                             if len(missing_days) > 5:
                                                 display_missing = ', '.join(missing_days[:5]) + f" ...외 {len(missing_days)-5}일"
                                             else:
@@ -205,6 +203,8 @@ def render_dashboard():
                                                 </div>
                                             </div>
                                         """, unsafe_allow_html=True)
+                                    else:
+                                        st.markdown(f"<div class='dash-card'><div><div class='dash-title'>{m_info['icon']} {m_name}</div><div>연동 상태: <span class='status-warn'>⚠️ 날짜 파싱 오류</span></div></div></div>", unsafe_allow_html=True)
                         else:
                             st.markdown(f"""
                                 <div class="dash-card">
@@ -227,7 +227,6 @@ def render_dashboard():
                             </div>
                         """, unsafe_allow_html=True)
         
-        # 🚀 1행이 끝나면 물리적인 띄어쓰기(공백)를 강제로 추가하여 행간을 넓힘
         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
