@@ -65,7 +65,7 @@ with st.sidebar:
 
     main_menu = option_menu(
         menu_title=None, 
-        options=["🏠", "📊 영업 실적", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "🤝 거래처 현황", "💳 채권 분석"],
+        options=["🏠", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "🤝 거래처 현황", "📊 영업 실적", "💳 채권 분석"],
         icons=["", "", "", "", "", "", ""],
         default_index=0, 
         styles={
