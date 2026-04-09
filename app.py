@@ -71,7 +71,7 @@ with st.sidebar:
             "container": {"padding": "0!important", "background-color": "transparent", "border": "none"},
             "nav-link": {
                 "font-size": "1.40rem", "text-align": "left", "margin": "0px 0px 8px 0px",
-                "padding": "10px 6px", "border-radius": "8px", "border": "2px solid #81b3ff", 
+                "padding": "10px 6px", "border-radius": "8px", "border": "2px solid #d2d4d5", 
                 "color": "#333", "font-weight": "normal"
             },
             "nav-link-hover": {"background-color": "#2b98d8", "border-color": "#2b98d8"},
