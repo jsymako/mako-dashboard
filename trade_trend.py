@@ -163,12 +163,15 @@ def run(load_data_func):
         
         # 사용자가 선택한 모드에 따라 차트의 축(Y)과 제목이 즉시 바뀝니다!
         if "품목" in rank_mode:
-            rank_field = group_field # 전체보기일 땐 브랜드명, 브랜드를 선택했을 땐 공식품목명
-            st.subheader(f"📊 {trader_title} 내 [{rank_field}] 매출 순위 (TOP 15)")
+            rank_field = group_field # 그룹화할 컬럼명 ('브랜드' 또는 '공식품목명')
+            
+            display_name = "전체 브랜드" if selected_brand == "전체보기" else selected_brand
+            st.subheader(f"📊 {trader_title} 내 [{display_name}] 매출 순위 (TOP 15)")
+            
         else:
             rank_field = '거래처명'
             brand_title = "전체 품목" if selected_brand == "전체보기" else selected_brand
-            st.subheader(f"📊 [{brand_title}] 매출 견인 거래처 순위 (TOP 15)")
+            st.subheader(f"📊 [{brand_title}] 매출 거래처 순위 (TOP 15)")
             
         # 선택된 축(rank_field) 기준으로 데이터를 합산
         sum_df = display_df.groupby([rank_field])[['공급가액', '수량']].sum().reset_index()
