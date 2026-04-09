@@ -8,6 +8,7 @@ import os
 import holidays
 
 def run(load_data_func):
+    st.title("📈 판매 현황 및 수요 예측")
     
     try:
         with open("sales_trend.css", "r", encoding="utf-8") as f:
@@ -15,7 +16,7 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    st.title("📈 판매 현황 및 수요 예측")
+    
 
     try:
         # 1. 데이터 로드 및 마스터 결합
