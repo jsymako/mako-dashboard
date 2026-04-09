@@ -37,8 +37,9 @@ def run(load_data_func):
         df_trade['월_dt'] = df_trade['일자'].dt.to_period('M').dt.to_timestamp()
         df_trade['월'] = df_trade['일자'].dt.strftime('%Y년 %m월')
 
-        # 2. 사이드바 필터
-        
+        # ==========================================
+        # 🚀 2. 사이드바 필터 (다중 선택 UI로 통일)
+        # ==========================================
         trader_list = sorted(list(df_trade['거래처명'].dropna().unique()))
         selected_traders = st.sidebar.multiselect(
             "거래처 선택", 
@@ -49,8 +50,13 @@ def run(load_data_func):
         
         temp_df = df_trade if not selected_traders else df_trade[df_trade['거래처명'].isin(selected_traders)]
         
-        brand_list = ["전체보기"] + sorted(list(temp_df['브랜드'].dropna().unique()))
-        selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
+        brand_list = sorted(list(temp_df['브랜드'].dropna().unique()))
+        selected_brands = st.sidebar.multiselect(
+            "브랜드 선택", 
+            options=brand_list,
+            default=[],
+            placeholder="비워두면 전체 브랜드 조회"
+        )
 
         view_mode = st.sidebar.radio("분석 모드", ["월별 현황", "일별 현황"], index=0)
 
@@ -58,10 +64,13 @@ def run(load_data_func):
         filtered_df = df_trade.copy()
         if selected_traders:
             filtered_df = filtered_df[filtered_df['거래처명'].isin(selected_traders)]
-        if selected_brand != "전체보기":
-            filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
+            
+        # 🚀 다중 선택 필터링 적용
+        if selected_brands:
+            filtered_df = filtered_df[filtered_df['브랜드'].isin(selected_brands)]
 
-        group_field = '브랜드' if selected_brand == "전체보기" else '공식품목명'
+        # 선택한 브랜드가 없으면(전체조회) 브랜드별 묶음, 특정 브랜드를 선택했으면 품목별 묶음
+        group_field = '브랜드' if not selected_brands else '공식품목명'
 
         # 3. 모드별 날짜 세팅 및 필터링
         today = datetime.date.today()
@@ -98,7 +107,6 @@ def run(load_data_func):
         if display_df.empty:
             st.warning("선택하신 조건에 데이터가 없습니다.")
             return
-
 
         # 4. KPI 상단 바
         total_amt = display_df['공급가액'].sum()
@@ -148,44 +156,35 @@ def run(load_data_func):
             ).properties(height=350)
             st.altair_chart(line_chart, use_container_width=True)
 
-        # ==========================================
-        # 🚀 [디자인 튜닝 완료] 6. 관점 전환이 가능한 교차 랭킹 차트
-        # 막대 두께를 고정하고, 순위에 따라 다채로운 그라데이션 색상을 적용합니다.
-        # ==========================================
+        # 6. 관점 전환이 가능한 교차 랭킹 차트
         st.markdown("---")
         
-        # 스위치(라디오 버튼) 추가: 가로로 예쁘게 배치
         rank_mode = st.radio(
             "그래프 기준", 
             ["품목", "거래처"], 
             horizontal=True
         )
         
-        # 사용자가 선택한 모드에 따라 차트의 축(Y)과 제목이 즉시 바뀝니다!
+        # 🚀 [수정] 선택한 브랜드가 여러 개일 때, 콤마(,)로 이어서 타이틀에 표시
         if "품목" in rank_mode:
-            rank_field = group_field # 그룹화할 컬럼명 ('브랜드' 또는 '공식품목명')
-            
-            display_name = "전체 브랜드" if selected_brand == "전체보기" else selected_brand
+            rank_field = group_field 
+            display_name = "전체 브랜드" if not selected_brands else ", ".join(selected_brands)
             st.subheader(f"📊 {trader_title} 내 [{display_name}] 매출 순위 (TOP 15)")
-            
         else:
             rank_field = '거래처명'
-            brand_title = "전체 품목" if selected_brand == "전체보기" else selected_brand
-            st.subheader(f"📊 [{brand_title}] 매출 거래처 순위 (TOP 15)")
+            brand_title = "전체 품목" if not selected_brands else ", ".join(selected_brands)
+            st.subheader(f"📊 [{brand_title}] 매출 견인 거래처 순위 (TOP 15)")
             
-        # 선택된 축(rank_field) 기준으로 데이터를 합산
         sum_df = display_df.groupby([rank_field])[['공급가액', '수량']].sum().reset_index()
         sum_df = sum_df.sort_values(by='공급가액', ascending=False).head(15) 
         
         y_ax = alt.Axis(labelLimit=500, labelFontSize=14, title='', labelPadding=10)
         chart_h = max(300, len(sum_df) * 45)
 
-        # 🚀 [디자인 핵심] 막대 차트 정의
-        # 🚀 [디자인 핵심] 막대 차트 정의
         rank_chart = alt.Chart(sum_df).mark_bar(
-            size=25,            # 막대 두께 25로 고정 (슬림하게 유지)
-            cornerRadius=5,     # 막대 끝 둥글게
-            color="#2E86C1",    # 🌟 그라데이션 제거! 모든 막대를 또렷한 파란색으로 통일합니다. (빨간색을 원하시면 "#E74C3C" 로 변경)
+            size=25,            
+            cornerRadius=5,     
+            color="#2E86C1",    
             opacity=0.9
         ).encode(
             x=alt.X('공급가액:Q', title='총 거래액 (원)'), 
@@ -193,7 +192,6 @@ def run(load_data_func):
             tooltip=[rank_field, alt.Tooltip('공급가액', format=','), alt.Tooltip('수량', format=',')]
         )
         
-        # [보너스 디자인] 막대 끝에 실제 수량 숫자를 띄워 가독성 업그레이드!
         text_label = rank_chart.mark_text(
             align='left', 
             dx=5, 
@@ -204,9 +202,7 @@ def run(load_data_func):
             text=alt.Text('공급가액:Q', format=',')
         )
 
-        # 차트와 숫자 라벨을 합쳐서 그립니다.
         st.altair_chart((rank_chart + text_label).properties(height=chart_h), use_container_width=True)
-        # ==========================================
     
     except Exception as e:
         st.error(f"오류 발생: {e}")
