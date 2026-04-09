@@ -12,8 +12,8 @@ h1, h2, h3, h4, h5, h6, p, label, li, table, button, input {
 }
 
 .block-container h1 {
-    font-size: 2.2rem !important;        /* 글자 크기 (기본보다 더 크고 시원하게) */
-    font-weight: 900 !important;         /* 글자 굵기 (가장 두껍고 단단하게) */
+    font-size: 2.5rem !important;        /* 글자 크기 (기본보다 더 크고 시원하게) */
+    font-weight: 700 !important;         /* 글자 굵기 (가장 두껍고 단단하게) */
     color: #111111 !important;           /* 글자 색상 (세련된 진한 검정색) */
     
     padding-bottom: 12px !important;     /* 글자와 밑줄 사이의 간격 */
