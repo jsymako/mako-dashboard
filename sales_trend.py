@@ -45,8 +45,6 @@ def run(load_data_func):
         product_list = ["전체보기"] + sorted(list(prod_df['공식품목명'].unique()))
         selected_product = st.sidebar.selectbox("품목 선택", product_list)
         
-        st.sidebar.markdown("---")
-
         view_mode = st.sidebar.radio("분석 모드",["월별 현황", "일별 현황", "수요 예측"], index=0)
 
         # 공통 필터 적용
