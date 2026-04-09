@@ -8,8 +8,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
-    st.title("🏆 영업 실적")
-    st.markdown("직원별 목표 달성률(%)과 당월 및 분기 상세 실적을 확인합니다.")
+    st.title("📊 영업 실적")
 
     st.markdown("""
         <style>
@@ -155,7 +154,7 @@ def run(load_data_func):
     # ==========================================
     # 🚀 4. 전사 KPI 상단 바 (한 줄 정렬 디자인 적용)
     # ==========================================
-    st.subheader(f"🎯 {curr_y}년 전사 목표 달성 현황")
+    st.subheader(f"🎯 {curr_y}년 전체 실적 현황")
     
     kpi_cols = st.columns(3)
     
