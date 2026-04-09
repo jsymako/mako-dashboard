@@ -72,10 +72,10 @@ with st.sidebar:
             "nav-link": {
                 "font-size": "1.40rem", "text-align": "left", "margin": "0px 0px 8px 0px",
                 "padding": "10px 6px", "border-radius": "8px", "border": "2px solid #81b3ff", 
-                "color": "#333", "font-weight": "normal", "background-color": "#81b3ff"
+                "color": "#333", "font-weight": "normal"
             },
             "nav-link-hover": {"background-color": "#2b98d8", "border-color": "#2b98d8"},
-            "nav-link-selected": {"background-color": "#005eb5", "color": "white", "font-weight": "600", "border-color": "#005eb5"},
+            "nav-link-selected": {"color": "white", "font-weight": "600", "border-color": "#005eb5"},
         }
     )
 
