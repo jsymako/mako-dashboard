@@ -162,7 +162,7 @@ def run(load_data_func):
         emp_melt = emp_merged[['직원명', '연간목표액', '실적금액']].melt(id_vars='직원명', var_name='구분', value_name='금액')
         
         # 목표바와 실적바를 나란히 보여주는 그룹형 차트
-        emp_chart = alt.Chart(emp_melt).mark_bar(cornerRadiusTop=5).encode(
+        emp_chart = alt.Chart(emp_melt).mark_bar(cornerRadiusEnd=5).encode(
             x=alt.X('구분:N', title='', axis=alt.Axis(labels=False, ticks=False)), # 세부 그룹 축 숨기기
             y=alt.Y('금액:Q', title='금액(원)'),
             color=alt.Color('구분:N', scale=alt.Scale(domain=['연간목표액', '실적금액'], range=['#D5DBDB', '#2E86C1']), legend=alt.Legend(title="구분", orient='top-left')),
@@ -176,7 +176,7 @@ def run(load_data_func):
         st.subheader("📅 분기별 목표 대비 실적")
         q_melt = q_merged.melt(id_vars='분기', var_name='구분', value_name='금액')
         
-        q_chart = alt.Chart(q_melt).mark_bar(cornerRadiusTop=5).encode(
+        q_chart = alt.Chart(q_melt).mark_bar(cornerRadiusEnd=5).encode(
             x=alt.X('구분:N', title='', axis=alt.Axis(labels=False, ticks=False)),
             y=alt.Y('금액:Q', title='금액(원)'),
             color=alt.Color('구분:N', scale=alt.Scale(domain=['목표금액', '실적금액'], range=['#FADBD8', '#E74C3C']), legend=alt.Legend(title="구분", orient='top-left')),
