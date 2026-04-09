@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 import altair as alt
 
 def run(load_data_func):
+    st.title("📦 쿠팡 재고 및 판매가 현황")
     
     try:
         with open("coupang_stock.css", "r", encoding="utf-8") as f:
@@ -12,7 +13,7 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    st.title("📦 쿠팡 재고 및 판매가 현황")
+    
     
     try:
         # 1. 데이터 로드 및 마스터 결합
