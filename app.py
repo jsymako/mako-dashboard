@@ -181,7 +181,7 @@ def render_dashboard():
                                             icon_status = "⚠️ 누락 확인"
                                             icon_class = "status-warn"
                                         else:
-                                            missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음 (완벽)</span>"
+                                            missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음</span>"
                                             icon_status = "🟢 정상 수신중"
                                             icon_class = "status-ok"
 
