@@ -60,6 +60,7 @@ def run(load_data_func):
                         sheet = doc.add_worksheet(title="sales_target", rows="100", cols="5")
                     sheet.clear()
                     sheet.update([df_target.columns.values.tolist()] + df_target.astype(str).values.tolist())
+                    st.cache_data.clear()
                     st.success(f"✅ {t_emp}님의 목표가 저장되었습니다.")
                     st.rerun()
                 else:
@@ -93,6 +94,7 @@ def run(load_data_func):
                         sheet = doc.add_worksheet(title="sales_record_emp", rows="1000", cols="5")
                     sheet.clear()
                     sheet.update([df_record.columns.values.tolist()] + df_record.astype(str).values.tolist())
+                    st.cache_data.clear()
                     st.success(f"✅ {r_emp}님의 {r_month} 실적이 저장되었습니다.")
                     st.rerun()
                 else:
