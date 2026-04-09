@@ -5,6 +5,7 @@ import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
+    st.title("💳 채권 분석")
 
 # 🚀 방금 만든 안전한 'ar_trend.css'를 불러옵니다.
     try:
@@ -53,7 +54,7 @@ def run(load_data_func):
         </style>
     """, unsafe_allow_html=True)
 
-    st.title("💳 채권 분석")
+    
 
     try:
         df_memo_gs = load_data_func("ar_memo")
