@@ -171,23 +171,23 @@ def run(load_data_func):
                 <span style="font-size: 0.95rem; color: #777; font-weight: 500;">실적액</span>
                 <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{int(actual/10000):,}만 원</span>
             </div>
-            <div style="text-align: right; background-color: #fcf3f2; padding: 5px 10px; border-radius: 5px;">
-                <span style="font-size: 1.3rem; font-weight: 800; color: #E74C3C;">🔥 달성률 {rate:.1f}%</span>
+            <div style="text-align: right; padding: 5px 10px; border-radius: 5px;">
+                <span style="font-size: 1.3rem; font-weight: 800; color: #E74C3C;">달성률 {rate:.1f}%</span>
             </div>
         </div>
         """
 
     with kpi_cols[0]:
         with st.container(border=True):
-            st.markdown(make_kpi_html("📅 연간 누적", y_target_total, y_actual_total, y_rate), unsafe_allow_html=True)
+            st.markdown(make_kpi_html("연간 누적", y_target_total, y_actual_total, y_rate), unsafe_allow_html=True)
 
     with kpi_cols[1]:
         with st.container(border=True):
-            st.markdown(make_kpi_html(f"📊 {curr_q}분기 누적", q_target_total, q_actual_total, q_rate), unsafe_allow_html=True)
+            st.markdown(make_kpi_html(f"{curr_q}분기 누적", q_target_total, q_actual_total, q_rate), unsafe_allow_html=True)
 
     with kpi_cols[2]:
         with st.container(border=True):
-            st.markdown(make_kpi_html(f"📆 {curr_m}월 당월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
+            st.markdown(make_kpi_html(f"{curr_m}월 당월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -231,7 +231,7 @@ def run(load_data_func):
     col_chart1, col_chart2 = st.columns(2)
     
     with col_chart1:
-        st.subheader(f"🧑‍💼 당월({curr_m}월) 달성률 (%)")
+        st.subheader(f"당월({curr_m}월) 달성률 (%)")
         st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), use_container_width=True)
         
         st.markdown(f"##### 📋 {curr_m}월 실적 상세")
@@ -243,7 +243,7 @@ def run(load_data_func):
         }), use_container_width=True)
 
     with col_chart2:
-        st.subheader(f"📅 {curr_q}분기 달성률 (%)")
+        st.subheader(f"{curr_q}분기 달성률 (%)")
         st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
         
         st.markdown(f"##### 📋 {curr_q}분기 실적 상세")
