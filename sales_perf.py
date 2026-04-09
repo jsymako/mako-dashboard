@@ -8,14 +8,9 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
-    st.title("🏆 영업 실적 분석")
+    st.title("🏆 영업 실적")
     st.markdown("직원별 목표 달성률(%)과 당월 및 분기 상세 실적을 확인합니다.")
 
-    try:
-        with open("sales_trend.css", "r", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        pass
 
     # 1. 데이터 로드 (시트가 없으면 자동으로 빈 데이터 생성)
     try:
@@ -109,7 +104,6 @@ def run(load_data_func):
                 else:
                     st.warning("직원과 입력월을 정확히 선택해주세요.")
 
-    st.markdown("---")
 
     if df_target.empty:
         st.info("👆 위 패널을 열어 직원별 [연간 목표액]을 먼저 설정해 주세요.")
