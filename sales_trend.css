@@ -58,10 +58,15 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 
 /* 1. 제일 큰 왕 제목 (# 1개) */
 [data-testid="stSidebar"] h1 {
-    font-size: 1.8rem !important;
-    font-weight: 600 !important;
-    color: #2C3E50 !important;
-    margin-bottom: 15px !important;
+   font-size: 2.2rem !important;        /* 글자 크기 (기본보다 더 크고 시원하게) */
+   font-weight: 900 !important;         /* 글자 굵기 (가장 두껍고 단단하게) */
+   color: #111111 !important;           /* 글자 색상 (세련된 진한 검정색) */
+   
+   padding-bottom: 12px !important;     /* 글자와 밑줄 사이의 간격 */
+   border-bottom: 4px solid #2E86C1 !important; /* 🚀 제목 아래에 파란색 두꺼운 밑줄 포인트 */
+   
+   margin-bottom: 30px !important;      /* 제목과 그 아래 내용(컨텐츠) 사이의 넉넉한 여백 */
+   letter-spacing: -1px !important;
 }
 
 /* 2. 중간 제목 (## 2개) */
