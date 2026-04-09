@@ -99,37 +99,6 @@ def run(load_data_func):
             st.warning("선택하신 조건에 데이터가 없습니다.")
             return
 
-        # ==========================================
-        # [데이터 누락 점검기] 한국 공휴일 완벽 제외
-        # ==========================================
-        check_end = datetime.date.today() - datetime.timedelta(days=2) 
-        check_start = check_end - datetime.timedelta(days=365)         
-        
-        business_days = pd.bdate_range(start=check_start, end=check_end).date
-        mask_recent = (df_trade_raw['일자'].dt.date >= check_start) & (df_trade_raw['일자'].dt.date <= check_end)
-        actual_dates = df_trade_raw[mask_recent]['일자'].dt.date.unique()
-        
-        missing_dates_raw = set(business_days) - set(actual_dates)
-        kr_holidays = holidays.KR(years=range(check_start.year, check_end.year + 1))
-        missing_dates = sorted([d for d in missing_dates_raw if d not in kr_holidays])
-        
-        check_html = "<hr style='margin: 15px 0px 10px 0px; border-top: 1px solid #ddd;'>"
-        check_html += "<div style='font-size: 0.85rem; line-height: 1.5; color: #666;'>"
-        check_html += "<strong style='color: #2C3E50;'>🚨 크롤링 점검 (최근 1년)</strong><br>"
-        
-        if missing_dates:
-            check_html += f"<span style='color: #E74C3C; font-weight: 600;'>⚠️ 평일 데이터 누락 ({len(missing_dates)}일)</span><br>"
-            check_html += "<div style='max-height: 120px; overflow-y: auto; margin-top: 5px; padding-right: 5px; border-left: 2px solid #E74C3C;'>"
-            weekdays_kr = ["월", "화", "수", "목", "금", "토", "일"]
-            for md in missing_dates:
-                check_html += f"<span style='margin-left: 8px; font-size: 0.8rem;'>- {md.strftime('%y/%m/%d')} ({weekdays_kr[md.weekday()]})</span><br>"
-            check_html += "</div>"
-        else:
-            check_html += "<span style='color: #27AE60; font-weight: 600;'>✅ 누락 없음 완벽!</span>"
-            
-        check_html += "</div>"
-        st.sidebar.markdown(check_html, unsafe_allow_html=True)
-        # ==========================================
 
         # 4. KPI 상단 바
         total_amt = display_df['공급가액'].sum()
