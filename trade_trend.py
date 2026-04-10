@@ -243,7 +243,7 @@ def run(load_data_func):
             st.altair_chart((rank_chart + text_label).properties(height=chart_h), use_container_width=True)
 
         # ==========================================
-        # 🚀 6. 향후 12개월 수요 예측 (그래프 연결 & 표 변환 적용)
+        # 🚀 6. 향후 12개월 수요 예측 (오버랩 그래프 & 대형 폰트 상세표)
         # ==========================================
         elif view_mode == "수요 예측":
             st.subheader("향후 12개월 수요 (출고) 예측 분석")
@@ -262,50 +262,66 @@ def run(load_data_func):
                 recent_avg = m_data['수량'].tail(3).mean()
                 cur_start = datetime.datetime.now().replace(day=1)
                 
+                # 향후 12개월 데이터 생성
                 f_res = []
                 for i in range(1, 13):
                     t_date = cur_start + relativedelta(months=i)
                     f_res.append({'월_dt': t_date, '예측수량': recent_avg * seasonal_idx.get(t_date.month, 1.0)})
                 f_df = pd.DataFrame(f_res)
 
-                # 🚀 과거 12개월 데이터와 향후 예측 데이터 병합
+                # 🚀 과거 12개월 vs 향후 12개월 오버랩(겹치기) 로직
+                # X축을 통일시키기 위해 '1개월차(N월)' 형태의 공통 라벨과 정렬 인덱스를 생성합니다.
                 past_df = m_data.tail(12).reset_index().rename(columns={'수량':'값','월_dt':'날'})
+                past_df['순서'] = range(1, 13)
+                past_df['공통월_라벨'] = past_df['날'].dt.strftime('%m월')
+                past_df['구분'] = '과거 실적 (작년 동기)'
+                
                 future_df = f_df.rename(columns={'예측수량':'값','월_dt':'날'})
-                
-                # 🚀 [핵심] 과거의 마지막 데이터를 미래의 첫 데이터로 복사하여 선을 이어줍니다!
-                link_row = past_df.iloc[-1:].copy()
-                future_df = pd.concat([link_row, future_df], ignore_index=True)
-                
-                past_df['구분'] = '과거 실적'
-                future_df['구분'] = '향후 예측'
+                future_df['순서'] = range(1, 13)
+                future_df['공통월_라벨'] = future_df['날'].dt.strftime('%m월')
+                future_df['구분'] = '향후 예측 (내년 동기)'
                 
                 comb = pd.concat([past_df, future_df])
                 comb['박스환산'] = comb['값'] / b_unit
                 
-                # 🚀 과거 실적(회색 실선) / 향후 예측(보라색 점선) 연결 그래프
+                # 🚀 과거 실적(회색 실선) / 향후 예측(보라색 점선) 중첩 그래프
                 forecast_chart = alt.Chart(comb).mark_line(point=True, size=3).encode(
-                    x=alt.X('날:T', axis=alt.Axis(format='%y년 %m월', labelAngle=0, labelFontSize=14)), 
+                    x=alt.X('공통월_라벨:N', sort=alt.EncodingSortField(field='순서', order='ascending'), title='비교 월 (Month)', axis=alt.Axis(labelAngle=0, labelFontSize=14)), 
                     y=alt.Y('박스환산:Q', title='수량 (박스)'),
-                    color=alt.Color('구분:N', scale=alt.Scale(domain=['과거 실적', '향후 예측'], range=['#95A5A6', '#8E44AD'])),
-                    strokeDash=alt.StrokeDash('구분:N', scale=alt.Scale(domain=['과거 실적', '향후 예측'], range=[[1,0], [5,5]]), legend=alt.Legend(title="데이터 구분", orient="top-left")),
-                    tooltip=[alt.Tooltip('날:T', format='%Y년 %m월', title='기준월'), alt.Tooltip('박스환산:Q', format=',.1f', title='수량 (박스)'), alt.Tooltip('값:Q', format=',.0f', title='수량 (낱개)')]
+                    color=alt.Color('구분:N', scale=alt.Scale(domain=['과거 실적 (작년 동기)', '향후 예측 (내년 동기)'], range=['#95A5A6', '#8E44AD'])),
+                    strokeDash=alt.StrokeDash('구분:N', scale=alt.Scale(domain=['과거 실적 (작년 동기)', '향후 예측 (내년 동기)'], range=[[1,0], [5,5]]), legend=alt.Legend(title="비교 그룹", orient="top-left")),
+                    tooltip=[
+                        alt.Tooltip('구분:N', title='구분'),
+                        alt.Tooltip('날:T', format='%Y년 %m월', title='실제 연/월'), 
+                        alt.Tooltip('박스환산:Q', format=',.1f', title='수량 (박스)'), 
+                        alt.Tooltip('값:Q', format=',.0f', title='수량 (낱개)')
+                    ]
                 ).properties(height=350)
                 
                 st.altair_chart(forecast_chart, use_container_width=True)
 
                 st.markdown("### 📋 향후 12개월 예상 수요 (발주 추천량) 상세표")
                 
-                # 🚀 표(Dataframe) 형태로 데이터 가공 후 출력
+                # 🚀 표 데이터 가공
                 f_df['예상 박스'] = f_df['예측수량'] / b_unit
                 disp_df = f_df.copy()
                 disp_df['예측 월'] = disp_df['월_dt'].dt.strftime('%Y년 %m월')
                 disp_df = disp_df[['예측 월', '예상 박스', '예측수량']]
                 disp_df.rename(columns={'예측수량': '낱개 수량 (개)'}, inplace=True)
 
-                st.dataframe(disp_df.style.format({
+                # 🚀 글자 크기를 키운 커스텀 HTML 테이블 생성 및 주입
+                html_table = disp_df.style.format({
                     '예상 박스': '{:,.1f} 박스',
                     '낱개 수량 (개)': '{:,.0f} 개'
-                }), use_container_width=True)
+                }).hide(axis="index") \
+                  .set_table_attributes('style="width:100%; font-size:1.2rem; text-align:center; border-collapse:collapse; background-color:white; box-shadow: 0 2px 8px rgba(0,0,0,0.05);"') \
+                  .set_table_styles([
+                      {'selector': 'th', 'props': [('background-color', '#f4f6f8'), ('color', '#333'), ('padding', '14px'), ('border-bottom', '2px solid #ddd'), ('text-align', 'center'), ('font-size', '1.25rem')]},
+                      {'selector': 'td', 'props': [('padding', '14px'), ('border-bottom', '1px solid #eee'), ('color', '#111'), ('font-size', '1.2rem'), ('text-align', 'center')]}
+                  ]).to_html()
+                
+                st.markdown(html_table, unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
                 
                 total_f = f_df['예측수량'].sum()
                 total_box_str = f"{total_f/b_unit:.1f} 박스" if b_unit > 1 else f"{int(total_f):,} 개"
