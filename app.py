@@ -65,8 +65,8 @@ with st.sidebar:
 
     main_menu = option_menu(
         menu_title=None, 
-        options=["🏠", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "🤝 거래처 현황", "📊 영업 실적", "💳 채권 분석"],
-        icons=["", "", "", "", "", "", ""],
+        options=["🏠", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "📊 영업 실적", "💳 채권 분석"],
+        icons=["", "", "", "", "", ""],
         default_index=0, 
         styles={
             "container": {"padding": "0!important", "background-color": "transparent", "border": "none"},
@@ -239,8 +239,6 @@ elif main_menu == "📦 자사 재고":
 elif main_menu == "🚀 쿠팡 재고":
     coupang_stock.run(load_sheet_data)
 elif main_menu == "📈 판매 현황":
-    sales_trend.run(load_sheet_data)
-elif main_menu == "🤝 거래처 현황":
     trade_trend.run(load_sheet_data)
 elif main_menu == "💳 채권 분석":
     ar_trend.run(load_sheet_data)
