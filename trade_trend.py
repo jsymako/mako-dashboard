@@ -16,7 +16,7 @@ def run(load_data_func):
 
     try:
         # ==========================================
-        # 🚀 1. 데이터 로드 및 마스터 결합 (수요예측을 위해 '박스입수' 추가)
+        # 1. 데이터 로드 및 마스터 결합 (수요예측을 위해 '박스입수' 추가)
         # ==========================================
         df_trade_raw = load_data_func("trade_record")
         df_item = load_data_func("ecount_item_data")
@@ -43,7 +43,7 @@ def run(load_data_func):
         df_trade['월'] = df_trade['일자'].dt.strftime('%Y년 %m월')
 
         # ==========================================
-        # 🚀 2. 사이드바 필터 (거래처 -> 브랜드 -> 품목 순차적 다중 선택)
+        # 2. 사이드바 필터 (거래처 -> 브랜드 -> 품목 순차적 다중 선택)
         # ==========================================
         trader_list = sorted(list(df_trade['거래처명'].dropna().unique()))
         selected_traders = st.sidebar.multiselect(
@@ -86,7 +86,7 @@ def run(load_data_func):
         group_field = '브랜드' if not selected_brands and not selected_products else '공식품목명'
 
         # ==========================================
-        # 🚀 3. 모드별 날짜 세팅 및 필터링
+        # 3. 모드별 날짜 세팅 및 필터링
         # ==========================================
         today = datetime.date.today()
         
@@ -130,7 +130,7 @@ def run(load_data_func):
             return
 
         # ==========================================
-        # 🚀 4. KPI 상단 바
+        # 4. KPI 상단 바
         # ==========================================
         total_amt = display_df['공급가액'].sum()
         total_qty = display_df['수량'].sum()
@@ -161,7 +161,7 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 🚀 5. 메인 시각화 분기 (현황 분석 vs 수요 예측)
+        # 5. 메인 시각화 분기 (현황 분석 vs 수요 예측)
         # ==========================================
         if view_mode in ["월별 현황", "일별 현황"]:
             common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
@@ -243,7 +243,7 @@ def run(load_data_func):
             st.altair_chart((rank_chart + text_label).properties(height=chart_h), use_container_width=True)
 
         # ==========================================
-        # 🚀 [수정됨] 향후 12개월 수요 예측 및 박스 단위 변환
+        # 🚀 6. 향후 12개월 수요 예측 (그래프 연결 & 표 변환 적용)
         # ==========================================
         elif view_mode == "수요 예측":
             st.subheader("향후 12개월 수요 (출고) 예측 분석")
@@ -252,59 +252,64 @@ def run(load_data_func):
             if len(m_data) < 12:
                 st.warning("예측 모델을 구동하려면 최소 12개월 이상의 과거 거래 데이터가 필요합니다.")
             else:
-                # 🚀 박스 단위 계산을 위로 올림
                 if selected_products and len(selected_products) == 1:
                     b_unit = filtered_df['박스입수'].iloc[0] 
                 else:
                     b_unit = filtered_df['박스입수'].mean()
 
-                # 계절성 지수 기반의 간단 예측 모델 (12개월로 확장)
+                # 최근 3개월 평균 * 계절성 지수
                 seasonal_idx = filtered_df.groupby(filtered_df['일자'].dt.month)['수량'].sum() / (filtered_df.groupby(filtered_df['일자'].dt.month)['수량'].sum().mean())
                 recent_avg = m_data['수량'].tail(3).mean()
                 cur_start = datetime.datetime.now().replace(day=1)
                 
                 f_res = []
-                for i in range(1, 13): # 🚀 1개월 ~ 12개월까지 반복
+                for i in range(1, 13):
                     t_date = cur_start + relativedelta(months=i)
                     f_res.append({'월_dt': t_date, '예측수량': recent_avg * seasonal_idx.get(t_date.month, 1.0)})
                 f_df = pd.DataFrame(f_res)
 
-                # 데이터 결합 시 '구분' (과거 vs 예측) 컬럼 추가
+                # 🚀 과거 12개월 데이터와 향후 예측 데이터 병합
                 past_df = m_data.tail(12).reset_index().rename(columns={'수량':'값','월_dt':'날'})
                 future_df = f_df.rename(columns={'예측수량':'값','월_dt':'날'})
                 
+                # 🚀 [핵심] 과거의 마지막 데이터를 미래의 첫 데이터로 복사하여 선을 이어줍니다!
+                link_row = past_df.iloc[-1:].copy()
+                future_df = pd.concat([link_row, future_df], ignore_index=True)
+                
+                past_df['구분'] = '과거 실적'
+                future_df['구분'] = '향후 예측'
+                
                 comb = pd.concat([past_df, future_df])
                 comb['박스환산'] = comb['값'] / b_unit
-                comb['구분'] = ['과거 실적'] * len(past_df) + ['향후 예측'] * len(future_df)
                 
-                # 🚀 그래프: 과거는 회색 실선, 예측은 보라색 점선으로 완벽 분리
+                # 🚀 과거 실적(회색 실선) / 향후 예측(보라색 점선) 연결 그래프
                 forecast_chart = alt.Chart(comb).mark_line(point=True, size=3).encode(
                     x=alt.X('날:T', axis=alt.Axis(format='%y년 %m월', labelAngle=0, labelFontSize=14)), 
                     y=alt.Y('박스환산:Q', title='수량 (박스)'),
                     color=alt.Color('구분:N', scale=alt.Scale(domain=['과거 실적', '향후 예측'], range=['#95A5A6', '#8E44AD'])),
-                    strokeDash=alt.StrokeDash('구분:N', scale=alt.Scale(domain=['과거 실적', '향후 예측'], range=[[1,0], [5,5]]), legend=None),
-                    tooltip=[alt.Tooltip('날:T', format='%Y년 %m월', title='월'), alt.Tooltip('박스환산:Q', format=',.1f', title='예상 박스'), alt.Tooltip('값:Q', format=',.0f', title='낱개 수량')]
+                    strokeDash=alt.StrokeDash('구분:N', scale=alt.Scale(domain=['과거 실적', '향후 예측'], range=[[1,0], [5,5]]), legend=alt.Legend(title="데이터 구분", orient="top-left")),
+                    tooltip=[alt.Tooltip('날:T', format='%Y년 %m월', title='기준월'), alt.Tooltip('박스환산:Q', format=',.1f', title='수량 (박스)'), alt.Tooltip('값:Q', format=',.0f', title='수량 (낱개)')]
                 ).properties(height=350)
+                
                 st.altair_chart(forecast_chart, use_container_width=True)
 
-                st.markdown("### 📋 향후 12개월 예상 수요 (발주 추천량) 요약")
+                st.markdown("### 📋 향후 12개월 예상 수요 (발주 추천량) 상세표")
                 
-                # 🚀 12개월 치 데이터를 4칸씩 3줄로 예쁘게 출력
-                for row_idx in range(3):
-                    cols = st.columns(4)
-                    for col_idx in range(4):
-                        item_idx = row_idx * 4 + col_idx
-                        if item_idx < len(f_df):
-                            row = f_df.iloc[item_idx]
-                            with cols[col_idx]:
-                                main_v = f"{row['예측수량']/b_unit:.1f} 박스" if b_unit > 1 else f"{int(row['예측수량']):,} 개"
-                                sub_v = f"낱개: {int(row['예측수량']):,} 개" if b_unit > 1 else ""
-                                st.metric(f"{row['월_dt'].strftime('%Y년 %m월')}", main_v)
-                                if sub_v: st.caption(sub_v)
+                # 🚀 표(Dataframe) 형태로 데이터 가공 후 출력
+                f_df['예상 박스'] = f_df['예측수량'] / b_unit
+                disp_df = f_df.copy()
+                disp_df['예측 월'] = disp_df['월_dt'].dt.strftime('%Y년 %m월')
+                disp_df = disp_df[['예측 월', '예상 박스', '예측수량']]
+                disp_df.rename(columns={'예측수량': '낱개 수량 (개)'}, inplace=True)
+
+                st.dataframe(disp_df.style.format({
+                    '예상 박스': '{:,.1f} 박스',
+                    '낱개 수량 (개)': '{:,.0f} 개'
+                }), use_container_width=True)
                 
                 total_f = f_df['예측수량'].sum()
                 total_box_str = f"{total_f/b_unit:.1f} 박스" if b_unit > 1 else f"{int(total_f):,} 개"
-                st.success(f"✅ 향후 12개월 총 예상 출고(필요)량: 약 {total_box_str} ({int(total_f):,} 개)")
+                st.success(f"✅ 향후 12개월 총 예상 출고(필요)량: 약 **{total_box_str}** ({int(total_f):,} 개)")
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
