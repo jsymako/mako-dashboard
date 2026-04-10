@@ -253,7 +253,7 @@ def run(load_data_func):
                 st.warning("예측 모델을 구동하려면 최소 12개월 이상의 과거 거래 데이터가 필요합니다.")
             else:
                 # 🚀 [추가됨] 예측 알고리즘 안내 박스 (시각적 피드백)
-                @st.dialog("💡 수요 예측 알고리즘 안내")
+                @st.dialog("수요 예측 알고리즘 안내", width="large")
                 def show_algo_popup():
                     st.markdown("""
                         <div style="background-color: #fcf8ff; border-left: 4px solid #8E44AD; padding: 15px 20px; border-radius: 5px; margin-bottom: 10px;">
@@ -269,7 +269,7 @@ def run(load_data_func):
                     """, unsafe_allow_html=True)
 
                 # 🚀 2. 팝업을 띄우는 버튼 생성
-                if st.button("💡 수요 예측 알고리즘 원리 보기"):
+                if st.button("수요 예측 알고리즘 안내"):
                     show_algo_popup()
 
                 if selected_products and len(selected_products) == 1:
