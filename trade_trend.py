@@ -253,19 +253,20 @@ def run(load_data_func):
                 st.warning("예측 모델을 구동하려면 최소 12개월 이상의 과거 거래 데이터가 필요합니다.")
             else:
                 # 🚀 [추가됨] 예측 알고리즘 안내 박스 (시각적 피드백)
-                st.markdown("""
-                    <div style="background-color: #fcf8ff; border-left: 4px solid #8E44AD; padding: 15px 20px; border-radius: 5px; margin-bottom: 25px;">
-                        <h4 style="margin-top: 0; color: #2c3e50; font-size: 1.1rem; margin-bottom: 10px;">💡 수요 예측 알고리즘 안내</h4>
-                        <ul style="margin-bottom: 0; color: #444; font-size: 1.0rem; line-height: 1.7; padding-left: 20px;">
-                            <li><b>기초 체력 (60% 반영):</b> 과거 12개월 평균 판매량 <span style="color:#777; font-size:0.9rem;">(장기적인 판매 규모의 안정성)</span></li>
-                            <li><b>최신 트렌드 (40% 반영):</b> 최근 3개월 평균 판매량 <span style="color:#777; font-size:0.9rem;">(가장 최근의 시장 상승/하락 추세)</span></li>
-                            <li><b>계절성 지수:</b> 과거 판매 패턴 기준의 월별 고유 가중치 <span style="color:#777; font-size:0.9rem;">(예: 성수기/비수기 변동폭)</span></li>
-                            <li style="list-style: none; margin-top: 10px; margin-left: -20px; color: #8E44AD; font-weight: bold; font-size: 1.05rem;">
-                                👉 예상 발주량 = (기초 체력 + 최신 트렌드) × 월별 계절성 지수
-                            </li>
-                        </ul>
-                    </div>
-                """, unsafe_allow_html=True)
+                with st.expander("💡 수요 예측 알고리즘 안내 (클릭하여 펼치기)", expanded=False):
+                    st.markdown("""
+                        <div style="background-color: #fcf8ff; border-left: 4px solid #8E44AD; padding: 15px 20px; border-radius: 5px; margin-bottom: 25px;">
+                            <h4 style="margin-top: 0; color: #2c3e50; font-size: 1.1rem; margin-bottom: 10px;">💡 수요 예측 알고리즘 안내</h4>
+                            <ul style="margin-bottom: 0; color: #444; font-size: 1.0rem; line-height: 1.7; padding-left: 20px;">
+                                <li><b>기초 체력 (60% 반영):</b> 과거 12개월 평균 판매량 <span style="color:#777; font-size:0.9rem;">(장기적인 판매 규모의 안정성)</span></li>
+                                <li><b>최신 트렌드 (40% 반영):</b> 최근 3개월 평균 판매량 <span style="color:#777; font-size:0.9rem;">(가장 최근의 시장 상승/하락 추세)</span></li>
+                                <li><b>계절성 지수:</b> 과거 판매 패턴 기준의 월별 고유 가중치 <span style="color:#777; font-size:0.9rem;">(예: 성수기/비수기 변동폭)</span></li>
+                                <li style="list-style: none; margin-top: 10px; margin-left: -20px; color: #8E44AD; font-weight: bold; font-size: 1.05rem;">
+                                    👉 예상 발주량 = (기초 체력 + 최신 트렌드) × 월별 계절성 지수
+                                </li>
+                            </ul>
+                        </div>
+                    """, unsafe_allow_html=True)
 
                 if selected_products and len(selected_products) == 1:
                     b_unit = filtered_df['박스입수'].iloc[0] 
