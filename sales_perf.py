@@ -54,7 +54,7 @@ def run(load_data_func):
             st.markdown("#### 🎯 연간 목표 설정")
             t_emp = st.text_input("직원 이름")
             t_amt = st.number_input("연간 목표액 (원)", min_value=0, step=1000000, format="%d")
-            if st.button("목표 저장", use_container_width=True):
+            if st.button("목표 저장", width="stretch"):
                 if t_emp:
                     if t_emp in df_target['직원명'].values:
                         df_target.loc[df_target['직원명'] == t_emp, '연간목표액'] = t_amt
@@ -93,7 +93,7 @@ def run(load_data_func):
             r_month = f"{r_year}-{r_month_num:02d}"
             r_amt = st.number_input("해당 월 실적액 (원)", min_value=0, step=1000000, format="%d")
             
-            if st.button("실적 저장", use_container_width=True):
+            if st.button("실적 저장", width="stretch"):
                 if r_emp != "선택하세요" and r_month:
                     mask = (df_record['직원명'] == r_emp) & (df_record['입력월'] == r_month)
                     if mask.any():
@@ -233,7 +233,7 @@ def run(load_data_func):
     
     with col_chart1:
         st.subheader(f"당월({curr_m}월) 달성률 (%)")
-        st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), use_container_width=True)
+        st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), width="stretch")
         
         st.markdown(f"##### 📋 {curr_m}월 실적 상세")
         disp_m = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
@@ -241,11 +241,11 @@ def run(load_data_func):
             '월간목표액': '{:,.0f} 원',
             '월간실적액': '{:,.0f} 원',
             '월간달성률': '{:.1f} %'
-        }), use_container_width=True)
+        }), width="stretch")
 
     with col_chart2:
         st.subheader(f"{curr_q}분기 달성률 (%)")
-        st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
+        st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), width="stretch")
         
         st.markdown(f"##### 📋 {curr_q}분기 실적 상세")
         disp_q = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
@@ -253,4 +253,4 @@ def run(load_data_func):
             '분기목표액': '{:,.0f} 원',
             '분기실적액': '{:,.0f} 원',
             '분기달성률': '{:.1f} %'
-        }), use_container_width=True)
+        }), width="stretch")
