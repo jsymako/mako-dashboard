@@ -188,13 +188,13 @@ def run(load_data_func):
                 line_chart = alt.Chart(trend).mark_line(point=True).encode(
                     x=common_x, y=alt.Y('공급가액:Q', title='금액(원)'), color=color_encoding, tooltip=[grp, '거래처명', '공급가액']
                 ).properties(height=350)
-                st.altair_chart(line_chart, use_container_width=True)
+                st.altair_chart(line_chart, width="stretch")
             else:
                 line_chart = alt.Chart(trend).mark_line(point=True).encode(
                     x=alt.X(f'{grp}:N', title='', axis=alt.Axis(labelAngle=0, labelFontSize=14)), 
                     y=alt.Y('공급가액:Q', title='금액(원)'), color=color_encoding, tooltip=[grp, '거래처명', '공급가액']
                 ).properties(height=350)
-                st.altair_chart(line_chart, use_container_width=True)
+                st.altair_chart(line_chart, width="stretch")
 
             # ------------------------------------------
             # 관점 전환 교차 랭킹 차트
@@ -240,7 +240,7 @@ def run(load_data_func):
                 align='left', dx=5, fontSize=13, fontWeight='bold', color='#555'
             ).encode(text=alt.Text('공급가액:Q', format=','))
 
-            st.altair_chart((rank_chart + text_label).properties(height=chart_h), use_container_width=True)
+            st.altair_chart((rank_chart + text_label).properties(height=chart_h), width="stretch")
 
         # ==========================================
         # 🚀 6. 향후 12개월 수요 예측
@@ -319,7 +319,7 @@ def run(load_data_func):
                     ]
                 ).properties(height=350)
                 
-                st.altair_chart(forecast_chart, use_container_width=True)
+                st.altair_chart(forecast_chart, width="stretch")
 
                 st.markdown("### 📋 향후 12개월 예상 수요 (발주 추천량) 상세표")
                 
