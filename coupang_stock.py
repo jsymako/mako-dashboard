@@ -167,22 +167,27 @@ def run(load_data_func):
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
 
         # 5. 일자별 상세 모니터링 표
+        # 5. 일자별 상세 모니터링 표
         st.markdown("---")
         st.subheader("🚨 일자별 안전재고 및 가격 모니터링")
-        st.markdown("※ 기준치 미달/초과 발생 시 아이콘과 함께 표시됩니다.")
+        st.markdown("※ 기준치 미달/초과 발생 시 붉은색 글씨로 표시됩니다.")
 
+        # 🚀 [수정] 0일 경우 "품절" 표시, 아이콘 제거 (아이콘 대신 색상으로만 구분)
         def format_stock_status(row):
             val = int(row['재고'])
             safe_val = int(row['안전재고량'])
-            if safe_val > 0 and val < safe_val: return f"{val:,} 🚨"
+            if val == 0:
+                return "품절"
+            if safe_val > 0 and val < safe_val: 
+                return f"{val:,}" 
             return f"{val:,}"
 
+        # 🚀 [수정] 판매가 포맷 유지 (아이콘 제거)
         def format_price_status(row):
             val = int(row['판매가'])
             max_val = int(row['최대판매가'])
             min_val = int(row['최소판매가'])
-            if max_val > 0 and val > max_val: return f"{val:,} 🔺"
-            elif min_val > 0 and val < min_val: return f"{val:,} 🔻"
+            # 텍스트 값만 리턴
             return f"{val:,}"
 
         show_df = display_df[['일자', '브랜드', '품목명', '재고', '안전재고량', '판매가', '최소판매가', '최대판매가']].copy()
@@ -212,17 +217,65 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        # 🚀 [추가] 경고 아이콘(🚨, 🔺, 🔻)이 포함된 셀에 빨간색 배경색 입히기
-       def highlight_status(val):
-            if isinstance(val, str):
-                if "🚨" in val or "🔺" in val or "🔻" in val:
-                    # background-color를 없애고, border(테두리) 속성을 줍니다.
-                    return "border: 2px solid #ff4b4b; color: #ff4b4b; font-weight: bold;"
+        # 🚀 [핵심 수정] 원본 데이터(show_df)를 활용하여 색상을 입히는 논리적 스타일 함수
+        def color_danger_cells(val, col_name, row_idx):
+            # 1. 값이 없거나 기본 정보 컬럼이면 무시
+            if pd.isna(val) or val == "-" or col_name in ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가']:
+                return ""
+            
+            # 2. 현재 행의 안전재고/최소/최대 판매가 기준 가져오기
+            try:
+                safe_qty = int(pivot_df.loc[row_idx, '안전재고'].replace(',', ''))
+            except:
+                safe_qty = 0
+            
+            try:
+                min_price = int(pivot_df.loc[row_idx, '최소판매가'].replace(',', ''))
+            except:
+                min_price = 0
+                
+            try:
+                max_price = int(pivot_df.loc[row_idx, '최대판매가'].replace(',', ''))
+            except:
+                max_price = 0
+
+            # 3. 셀 값 파싱 (재고 | 가격 또는 단일 값)
+            is_danger = False
+            
+            if "품절" in val:
+                is_danger = True
+            else:
+                parts = str(val).split(" | ")
+                
+                # 재고 체크 (첫 번째 부분)
+                if view_target in ["📦 재고량 추이", "📊 모두 보기"] and len(parts) >= 1:
+                    try:
+                        qty = int(parts[0].replace(',', ''))
+                        if safe_qty > 0 and qty < safe_qty:
+                            is_danger = True
+                    except:
+                        pass
+                
+                # 가격 체크 (두 번째 부분 또는 단일 값)
+                if view_target in ["💰 판매가 변동", "📊 모두 보기"]:
+                    price_str = parts[1] if len(parts) > 1 else parts[0]
+                    try:
+                        price = int(price_str.replace(',', ''))
+                        if (max_price > 0 and price > max_price) or (min_price > 0 and price < min_price):
+                            is_danger = True
+                    except:
+                        pass
+
+            # 4. 위험 감지 시 스타일 적용 (테두리는 Streamlit 특성상 표 렌더링 시 잘 안 먹힐 수 있어 글자색으로 강조)
+            if is_danger:
+                 return "color: #ff4b4b; font-weight: bold;"
             return ""
 
+        # 데이터프레임 전체를 순회하며 스타일 적용
+        styled_df = pivot_df.style.apply(lambda col: [color_danger_cells(v, col.name, i) for i, v in enumerate(col)], axis=0)
+
         st.dataframe(
-            # 🚀 applymap 을 map 으로 변경했습니다.
-            pivot_df.style.map(highlight_status), 
+            styled_df, 
             width="stretch", 
             height=750, 
             hide_index=True
