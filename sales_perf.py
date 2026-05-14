@@ -225,14 +225,18 @@ def run(load_data_func):
         ).encode(y='y:Q')
 
         base = alt.Chart(data).encode(
-            x=alt.X('직원명:N', title='', axis=alt.Axis(labelAngle=0, labelFontSize=14)),
-            y=alt.Y(f'{y_col}:Q', title='달성률 (%)', scale=alt.Scale(domain=[0, max(110, data[y_col].max() + 10)])),
+            # 🚀 [수정] 직원명(가로축)의 글자 크기를 18로 키우고 굵게(bold) 처리했습니다.
+            x=alt.X('직원명:N', title='', axis=alt.Axis(labelAngle=0, labelFontSize=18, labelFontWeight='bold')),
+            
+            # 🚀 [선택] 세로축(달성률 %)의 글자 크기도 밸런스를 위해 살짝 키웠습니다.
+            y=alt.Y(f'{y_col}:Q', title='달성률 (%)', axis=alt.Axis(labelFontSize=14, titleFontSize=15), scale=alt.Scale(domain=[0, max(110, data[y_col].max() + 10)])),
             tooltip=['직원명', alt.Tooltip(f'{y_col}:Q', format='.1f', title='달성률(%)')]
         )
         bar = base.mark_bar(size=40, cornerRadiusEnd=5, color=bar_color, opacity=0.8)
         
+        # 🚀 [수정] 막대 위에 표시되는 달성률 숫자 폰트도 14에서 16으로 키웠습니다.
         text = base.mark_text(
-            align='center', baseline='bottom', dy=-5, fontSize=14, fontWeight='bold', color='#333'
+            align='center', baseline='bottom', dy=-5, fontSize=16, fontWeight='bold', color='#333'
         ).encode(text=alt.Text(f'{y_col}:Q', format='.1f'))
         
         return (bar + text + rule).properties(height=350)
