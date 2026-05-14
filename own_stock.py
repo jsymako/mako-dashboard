@@ -126,7 +126,12 @@ def run(load_data_func):
                     else:
                         weeks = row['예상소진주']
                         months = round(weeks / 4, 1)
-                        combined_val = f"{weeks}주 · {months}달"
+                        
+                        # 10 이상이면 반올림하여 소수점 없는 정수로 변환, 미만이면 그대로(소수점 1자리)
+                        str_weeks = f"{int(round(weeks))}" if weeks >= 10 else f"{weeks}"
+                        str_months = f"{int(round(months))}" if months >= 10 else f"{months}"
+                        
+                        combined_val = f"{str_weeks}주 · {str_months}달"
                     
                     stock_text = row['환산재고']
                     stock_parts = stock_text.split(' ')
