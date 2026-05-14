@@ -253,12 +253,20 @@ def run(load_data_func):
         
         m_t = m_data.set_index('직원명').T
         m_t.index = ['목표액', '실적액', '달성률']
-        styled_m_t = m_t.style.set_properties(**{'font-size': '22px', 'text-align': 'center'}) \
-                             .set_table_styles([
-                                 dict(selector="th", props=[("font-size", "16px"), ("text-align", "center")])
-                             ])
+        html_m = m_t.style.set_properties(**{
+            'font-size': '18px', 
+            'text-align': 'center', 
+            'padding': '12px',
+            'border': '1px solid #e0e0e0'
+        }).set_table_styles([{
+            'selector': 'th', 
+            'props': [('font-size', '18px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
+        }, {
+            'selector': 'table',
+            'props': [('width', '100%'), ('border-collapse', 'collapse')]
+        }]).to_html()
         
-        st.dataframe(styled_m_t, use_container_width=True)
+        st.markdown(html_m, unsafe_allow_html=True)
 
     with col_chart2:
         st.subheader(f"{curr_q}분기 달성률 (%)")
