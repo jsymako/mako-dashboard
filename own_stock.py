@@ -112,18 +112,18 @@ def run(load_data_func):
                 
                 for _, row in br_df.iterrows():
 
-                    # 1. 상태별 색상 및 두께 일괄 정의
+                    # 1. 상태별 색상 및 두께 일괄 정의 (전부 1px로 통일)
                     if row['재고상태'] == "품절":
                         status_color = "#ff4b4b" # 빨간색
-                        border_thick = "5px"
+                        border_thick = "1px"
                         text_color = "white"     # 짙은 배경엔 흰 글자
                     elif row['재고상태'] == "부족":
                         status_color = "#ffc107" # 노란색
-                        border_thick = "5px"
+                        border_thick = "1px"
                         text_color = "black"     # 밝은 배경엔 검은 글자
                     elif row['재고상태'] == "과다":
                         status_color = "#28a745" # 초록색
-                        border_thick = "5px"
+                        border_thick = "1px"
                         text_color = "white"     # 짙은 배경엔 흰 글자
                     else: # 적정
                         status_color = "#e0e0e0" # 옅은 회색
@@ -133,12 +133,12 @@ def run(load_data_func):
                     # 2. 테두리 및 타이틀 스타일 적용
                     border_style = f"border: {border_thick} solid {status_color};"
                     
-                    # '적정'일 때는 타이틀 배경을 투명하게 두어 깔끔함을 유지합니다.
+                    # '적정'일 때는 타이틀 배경을 투명하게 유지합니다.
                     if row['재고상태'] == "적정":
                         title_style = ""
                     else:
-                        title_style = f"background-color: {status_color}; color: {text_color}; padding: 2px 8px; border-radius: 4px; display: inline-block;"
-                    
+                        # 🚀 display: inline-block;을 제거하여 좌우로 꽉 차는 시원한 헤더로 복구했습니다.
+                        title_style = f"background-color: {status_color}; color: {text_color}; padding: 4px 8px; border-radius: 4px;"
                     
                     if row['예상소진주'] >= 999:
                         combined_val = "자료 없음"
