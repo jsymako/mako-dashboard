@@ -212,13 +212,20 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        # 🚀 [수정] 표의 줄 수(행 개수)에 비례하여 높이를 자동으로 계산합니다.
-        # 기본 헤더(제목줄) 여백 약 39px + (데이터 줄 수 * 36px)
-        row_count = len(pivot_df)
-        dynamic_height = int((row_count * 36) + 39) 
-        
-        # use_container_width 대신 최신 문법인 width="stretch"를 적용했습니다.
-        st.dataframe(pivot_df, width="stretch", height=dynamic_height, hide_index=True)
+        # 🚀 [추가] 경고 아이콘(🚨, 🔺, 🔻)이 포함된 셀에 빨간색 배경색 입히기
+        def highlight_status(val):
+            if isinstance(val, str):
+                if "🚨" in val or "🔺" in val or "🔻" in val:
+                    return "background-color: #ff4b4b; color: white; font-weight: bold;"
+            return ""
+
+        # 🚀 [수정] 높이를 750px(약 20줄)로 고정하여 수평 스크롤 접근성 개선
+        st.dataframe(
+            pivot_df.style.applymap(highlight_status), 
+            width="stretch", 
+            height=750, 
+            hide_index=True
+        )
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
