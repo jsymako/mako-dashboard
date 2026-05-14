@@ -254,8 +254,8 @@ def run(load_data_func):
         m_t = m_data.set_index('직원명').T
         m_t.index = ['목표액', '실적액', '달성률']
         html_m = m_t.style.set_properties(**{
-            'font-size': '20px', 
-            'text-align': 'center', 
+            'font-size': '22px', 
+            'text-align': 'right', 
             'padding': '12px',
             'border': '1px solid #e0e0e0'
         }).set_table_styles([{
@@ -282,7 +282,7 @@ def run(load_data_func):
         q_t = q_data.set_index('직원명').T
         q_t.index = ['목표액', '실적액', '달성률']
         html_q = q_t.style.set_properties(**{
-            'font-size': '20px', 
+            'font-size': '22px', 
             'text-align': 'center', 
             'padding': '12px',
             'border': '1px solid #e0e0e0'
