@@ -253,7 +253,7 @@ def run(load_data_func):
         
         m_t = m_data.set_index('직원명').T
         m_t.index = ['목표액', '실적액', '달성률']
-        styled_m_t = m_t.style.set_properties(**{'font-size': '16px', 'text-align': 'center'}) \
+        styled_m_t = m_t.style.set_properties(**{'font-size': '22px', 'text-align': 'center'}) \
                              .set_table_styles([
                                  dict(selector="th", props=[("font-size", "16px"), ("text-align", "center")])
                              ])
@@ -273,7 +273,7 @@ def run(load_data_func):
         
         q_t = q_data.set_index('직원명').T
         q_t.index = ['목표액', '실적액', '달성률']
-        styled_q_t = q_t.style.set_properties(**{'font-size': '16px', 'text-align': 'center'}) \
+        styled_q_t = q_t.style.set_properties(**{'font-size': '22px', 'text-align': 'center'}) \
                              .set_table_styles([
                                  dict(selector="th", props=[("font-size", "16px"), ("text-align", "center")])
                              ])
