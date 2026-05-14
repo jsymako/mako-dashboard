@@ -111,15 +111,34 @@ def run(load_data_func):
                 html_content = f'<div class="brand-section"><div class="brand-title">🏢 {br} ({len(br_df)}개 품목)</div><div class="grid-container">'
                 
                 for _, row in br_df.iterrows():
-                    # 🚀 [수정] 간소화된 2글자 상태명에 맞춰 테두리 조건 변경
-                    border_style = "border: 1px solid #e0e0e0;" # 기본 (적정)
+
+                    # 1. 상태별 색상 및 두께 일괄 정의
+                    if row['재고상태'] == "품절":
+                        status_color = "#ff4b4b" # 빨간색
+                        border_thick = "5px"
+                        text_color = "white"     # 짙은 배경엔 흰 글자
+                    elif row['재고상태'] == "부족":
+                        status_color = "#ffc107" # 노란색
+                        border_thick = "5px"
+                        text_color = "black"     # 밝은 배경엔 검은 글자
+                    elif row['재고상태'] == "과다":
+                        status_color = "#28a745" # 초록색
+                        border_thick = "5px"
+                        text_color = "white"     # 짙은 배경엔 흰 글자
+                    else: # 적정
+                        status_color = "#e0e0e0" # 옅은 회색
+                        border_thick = "1px"
+                        text_color = "inherit"   # 기본 글자색 유지
+
+                    # 2. 테두리 및 타이틀 스타일 적용
+                    border_style = f"border: {border_thick} solid {status_color};"
                     
-                    if row['재고상태'] == "품절": 
-                        border_style = "border: 10px solid #ff4b4b;"
-                    elif row['재고상태'] == "부족": 
-                        border_style = "border: 10px solid #ffc107;"
-                    elif row['재고상태'] == "과다": 
-                        border_style = "border: 10px solid #28a745;"
+                    # '적정'일 때는 타이틀 배경을 투명하게 두어 깔끔함을 유지합니다.
+                    if row['재고상태'] == "적정":
+                        title_style = ""
+                    else:
+                        title_style = f"background-color: {status_color}; color: {text_color}; padding: 2px 8px; border-radius: 4px; display: inline-block;"
+                    
                     
                     if row['예상소진주'] >= 999:
                         combined_val = "자료 없음"
@@ -141,7 +160,7 @@ def run(load_data_func):
                     card_html = f"""
                     <div class="item-card" style="{border_style}">
                         <div class="card-header">
-                            <div class="item-title">{row['품목명']}</div>
+                            <div class="item-title" style="{title_style}">{row['품목명']}</div>
                             <div class="stock-main">
                                 <span class="stock-label">현재고</span>
                                 <div>
