@@ -256,11 +256,11 @@ def run(load_data_func):
         html_m = m_t.style.set_properties(**{
             'font-size': '20px', 
             'text-align': 'center', 
-            'padding': '15px',
+            'padding': '12px',
             'border': '1px solid #e0e0e0'
         }).set_table_styles([{
             'selector': 'th', 
-            'props': [('font-size', '18px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
+            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
         }, {
             'selector': 'table',
             'props': [('width', '100%'), ('border-collapse', 'collapse')]
@@ -282,13 +282,13 @@ def run(load_data_func):
         q_t = q_data.set_index('직원명').T
         q_t.index = ['목표액', '실적액', '달성률']
         html_q = q_t.style.set_properties(**{
-            'font-size': '18px', 
+            'font-size': '20px', 
             'text-align': 'center', 
             'padding': '12px',
             'border': '1px solid #e0e0e0'
         }).set_table_styles([{
             'selector': 'th', 
-            'props': [('font-size', '18px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
+            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
         }, {
             'selector': 'table',
             'props': [('width', '100%'), ('border-collapse', 'collapse')]
