@@ -69,10 +69,13 @@ def run(load_data_func):
         df_merged = pd.merge(df_merged, df_item_limit, on='품목코드', how='left')
         df_merged = pd.merge(df_merged, df_item_box, on='품목코드', how='left')
         
+        df_merged['현재재고'] = pd.to_numeric(df_merged['현재재고'], errors='coerce').fillna(0).clip(lower=0)
+        df_merged['주평균판매량'] = pd.to_numeric(df_merged['주평균판매량'], errors='coerce').fillna(0).clip(lower=0)
+
         df_merged['예상소진주'] = np.where(df_merged['주평균판매량'] > 0, 
                                        (df_merged['현재재고'] / df_merged['주평균판매량']).round(1), 
                                        999.0)
-        df_merged['예상소진주'] = df_merged['예상소진주'].clip(lower=0)
+        df_merged['예상소진주'] = pd.to_numeric(df_merged['예상소진주'], errors='coerce').fillna(0).clip(lower=0)
 
         # 🚀 [수정] 상태 판별 함수: 2글자로 간소화 및 잔재 제거
         def check_status(row):
