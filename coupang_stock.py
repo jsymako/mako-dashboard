@@ -172,7 +172,7 @@ def run(load_data_func):
         st.subheader("🚨 일자별 안전재고 및 가격 모니터링")
         st.markdown("※ 🚨 재고부족(품절) | 🔺 가격초과(빨강) | 🔻 가격미달(파랑)")
 
-        # 🚀 다시 아이콘을 살려 가독성을 극대화합니다.
+        # 🚀 1. 재고와 판매가 모두에 무조건 아이콘을 붙여줍니다.
         def format_stock_status(row):
             val = int(row['재고'])
             safe_val = int(row['안전재고량'])
@@ -193,16 +193,18 @@ def run(load_data_func):
             return f"{val:,}"
 
         show_df = display_df[['일자', '브랜드', '품목명', '재고', '안전재고량', '판매가', '최소판매가', '최대판매가']].copy()
+        
+        # 여기서 생성된 현황(아이콘 포함)이 아래에서 그대로 사용됩니다.
         show_df['재고 현황'] = show_df.apply(format_stock_status, axis=1)
         show_df['판매가 현황'] = show_df.apply(format_price_status, axis=1)
         show_df['일자'] = show_df['일자'].dt.strftime('%m/%d')
 
+        # 🚀 2. 조회 항목에 따라 어떤 현황을 보여줄지 결정합니다.
         if view_target == "📦 재고량 추이":
             show_df['표시값'] = show_df['재고 현황']
         elif view_target == "💰 판매가 변동":
             show_df['표시값'] = show_df['판매가 현황']
         else:
-            # 모두 보기일 때: "150 🚨 | 8,000 🔻" 형태로 조합되어 원인 파악이 쉽습니다.
             show_df['표시값'] = show_df['재고 현황'] + " | " + show_df['판매가 현황']
 
         show_df['안전재고'] = show_df['안전재고량'].apply(lambda x: f"{int(x):,}")
@@ -220,7 +222,7 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        # 🚀 [핵심 수정] 텍스트 안에 어떤 아이콘이 있는지 확인해서 색상을 자동으로 칠합니다.
+        # 🚀 3. 셀 안에 들어있는 아이콘을 스캔해서 색상을 칠합니다.
         def color_danger_cells(val):
             if not isinstance(val, str):
                 return ""
@@ -229,13 +231,13 @@ def run(load_data_func):
             has_high_price = "🔺" in val
             has_low_price = "🔻" in val
             
-            # 1. 복합 문제: 가격도 낮고 재고도 문제일 때 -> 보라색으로 구별
+            # 복합 문제 (재고 문제 + 가격 낮음) -> 보라색
             if (has_stock_danger or has_high_price) and has_low_price:
                 return "color: #9c27b0; font-weight: bold;" 
-            # 2. 단일 문제: 가격 미달만 있을 때 -> 파란색
+            # 가격 낮음 -> 파란색
             elif has_low_price:
                 return "color: #007bff; font-weight: bold;"
-            # 3. 단일 문제: 재고 부족이나 가격 초과일 때 -> 빨간색
+            # 재고 부족 or 가격 높음 -> 빨간색
             elif has_stock_danger or has_high_price:
                 return "color: #ff4b4b; font-weight: bold;"
                 
