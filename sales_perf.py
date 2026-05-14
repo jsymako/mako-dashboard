@@ -260,7 +260,7 @@ def run(load_data_func):
             'border': '1px solid #e0e0e0'
         }).set_table_styles([{
             'selector': 'th', 
-            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
+            'props': [('font-size', '24px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
         }, {
             'selector': 'table',
             'props': [('width', '100%'), ('border-collapse', 'collapse')]
@@ -288,7 +288,7 @@ def run(load_data_func):
             'border': '1px solid #e0e0e0'
         }).set_table_styles([{
             'selector': 'th', 
-            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
+            'props': [('font-size', '24px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
         }, {
             'selector': 'table',
             'props': [('width', '100%'), ('border-collapse', 'collapse')]
