@@ -230,7 +230,7 @@ def run(load_data_func):
         pivot_df = pivot_df[final_cols].fillna("-")
 
         if view_target == "📊 모두 보기":
-            target_width = 160  # '재고 | 판매가'가 다 보이도록 넉넉하게 설정
+            target_width = 140  # '재고 | 판매가'가 다 보이도록 넉넉하게 설정
         else:
             target_width = 90   # 단일 항목일 때는 90으로 콤팩트하게 유지
             
