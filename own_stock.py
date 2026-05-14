@@ -114,11 +114,11 @@ def run(load_data_func):
 
                     # 1. 상태별 색상 및 두께 일괄 정의 (전부 1px로 통일)
                     if row['재고상태'] == "품절":
-                        status_color = "#ff4b4b" # 빨간색
+                        status_color = "#fd1e1e" # 빨간색
                         border_thick = "1px"
                         text_color = "white"     # 짙은 배경엔 흰 글자
                     elif row['재고상태'] == "부족":
-                        status_color = "#ffc107" # 노란색
+                        status_color = "#ffe321" # 노란색
                         border_thick = "1px"
                         text_color = "black"     # 밝은 배경엔 검은 글자
                     elif row['재고상태'] == "과다":
