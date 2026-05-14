@@ -261,10 +261,11 @@ def run(load_data_func):
             'font-size': '25px', 
             'text-align': 'right', 
             'padding': '12px',
-            'border': '1px solid #e0e0e0'
+            'border': '1px solid #e0e0e0',
+            'width': '150px'
         }).set_table_styles([{
             'selector': 'th', 
-            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
+            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]
         }, {
             'selector': 'table',
             'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]
@@ -289,10 +290,11 @@ def run(load_data_func):
             'font-size': '25px', 
             'text-align': 'right', 
             'padding': '12px',
-            'border': '1px solid #e0e0e0'
+            'border': '1px solid #e0e0e0',
+            'width': '150px'
         }).set_table_styles([{
             'selector': 'th', 
-            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0')]
+            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]
         }, {
             'selector': 'table',
             'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]
