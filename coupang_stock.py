@@ -170,24 +170,26 @@ def run(load_data_func):
         # 5. 일자별 상세 모니터링 표
         st.markdown("---")
         st.subheader("🚨 일자별 안전재고 및 가격 모니터링")
-        st.markdown("※ 기준치 미달/초과 발생 시 붉은색 글씨로 표시됩니다.")
+        st.markdown("※ 🚨 재고부족(품절) | 🔺 가격초과(빨강) | 🔻 가격미달(파랑)")
 
-        # 🚀 [수정] 0일 경우 "품절" 표시, 아이콘 제거 (아이콘 대신 색상으로만 구분)
+        # 🚀 다시 아이콘을 살려 가독성을 극대화합니다.
         def format_stock_status(row):
             val = int(row['재고'])
             safe_val = int(row['안전재고량'])
             if val == 0:
-                return "품절"
+                return "품절 🚨"
             if safe_val > 0 and val < safe_val: 
-                return f"{val:,}" 
+                return f"{val:,} 🚨"
             return f"{val:,}"
 
-        # 🚀 [수정] 판매가 포맷 유지 (아이콘 제거)
         def format_price_status(row):
             val = int(row['판매가'])
             max_val = int(row['최대판매가'])
             min_val = int(row['최소판매가'])
-            # 텍스트 값만 리턴
+            if max_val > 0 and val > max_val: 
+                return f"{val:,} 🔺"
+            elif min_val > 0 and val < min_val: 
+                return f"{val:,} 🔻"
             return f"{val:,}"
 
         show_df = display_df[['일자', '브랜드', '품목명', '재고', '안전재고량', '판매가', '최소판매가', '최대판매가']].copy()
@@ -200,6 +202,7 @@ def run(load_data_func):
         elif view_target == "💰 판매가 변동":
             show_df['표시값'] = show_df['판매가 현황']
         else:
+            # 모두 보기일 때: "150 🚨 | 8,000 🔻" 형태로 조합되어 원인 파악이 쉽습니다.
             show_df['표시값'] = show_df['재고 현황'] + " | " + show_df['판매가 현황']
 
         show_df['안전재고'] = show_df['안전재고량'].apply(lambda x: f"{int(x):,}")
@@ -217,65 +220,29 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        # 🚀 [핵심 수정] 원본 데이터(show_df)를 활용하여 색상을 입히는 논리적 스타일 함수
-        def color_danger_cells(val, col_name, row_idx):
-            # 1. 값이 없거나 기본 정보 컬럼이면 무시
-            if pd.isna(val) or val == "-" or col_name in ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가']:
+        # 🚀 [핵심 수정] 텍스트 안에 어떤 아이콘이 있는지 확인해서 색상을 자동으로 칠합니다.
+        def color_danger_cells(val):
+            if not isinstance(val, str):
                 return ""
-            
-            # 2. 현재 행의 안전재고/최소/최대 판매가 기준 가져오기
-            try:
-                safe_qty = int(pivot_df.loc[row_idx, '안전재고'].replace(',', ''))
-            except:
-                safe_qty = 0
-            
-            try:
-                min_price = int(pivot_df.loc[row_idx, '최소판매가'].replace(',', ''))
-            except:
-                min_price = 0
                 
-            try:
-                max_price = int(pivot_df.loc[row_idx, '최대판매가'].replace(',', ''))
-            except:
-                max_price = 0
-
-            # 3. 셀 값 파싱 (재고 | 가격 또는 단일 값)
-            is_danger = False
+            has_stock_danger = "🚨" in val
+            has_high_price = "🔺" in val
+            has_low_price = "🔻" in val
             
-            if "품절" in val:
-                is_danger = True
-            else:
-                parts = str(val).split(" | ")
+            # 1. 복합 문제: 가격도 낮고 재고도 문제일 때 -> 보라색으로 구별
+            if (has_stock_danger or has_high_price) and has_low_price:
+                return "color: #9c27b0; font-weight: bold;" 
+            # 2. 단일 문제: 가격 미달만 있을 때 -> 파란색
+            elif has_low_price:
+                return "color: #007bff; font-weight: bold;"
+            # 3. 단일 문제: 재고 부족이나 가격 초과일 때 -> 빨간색
+            elif has_stock_danger or has_high_price:
+                return "color: #ff4b4b; font-weight: bold;"
                 
-                # 재고 체크 (첫 번째 부분)
-                if view_target in ["📦 재고량 추이", "📊 모두 보기"] and len(parts) >= 1:
-                    try:
-                        qty = int(parts[0].replace(',', ''))
-                        if safe_qty > 0 and qty < safe_qty:
-                            is_danger = True
-                    except:
-                        pass
-                
-                # 가격 체크 (두 번째 부분 또는 단일 값)
-                if view_target in ["💰 판매가 변동", "📊 모두 보기"]:
-                    price_str = parts[1] if len(parts) > 1 else parts[0]
-                    try:
-                        price = int(price_str.replace(',', ''))
-                        if (max_price > 0 and price > max_price) or (min_price > 0 and price < min_price):
-                            is_danger = True
-                    except:
-                        pass
-
-            # 4. 위험 감지 시 스타일 적용 (테두리는 Streamlit 특성상 표 렌더링 시 잘 안 먹힐 수 있어 글자색으로 강조)
-            if is_danger:
-                 return "color: #ff4b4b; font-weight: bold;"
             return ""
 
-        # 데이터프레임 전체를 순회하며 스타일 적용
-        styled_df = pivot_df.style.apply(lambda col: [color_danger_cells(v, col.name, i) for i, v in enumerate(col)], axis=0)
-
         st.dataframe(
-            styled_df, 
+            pivot_df.style.map(color_danger_cells), 
             width="stretch", 
             height=750, 
             hide_index=True
