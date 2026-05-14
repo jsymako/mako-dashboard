@@ -170,22 +170,30 @@ def run(load_data_func):
         # 5. 일자별 상세 모니터링 표
         st.markdown("---")
         st.subheader("🚨 일자별 안전재고 및 가격 모니터링")
-        st.markdown("※ 🚨 재고부족(품절) | 🔺 가격초과(빨강) | 🔻 가격미달(파랑)")
+        st.markdown("※ 범례: 🚨재고부족(빨강) | 🔺가격초과(녹색) | 🔻가격미달(파랑) | 🚨+🔺🔻복합(보라)")
 
-        # 🚀 1. 재고와 판매가 모두에 무조건 아이콘을 붙여줍니다.
+        # 🚀 1. 재고/판매가 데이터 안전 변환 및 아이콘 무조건 부착
         def format_stock_status(row):
-            val = int(row['재고'])
-            safe_val = int(row['안전재고량'])
-            if val == 0:
+            try:
+                val = int(float(row['재고']))
+                safe_val = int(float(row['안전재고량']))
+            except:
+                val, safe_val = 0, 0
+                
+            if val <= 0:
                 return "품절 🚨"
             if safe_val > 0 and val < safe_val: 
                 return f"{val:,} 🚨"
             return f"{val:,}"
 
         def format_price_status(row):
-            val = int(row['판매가'])
-            max_val = int(row['최대판매가'])
-            min_val = int(row['최소판매가'])
+            try:
+                val = int(float(row['판매가']))
+                max_val = int(float(row['최대판매가']))
+                min_val = int(float(row['최소판매가']))
+            except:
+                val, max_val, min_val = 0, 0, 0
+                
             if max_val > 0 and val > max_val: 
                 return f"{val:,} 🔺"
             elif min_val > 0 and val < min_val: 
@@ -194,12 +202,11 @@ def run(load_data_func):
 
         show_df = display_df[['일자', '브랜드', '품목명', '재고', '안전재고량', '판매가', '최소판매가', '최대판매가']].copy()
         
-        # 여기서 생성된 현황(아이콘 포함)이 아래에서 그대로 사용됩니다.
         show_df['재고 현황'] = show_df.apply(format_stock_status, axis=1)
         show_df['판매가 현황'] = show_df.apply(format_price_status, axis=1)
         show_df['일자'] = show_df['일자'].dt.strftime('%m/%d')
 
-        # 🚀 2. 조회 항목에 따라 어떤 현황을 보여줄지 결정합니다.
+        # 🚀 2. 조회 항목별 데이터 매핑
         if view_target == "📦 재고량 추이":
             show_df['표시값'] = show_df['재고 현황']
         elif view_target == "💰 판매가 변동":
@@ -207,9 +214,9 @@ def run(load_data_func):
         else:
             show_df['표시값'] = show_df['재고 현황'] + " | " + show_df['판매가 현황']
 
-        show_df['안전재고'] = show_df['안전재고량'].apply(lambda x: f"{int(x):,}")
-        show_df['최소판매가'] = show_df['최소판매가'].apply(lambda x: f"{int(x):,}")
-        show_df['최대판매가'] = show_df['최대판매가'].apply(lambda x: f"{int(x):,}")
+        show_df['안전재고'] = show_df['안전재고량'].apply(lambda x: f"{int(float(x)):,}" if pd.notna(x) else "0")
+        show_df['최소판매가'] = show_df['최소판매가'].apply(lambda x: f"{int(float(x)):,}" if pd.notna(x) else "0")
+        show_df['최대판매가'] = show_df['최대판매가'].apply(lambda x: f"{int(float(x)):,}" if pd.notna(x) else "0")
 
         pivot_df = show_df.pivot_table(
             index=['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'],
@@ -222,7 +229,7 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        # 🚀 3. 셀 안에 들어있는 아이콘을 스캔해서 색상을 칠합니다.
+        # 🚀 3. 대표님이 요청하신 직관적인 색상 룰 적용
         def color_danger_cells(val):
             if not isinstance(val, str):
                 return ""
@@ -231,14 +238,20 @@ def run(load_data_func):
             has_high_price = "🔺" in val
             has_low_price = "🔻" in val
             
-            # 복합 문제 (재고 문제 + 가격 낮음) -> 보라색
-            if (has_stock_danger or has_high_price) and has_low_price:
+            # ① 복합 문제 (재고부족 + 가격이상) -> 보라색
+            if has_stock_danger and (has_high_price or has_low_price):
                 return "color: #9c27b0; font-weight: bold;" 
-            # 가격 낮음 -> 파란색
-            elif has_low_price:
+                
+            # ② 단일 문제: 가격 미달 -> 파란색
+            if has_low_price:
                 return "color: #007bff; font-weight: bold;"
-            # 재고 부족 or 가격 높음 -> 빨간색
-            elif has_stock_danger or has_high_price:
+                
+            # ③ 단일 문제: 가격 초과 -> 녹색
+            if has_high_price:
+                return "color: #28a745; font-weight: bold;"
+                
+            # ④ 단일 문제: 재고 부족 -> 빨간색
+            if has_stock_danger:
                 return "color: #ff4b4b; font-weight: bold;"
                 
             return ""
