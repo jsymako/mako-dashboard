@@ -251,8 +251,8 @@ def run(load_data_func):
         st.markdown(f"##### 📋 {curr_m}월 실적 상세 (직원별 열 정렬)")
         # 행-열 전치 작업 및 단위 포맷팅
         m_data = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
-        m_data['월간목표액'] = m_data['월간목표액'].apply(lambda x: f"{int(x):,}원")
-        m_data['월간실적액'] = m_data['월간실적액'].apply(lambda x: f"{int(x):,}원")
+        m_data['월간목표액'] = m_data['월간목표액'].apply(lambda x: f"{int(x):,}")
+        m_data['월간실적액'] = m_data['월간실적액'].apply(lambda x: f"{int(x):,}")
         m_data['월간달성률'] = m_data['월간달성률'].apply(lambda x: f"{x:.1f}%")
         
         m_t = m_data.set_index('직원명').T
@@ -279,8 +279,8 @@ def run(load_data_func):
         st.markdown(f"##### 📋 {curr_q}분기 실적 상세 (직원별 열 정렬)")
         # 행-열 전치 작업 및 단위 포맷팅
         q_data = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
-        q_data['분기목표액'] = q_data['분기목표액'].apply(lambda x: f"{int(x):,}원")
-        q_data['분기실적액'] = q_data['분기실적액'].apply(lambda x: f"{int(x):,}원")
+        q_data['분기목표액'] = q_data['분기목표액'].apply(lambda x: f"{int(x):,}")
+        q_data['분기실적액'] = q_data['분기실적액'].apply(lambda x: f"{int(x):,}")
         q_data['분기달성률'] = q_data['분기달성률'].apply(lambda x: f"{x:.1f}%")
         
         q_t = q_data.set_index('직원명').T
