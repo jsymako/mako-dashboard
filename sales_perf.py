@@ -113,7 +113,13 @@ def run(load_data_func):
                         new_row = pd.DataFrame([{"입력월": r_month, "직원명": r_emp, "실적금액": r_amt}])
                         df_record = pd.concat([df_record, new_row], ignore_index=True)
                     
-                    # 구글 시트 업데이트 로직 (기존 동일)
+                    # 🚀 [수정] 누락되었던 구글 시트 로그인(client 인증) 코드를 추가했습니다.
+                    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                    creds_dict = json.loads(st.secrets["gcp_service_account"])
+                    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+                    client = gspread.authorize(creds)
+                    
+                    # 이제 정상적으로 시트를 열 수 있습니다.
                     doc = client.open("통합재고관리")
                     try: sheet = doc.worksheet("sales_record_emp")
                     except: sheet = doc.add_worksheet(title="sales_record_emp", rows="1000", cols="5")
@@ -123,7 +129,6 @@ def run(load_data_func):
                     st.cache_data.clear()
                     st.success(f"✅ {r_emp}님의 {r_month} 실적이 저장되었습니다.")
                     st.rerun()
-
 
     if df_target.empty:
         st.info("👆 위 패널을 열어 직원별 [연간 목표액]을 먼저 설정해 주세요.")
