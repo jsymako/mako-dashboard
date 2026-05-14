@@ -113,8 +113,7 @@ def render_dashboard():
     modules = {
         "자사 재고": {"sheet_name": "ecount_stock", "icon": "📦", "type": "latest_only"},
         "쿠팡 재고": {"sheet_name": "coupang_stock", "icon": "🚀", "type": "missing_check", "offset": 1},
-        "판매 현황": {"sheet_name": "sales_record", "icon": "📈", "type": "missing_check", "offset": 2},
-        "거래처 현황": {"sheet_name": "trade_record", "icon": "🤝", "type": "missing_check", "offset": 2}
+        "판매 현황": {"sheet_name": "trade_record", "icon": "🤝", "type": "missing_check", "offset": 2}
     }
 
     today = pd.Timestamp.now().normalize()
