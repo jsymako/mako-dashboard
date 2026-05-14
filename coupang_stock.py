@@ -219,9 +219,9 @@ def run(load_data_func):
                     return "background-color: #ff4b4b; color: white; font-weight: bold;"
             return ""
 
-        # 🚀 [수정] 높이를 750px(약 20줄)로 고정하여 수평 스크롤 접근성 개선
         st.dataframe(
-            pivot_df.style.applymap(highlight_status), 
+            # 🚀 applymap 을 map 으로 변경했습니다.
+            pivot_df.style.map(highlight_status), 
             width="stretch", 
             height=750, 
             hide_index=True
