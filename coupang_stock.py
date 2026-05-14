@@ -212,7 +212,13 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        st.dataframe(pivot_df, use_container_width=True, hide_index=True)
+        # 🚀 [수정] 표의 줄 수(행 개수)에 비례하여 높이를 자동으로 계산합니다.
+        # 기본 헤더(제목줄) 여백 약 39px + (데이터 줄 수 * 36px)
+        row_count = len(pivot_df)
+        dynamic_height = int((row_count * 36) + 39) 
+        
+        # use_container_width 대신 최신 문법인 width="stretch"를 적용했습니다.
+        st.dataframe(pivot_df, width="stretch", height=dynamic_height, hide_index=True)
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
