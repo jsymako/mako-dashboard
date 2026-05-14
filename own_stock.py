@@ -27,7 +27,7 @@ def run(load_data_func):
         update_time = df_own['업데이트 시간'].iloc[0] if '업데이트 시간' in df_own.columns and not df_own.empty else '정보 없음'
 
         # 2. 데이터 전처리
-        df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0)
+        df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0).clip(lower=0)
         df_sales['수량'] = df_sales['수량'].astype(str).str.replace(',', '')
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
@@ -62,7 +62,7 @@ def run(load_data_func):
         total_sales_by_item = recent_sales.groupby('품목코드')['수량'].sum().reset_index()
         total_sales_by_item.rename(columns={'수량': '기간내_총판매량'}, inplace=True)
         
-        total_sales_by_item['주평균판매량'] = ((total_sales_by_item['기간내_총판매량'] / months_to_look_back) / 4).round(1)
+        total_sales_by_item['주평균판매량'] = ((total_sales_by_item['기간내_총판매량'] / months_to_look_back) / 4).round(1).clip(lower=0)
         
         # 5. 데이터 병합 및 최종 환산
         df_merged = pd.merge(df_own, total_sales_by_item[['품목코드', '주평균판매량']], on='품목코드', how='left').fillna(0)
@@ -72,6 +72,7 @@ def run(load_data_func):
         df_merged['예상소진주'] = np.where(df_merged['주평균판매량'] > 0, 
                                        (df_merged['현재재고'] / df_merged['주평균판매량']).round(1), 
                                        999.0)
+        df_merged['예상소진주'] = df_merged['예상소진주'].clip(lower=0)
 
         # 🚀 [수정] 상태 판별 함수: 2글자로 간소화 및 잔재 제거
         def check_status(row):
