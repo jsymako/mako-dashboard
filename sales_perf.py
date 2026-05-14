@@ -253,7 +253,12 @@ def run(load_data_func):
         
         m_t = m_data.set_index('직원명').T
         m_t.index = ['목표액', '실적액', '달성률']
-        st.dataframe(m_t, use_container_width=True)
+        styled_m_t = m_t.style.set_properties(**{'font-size': '16px', 'text-align': 'center'}) \
+                             .set_table_styles([
+                                 dict(selector="th", props=[("font-size", "16px"), ("text-align", "center")])
+                             ])
+        
+        st.dataframe(styled_m_t, use_container_width=True)
 
     with col_chart2:
         st.subheader(f"{curr_q}분기 달성률 (%)")
@@ -268,4 +273,9 @@ def run(load_data_func):
         
         q_t = q_data.set_index('직원명').T
         q_t.index = ['목표액', '실적액', '달성률']
-        st.dataframe(q_t, use_container_width=True)
+        styled_q_t = q_t.style.set_properties(**{'font-size': '16px', 'text-align': 'center'}) \
+                             .set_table_styles([
+                                 dict(selector="th", props=[("font-size", "16px"), ("text-align", "center")])
+                             ])
+        
+        st.dataframe(styled_q_t, use_container_width=True)
