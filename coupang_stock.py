@@ -229,10 +229,14 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
+        if view_target == "📊 모두 보기":
+            target_width = 160  # '재고 | 판매가'가 다 보이도록 넉넉하게 설정
+        else:
+            target_width = 90   # 단일 항목일 때는 90으로 콤팩트하게 유지
+            
         my_column_config = {}
         for col in date_cols:
-            # 90픽셀 정도로 고정해두면 숫자와 아이콘이 모두 편안하게 들어갑니다.
-            my_column_config[col] = st.column_config.Column(width=90)
+            my_column_config[col] = st.column_config.Column(width=target_width)
 
         # 🚀 3. 대표님이 요청하신 직관적인 색상 룰 적용
         def color_danger_cells(val):
