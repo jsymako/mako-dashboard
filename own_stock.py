@@ -115,11 +115,11 @@ def run(load_data_func):
                     border_style = "border: 1px solid #e0e0e0;" # 기본 (적정)
                     
                     if row['재고상태'] == "품절": 
-                        border_style = "border: 5px solid #ff4b4b;"
+                        border_style = "border: 10px solid #ff4b4b;"
                     elif row['재고상태'] == "부족": 
-                        border_style = "border: 5px solid #ffc107;"
+                        border_style = "border: 10px solid #ffc107;"
                     elif row['재고상태'] == "과다": 
-                        border_style = "border: 5px solid #28a745;"
+                        border_style = "border: 10px solid #28a745;"
                     
                     if row['예상소진주'] >= 999:
                         combined_val = "자료 없음"
