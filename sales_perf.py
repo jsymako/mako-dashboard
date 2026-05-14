@@ -217,6 +217,27 @@ def run(load_data_func):
     # ==========================================
     # 🚀 6. 시각화 및 상세 데이터 표 (전치 레이아웃 적용)
     # ==========================================
+    
+    # 🚨 실수로 누락되었던 차트 생성 함수 복구
+    def make_rate_chart(data, y_col, bar_color):
+        rule = alt.Chart(pd.DataFrame({'y': [100]})).mark_rule(
+            color='#E74C3C', strokeDash=[5, 5], strokeWidth=2
+        ).encode(y='y:Q')
+
+        base = alt.Chart(data).encode(
+            x=alt.X('직원명:N', title='', axis=alt.Axis(labelAngle=0, labelFontSize=14)),
+            y=alt.Y(f'{y_col}:Q', title='달성률 (%)', scale=alt.Scale(domain=[0, max(110, data[y_col].max() + 10)])),
+            tooltip=['직원명', alt.Tooltip(f'{y_col}:Q', format='.1f', title='달성률(%)')]
+        )
+        bar = base.mark_bar(size=40, cornerRadiusEnd=5, color=bar_color, opacity=0.8)
+        
+        text = base.mark_text(
+            align='center', baseline='bottom', dy=-5, fontSize=14, fontWeight='bold', color='#333'
+        ).encode(text=alt.Text(f'{y_col}:Q', format='.1f'))
+        
+        return (bar + text + rule).properties(height=350)
+
+    # 🚀 표 및 차트 출력
     col_chart1, col_chart2 = st.columns(2)
     
     with col_chart1:
@@ -224,7 +245,7 @@ def run(load_data_func):
         st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), use_container_width=True)
         
         st.markdown(f"##### 📋 {curr_m}월 실적 상세 (직원별 열 정렬)")
-        # 🚀 [개선] 행-열 전치 작업 및 단위 포맷팅
+        # 행-열 전치 작업 및 단위 포맷팅
         m_data = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
         m_data['월간목표액'] = m_data['월간목표액'].apply(lambda x: f"{int(x):,}원")
         m_data['월간실적액'] = m_data['월간실적액'].apply(lambda x: f"{int(x):,}원")
@@ -239,7 +260,7 @@ def run(load_data_func):
         st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
         
         st.markdown(f"##### 📋 {curr_q}분기 실적 상세 (직원별 열 정렬)")
-        # 🚀 [개선] 행-열 전치 작업 및 단위 포맷팅
+        # 행-열 전치 작업 및 단위 포맷팅
         q_data = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
         q_data['분기목표액'] = q_data['분기목표액'].apply(lambda x: f"{int(x):,}원")
         q_data['분기실적액'] = q_data['분기실적액'].apply(lambda x: f"{int(x):,}원")
