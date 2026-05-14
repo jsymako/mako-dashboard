@@ -144,8 +144,8 @@ def run(load_data_func):
                         # 🚀 display: inline-block;을 제거하여 좌우로 꽉 차는 시원한 헤더로 복구했습니다.
                         title_style = f"background-color: {status_color}; color: {text_color};"
                     
-                    if row['예상소진주'] >= 999:
-                        combined_val = "자료 없음"
+                    if row['예상소진주'] >= 96:
+                        combined_val = "2년이상"
                     else:
                         weeks = row['예상소진주']
                         months = round(weeks / 4, 1)
