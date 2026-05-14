@@ -229,6 +229,11 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
+        my_column_config = {}
+        for col in date_cols:
+            # 90픽셀 정도로 고정해두면 숫자와 아이콘이 모두 편안하게 들어갑니다.
+            my_column_config[col] = st.column_config.Column(width=90)
+
         # 🚀 3. 대표님이 요청하신 직관적인 색상 룰 적용
         def color_danger_cells(val):
             if not isinstance(val, str):
@@ -260,7 +265,8 @@ def run(load_data_func):
             pivot_df.style.map(color_danger_cells), 
             width="stretch", 
             height=750, 
-            hide_index=True
+            hide_index=True,
+            column_config=my_column_config
         )
 
     except Exception as e:
