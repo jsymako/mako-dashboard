@@ -138,7 +138,7 @@ def run(load_data_func):
                         title_style = ""
                     else:
                         # 🚀 display: inline-block;을 제거하여 좌우로 꽉 차는 시원한 헤더로 복구했습니다.
-                        title_style = f"background-color: {status_color}; color: {text_color}; padding: 4px 8px; border-radius: 4px;"
+                        title_style = f"background-color: {status_color}; color: {text_color};"
                     
                     if row['예상소진주'] >= 999:
                         combined_val = "자료 없음"
