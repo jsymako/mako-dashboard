@@ -213,10 +213,11 @@ def run(load_data_func):
         pivot_df = pivot_df[final_cols].fillna("-")
 
         # 🚀 [추가] 경고 아이콘(🚨, 🔺, 🔻)이 포함된 셀에 빨간색 배경색 입히기
-        def highlight_status(val):
+       def highlight_status(val):
             if isinstance(val, str):
                 if "🚨" in val or "🔺" in val or "🔻" in val:
-                    return "background-color: #ff4b4b; color: white; font-weight: bold;"
+                    # background-color를 없애고, border(테두리) 속성을 줍니다.
+                    return "border: 2px solid #ff4b4b; color: #ff4b4b; font-weight: bold;"
             return ""
 
         st.dataframe(
