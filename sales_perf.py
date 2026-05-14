@@ -230,9 +230,9 @@ def run(load_data_func):
         ).encode(y='y:Q')
 
         base = alt.Chart(data).encode(
-            # 🚀 [수정] 직원명(가로축)의 글자 크기를 18로 키우고 굵게(bold) 처리했습니다.
-            x=alt.X('직원명:N', title='', axis=alt.Axis(labelAngle=0, labelFontSize=18, labelFontWeight='bold')),
-            
+            # 🚀 [핵심 수정] sort=None 을 추가해서 알테어의 자동 '가나다순 정렬'을 강제로 끕니다.
+            # 이렇게 하면 구글 시트(sales_target)에 적힌 직원 순서가 표와 차트에 100% 동일하게 유지됩니다.
+            x=alt.X('직원명:N', sort=None, title='', axis=alt.Axis(labelAngle=0, labelFontSize=18, labelFontWeight='bold')),
             # 🚀 [선택] 세로축(달성률 %)의 글자 크기도 밸런스를 위해 살짝 키웠습니다.
             y=alt.Y(f'{y_col}:Q', title='달성률 (%)', axis=alt.Axis(labelFontSize=14, titleFontSize=15), scale=alt.Scale(domain=[0, max(110, data[y_col].max() + 10)])),
             tooltip=['직원명', alt.Tooltip(f'{y_col}:Q', format='.1f', title='달성률(%)')]
