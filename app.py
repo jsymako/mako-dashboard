@@ -42,11 +42,15 @@ def load_sheet_data(worksheet_name):
 # -----------------------------------------------------------------
 st.markdown("""
     <style>
-    [data-testid="stSidebar"] {
+    [data-testid="stSidebar"], 
+    [data-testid="stSidebar"] > div:first-child,
+    [data-testid="stSidebarHeader"] {
         min-width: 230px !important;
         max-width: 230px !important;
-        background-color: #1E212B !important;  /* 🚀 아주 세련된 다크 네이비/그레이 색상 */
+        background-color: #1E212B !important;  
     }
+    
+    /* 열기/닫기 화살표 흰색으로 변경 */
     [data-testid="collapsedControl"] * { display: none !important; }
     [data-testid="collapsedControl"]::after {
         content: "❯" !important;
@@ -83,7 +87,7 @@ with st.sidebar:
                 "background-color": "transparent"
             },
             "icon": {
-                "color": "#A0AEC0",               # 선택 안 된 아이콘은 은은한 회색
+                "color": "#A0AEC0",               # 선택 안 된 아이콘
                 "font-size": "1.1rem"
             },
             "nav-link": {
@@ -91,19 +95,19 @@ with st.sidebar:
                 "text-align": "left", 
                 "margin": "0px 0px 4px 0px",
                 "padding": "10px 15px",
-                "border-radius": "0.5rem",        # 이미지처럼 모서리가 둥근 박스
-                "color": "#A0AEC0",               # 글자색도 은은한 회색
+                "border-radius": "0.5rem",        
+                "color": "#A0AEC0",               # 선택 안 된 글자
                 "font-weight": "400",
                 "border": "none"
             },
             "nav-link-hover": {
-                "background-color": "rgba(255, 255, 255, 0.05)", # 마우스 올리면 살짝 밝아짐
+                "background-color": "#2D3342",    # 🚀 [수정] 마우스 오버 시 확실히 보이는 밝은 다크그레이!
                 "color": "#FFFFFF"
             },
             "nav-link-selected": {
-                "background-color": "#374151",    # 🚀 이미지와 똑같은 짙은 둥근 회색 배경
-                "color": "#FFFFFF",               # 글자와 아이콘이 순백색으로 빛남
-                "font-weight": "600",             # 선택된 메뉴 글자만 볼드 처리
+                "background-color": "#374151",    # 선택된 메뉴 배경
+                "color": "#FFFFFF",               # 선택된 글자/아이콘
+                "font-weight": "600",             
                 "border": "none"
             },
         }
