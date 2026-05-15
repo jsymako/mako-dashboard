@@ -49,7 +49,7 @@ st.markdown("""
     [data-testid="collapsedControl"] * { display: none !important; }
     [data-testid="collapsedControl"]::after {
         content: "❯" !important;
-        font-size: 24px !important;
+        font-size: 22px !important;
         font-weight: 900 !important;
         color: #333333 !important;
         display: block !important;
@@ -58,8 +58,8 @@ st.markdown("""
 
     /* 🚀 추가: 사이드바 너비 강제 축소 (숫자를 바꿔가며 최적의 비율을 찾아보세요!) */
     [data-testid="stSidebar"] {
-        min-width: 220px !important;
-        max-width: 220px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -77,8 +77,8 @@ with st.sidebar:
         styles={
             "container": {"padding": "0!important", "background-color": "transparent", "border": "none"},
             "nav-link": {
-                "font-size": "1.40rem", "text-align": "left", "margin": "0px 0px 6px 0px",
-                "padding": "4px 10px", "border-radius": "8px", "border": "2px solid #d2d4d5", 
+                "font-size": "1.2rem", "text-align": "left", "margin": "0px 0px 6px 0px",
+                "padding": "4px 10px", "border-radius": "6px", "border": "2px solid #d2d4d5", 
                 "color": "#333", "font-weight": "normal"
             },
             "nav-link-hover": {"background-color": "#2b98d8", "border-color": "#2b98d8"},
