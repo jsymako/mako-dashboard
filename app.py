@@ -95,7 +95,7 @@ with st.sidebar:
             },
             "icon": {
                 "color": "#A0AEC0",               
-                "font-size": "1.1rem"                🚀 1. [수정] 아이콘 크기 (기본 1.1rem -> 더 키우려면 1.2rem, 1.3rem)
+                "font-size": "1.1rem"               # 🚀 1. [수정] 아이콘 크기 (기본 1.1rem -> 더 키우려면 1.2rem, 1.3rem)
             },
             "nav-link": {
                 "font-size": "1.05rem",            # 🚀 2. [수정] 글자 크기 (기본 1.05rem -> 더 키우려면 1.1rem, 1.2rem)
