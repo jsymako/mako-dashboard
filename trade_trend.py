@@ -50,7 +50,7 @@ def run(load_data_func):
             "거래처 선택", 
             options=trader_list,
             default=[],
-            placeholder="비워두면 전사 판매 현황 조회"
+            placeholder="전체 보기"
         )
         
         temp_df = df_trade if not selected_traders else df_trade[df_trade['거래처명'].isin(selected_traders)]
@@ -60,7 +60,7 @@ def run(load_data_func):
             "브랜드 선택", 
             options=brand_list,
             default=[],
-            placeholder="비워두면 전체 브랜드 조회"
+            placeholder="전체 보기"
         )
 
         temp_prod_df = temp_df if not selected_brands else temp_df[temp_df['브랜드'].isin(selected_brands)]
@@ -69,7 +69,7 @@ def run(load_data_func):
             "품목 선택", 
             options=prod_list,
             default=[],
-            placeholder="비워두면 전체 품목 조회"
+            placeholder="전체 보기"
         )
 
         view_mode = st.sidebar.radio("분석 모드", ["월별 현황", "일별 현황", "수요 예측"], index=0)
