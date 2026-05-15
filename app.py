@@ -42,15 +42,19 @@ def load_sheet_data(worksheet_name):
 # -----------------------------------------------------------------
 st.markdown("""
     <style>
-    [data-testid="stSidebar"], 
-    [data-testid="stSidebar"] > div:first-child,
-    [data-testid="stSidebarHeader"] {
+    /* 🚀 1. 스트림릿 최신 버전 대응 - 사이드바 전체 및 내부 배경색 다크 톤 강제 덮어쓰기 */
+    section[data-testid="stSidebar"] {
+        background-color: #1E212B !important;
         min-width: 230px !important;
         max-width: 230px !important;
-        background-color: #1E212B !important;  
     }
     
-    /* 열기/닫기 화살표 흰색으로 변경 */
+    /* 사이드바 안쪽의 숨겨진 하얀색 레이어까지 모조리 다크 톤으로 파괴 */
+    section[data-testid="stSidebar"] > div {
+        background-color: transparent !important; 
+    }
+
+    /* 🚀 2. 열기/닫기 화살표 흰색으로 변경 */
     [data-testid="collapsedControl"] * { display: none !important; }
     [data-testid="collapsedControl"]::after {
         content: "❯" !important;
@@ -59,12 +63,6 @@ st.markdown("""
         color: #FFFFFF !important;
         display: block !important;
         margin-left: 10px !important;
-    }
-
-    /* 🚀 추가: 사이드바 너비 강제 축소 (숫자를 바꿔가며 최적의 비율을 찾아보세요!) */
-    [data-testid="stSidebar"] {
-        min-width: 200px !important;
-        max-width: 200px !important;
     }
     </style>
 """, unsafe_allow_html=True)
