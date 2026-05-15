@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import gspread
 import json
+import altair as alt
 from oauth2client.service_account import ServiceAccountCredentials
 
 # 🚀 [최적화 1] 구글 시트 접속(인증) 기능을 딱 한 번만 수행하도록 캐싱합니다.
