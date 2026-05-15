@@ -8,7 +8,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
-    st.title("📊 영업 실적")
+    st.title("영업 실적")
 
     st.markdown("""
         <style>
