@@ -30,16 +30,16 @@ def run(load_data_func):
     try:
         df_target = load_data_func("sales_target")
         if df_target is None or df_target.empty:
-            df_target = pd.DataFrame(columns=["이름", "연간목표액"])
+            df_target = pd.DataFrame(columns=["직원명", "연간목표액"])
     except:
-        df_target = pd.DataFrame(columns=["이름", "연간목표액"])
+        df_target = pd.DataFrame(columns=["직원명", "연간목표액"])
 
     try:
         df_record = load_data_func("sales_record_emp")
         if df_record is None or df_record.empty:
-            df_record = pd.DataFrame(columns=["입력월", "이름", "실적금액"])
+            df_record = pd.DataFrame(columns=["입력월", "직원명", "실적금액"])
     except:
-        df_record = pd.DataFrame(columns=["입력월", "이름", "실적금액"])
+        df_record = pd.DataFrame(columns=["입력월", "직원명", "실적금액"])
 
     df_target['연간목표액'] = pd.to_numeric(df_target['연간목표액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
     df_record['실적금액'] = pd.to_numeric(df_record['실적금액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
@@ -53,25 +53,25 @@ def run(load_data_func):
         with c1:
             st.markdown("#### 🎯 연간 목표 설정/수정")
             # 🚀 [개선] 신규 추가 또는 기존 직원 선택 모드
-            existing_emps = df_target['이름'].tolist()
+            existing_emps = df_target['직원명'].tolist()
             mode = st.radio("작업 선택", ["기존 직원 수정", "신규 직원 추가"], horizontal=True)
 
             if mode == "기존 직원 수정" and existing_emps:
                 t_emp = st.selectbox("수정할 직원 선택", existing_emps)
                 # 선택된 직원의 현재 목표액을 기본값으로 가져옴
-                current_target = df_target.loc[df_target['이름'] == t_emp, '연간목표액'].values[0]
+                current_target = df_target.loc[df_target['직원명'] == t_emp, '연간목표액'].values[0]
             else:
-                t_emp = st.text_input("새 직원 이름")
+                t_emp = st.text_input("새 직원 직원명")
                 current_target = 0
 
             t_amt = st.number_input("연간 목표액 (원)", min_value=0, step=1000000, value=int(current_target), format="%d")
             
             if st.button("목표 저장", use_container_width=True):
                 if t_emp:
-                    if t_emp in df_target['이름'].values:
-                        df_target.loc[df_target['이름'] == t_emp, '연간목표액'] = t_amt
+                    if t_emp in df_target['직원명'].values:
+                        df_target.loc[df_target['직원명'] == t_emp, '연간목표액'] = t_amt
                     else:
-                        new_row = pd.DataFrame([{"이름": t_emp, "연간목표액": t_amt}])
+                        new_row = pd.DataFrame([{"직원명": t_emp, "연간목표액": t_amt}])
                         df_target = pd.concat([df_target, new_row], ignore_index=True)
                     
                     # 구글 시트 업데이트 로직 (기존 동일)
@@ -91,7 +91,7 @@ def run(load_data_func):
 
         with c2:
             st.markdown("#### 📈 월별 실적 입력")
-            emp_list = df_target['이름'].tolist()
+            emp_list = df_target['직원명'].tolist()
             r_emp = st.selectbox("직원 선택", ["선택하세요"] + emp_list)
             
             today_date = datetime.date.today()
@@ -106,11 +106,11 @@ def run(load_data_func):
             
             if st.button("실적 저장", use_container_width=True):
                 if r_emp != "선택하세요":
-                    mask = (df_record['이름'] == r_emp) & (df_record['입력월'] == r_month)
+                    mask = (df_record['직원명'] == r_emp) & (df_record['입력월'] == r_month)
                     if mask.any():
                         df_record.loc[mask, '실적금액'] = r_amt
                     else:
-                        new_row = pd.DataFrame([{"입력월": r_month, "이름": r_emp, "실적금액": r_amt}])
+                        new_row = pd.DataFrame([{"입력월": r_month, "직원명": r_emp, "실적금액": r_amt}])
                         df_record = pd.concat([df_record, new_row], ignore_index=True)
                     
                     # 🚀 [수정] 누락되었던 구글 시트 로그인(client 인증) 코드를 추가했습니다.
@@ -237,15 +237,15 @@ def run(load_data_func):
     # ==========================================
     # 🚀 5. 직원별 실적 가공
     # ==========================================
-    emp_df = df_target[['이름', '연간목표액']].copy()
+    emp_df = df_target[['직원명', '연간목표액']].copy()
     emp_df['분기목표액'] = emp_df['연간목표액'] / 4
     emp_df['월간목표액'] = emp_df['연간목표액'] / 12
     
-    m_emp = df_m.groupby('이름')['실적금액'].sum().reset_index().rename(columns={'실적금액': '월간실적액'})
-    q_emp = df_q.groupby('이름')['실적금액'].sum().reset_index().rename(columns={'실적금액': '분기실적액'})
+    m_emp = df_m.groupby('직원명')['실적금액'].sum().reset_index().rename(columns={'실적금액': '월간실적액'})
+    q_emp = df_q.groupby('직원명')['실적금액'].sum().reset_index().rename(columns={'실적금액': '분기실적액'})
     
-    emp_df = pd.merge(emp_df, m_emp, on='이름', how='left').fillna(0)
-    emp_df = pd.merge(emp_df, q_emp, on='이름', how='left').fillna(0)
+    emp_df = pd.merge(emp_df, m_emp, on='직원명', how='left').fillna(0)
+    emp_df = pd.merge(emp_df, q_emp, on='직원명', how='left').fillna(0)
     
     emp_df['월간달성률'] = np.where(emp_df['월간목표액'] > 0, (emp_df['월간실적액'] / emp_df['월간목표액'] * 100), 0)
     emp_df['분기달성률'] = np.where(emp_df['분기목표액'] > 0, (emp_df['분기실적액'] / emp_df['분기목표액'] * 100), 0)
@@ -256,9 +256,9 @@ def run(load_data_func):
     def make_rate_chart(data, y_col, bar_color):
         rule = alt.Chart(pd.DataFrame({'y': [100]})).mark_rule(color='#E74C3C', strokeDash=[5, 5], strokeWidth=2).encode(y='y:Q')
         base = alt.Chart(data).encode(
-            x=alt.X('이름:N', sort=None, title='', axis=alt.Axis(labelAngle=0, labelFontSize=18, labelFontWeight='bold')),
+            x=alt.X('직원명:N', sort=None, title='', axis=alt.Axis(labelAngle=0, labelFontSize=18, labelFontWeight='bold')),
             y=alt.Y(f'{y_col}:Q', title='달성률 (%)', axis=alt.Axis(labelFontSize=14, titleFontSize=15), scale=alt.Scale(domain=[0, max(110, data[y_col].max() + 10)])),
-            tooltip=['이름', alt.Tooltip(f'{y_col}:Q', format='.1f', title='달성률(%)')]
+            tooltip=['직원명', alt.Tooltip(f'{y_col}:Q', format='.1f', title='달성률(%)')]
         )
         bar = base.mark_bar(size=40, cornerRadiusEnd=5, color=bar_color, opacity=0.8)
         text = base.mark_text(align='center', baseline='bottom', dy=-5, fontSize=16, fontWeight='bold', color='#333').encode(text=alt.Text(f'{y_col}:Q', format='.1f'))
@@ -277,11 +277,11 @@ def run(load_data_func):
         
         # 상세 데이터 표 (HTML 렌더링 기존 로직 유지)
         st.markdown(f"##### 📋 {st.session_state.v_month}월 실적 상세")
-        m_data = emp_df[['이름', '월간목표액', '월간실적액', '월간달성률']].copy()
+        m_data = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
         m_data['월간목표액'] = m_data['월간목표액'].apply(lambda x: f"{int(x):,}")
         m_data['월간실적액'] = m_data['월간실적액'].apply(lambda x: f"{int(x):,}")
         m_data['월간달성률'] = m_data['월간달성률'].apply(lambda x: f"{x:.1f}%")
-        m_t = m_data.set_index('이름').T
+        m_t = m_data.set_index('직원명').T
         m_t.index = ['목표액', '실적액', '달성률']
         html_m = m_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
@@ -299,11 +299,11 @@ def run(load_data_func):
         st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
         
         st.markdown(f"##### 📋 {st.session_state.v_quarter}분기 실적 상세")
-        q_data = emp_df[['이름', '분기목표액', '분기실적액', '분기달성률']].copy()
+        q_data = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
         q_data['분기목표액'] = q_data['분기목표액'].apply(lambda x: f"{int(x):,}")
         q_data['분기실적액'] = q_data['분기실적액'].apply(lambda x: f"{int(x):,}")
         q_data['분기달성률'] = q_data['분기달성률'].apply(lambda x: f"{x:.1f}%")
-        q_t = q_data.set_index('이름').T
+        q_t = q_data.set_index('직원명').T
         q_t.index = ['목표액', '실적액', '달성률']
         html_q = q_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
