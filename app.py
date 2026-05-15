@@ -3,7 +3,6 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-from streamlit_option_menu import option_menu 
 import datetime
 import holidays 
 
@@ -15,9 +14,12 @@ import trade_trend
 import ar_trend
 import sales_perf
 
+# 🚨 반드시 가장 최상단에 위치해야 하는 설정
 st.set_page_config(page_title="통합재고관리", page_icon="🏠", layout="wide")
 
-# 🚀 공통 데이터 로드 함수
+# =================================================================
+# 🚀 1. 공통 데이터 로드 함수
+# =================================================================
 @st.cache_data(ttl=600)
 def load_sheet_data(worksheet_name):
     try:
@@ -37,91 +39,13 @@ def load_sheet_data(worksheet_name):
     except Exception as e:
         return None 
 
-# -----------------------------------------------------------------
-# 🚀 1. 사이드바 CSS (열기/닫기 글자 박멸)
-# -----------------------------------------------------------------
-st.markdown("""
-    <style>
-    /* 🚀 1. 사이드바 겉껍질 색칠 및 너비 고정 */
-    section[data-testid="stSidebar"] {
-        min-width: 230px !important;
-        max-width: 230px !important;
-        background-color: #1E212B !important;
-    }
-    
-    /* 🚀 2. 스트림릿이 몰래 숨겨둔 '안쪽 하얀색 상자'들까지 모조리 다크 톤으로 덮어쓰기! */
-    section[data-testid="stSidebar"] > div {
-        background-color: #1E212B !important; 
-    }
-    .stSidebar {
-        background-color: #1E212B !important;
-    }
-    
-    /* 🚀 3. 열기/닫기 화살표 흰색으로 변경 */
-    [data-testid="collapsedControl"] * { display: none !important; }
-    [data-testid="collapsedControl"]::after {
-        content: "❯" !important;
-        font-size: 22px !important;
-        font-weight: 900 !important;
-        color: #FFFFFF !important;
-        display: block !important;
-        margin-left: 10px !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# -----------------------------------------------------------------
-# 🚀 2. 사이드바 구성 (메뉴바)
-# -----------------------------------------------------------------
-with st.sidebar:
-
-    main_menu = option_menu(
-        menu_title=None, 
-        options=["대시보드", "자사 재고", "쿠팡 재고", "판매 현황", "영업 실적", "채권 분석"],
-        # 🚀 [추가] 촌스러운 이모지 대신 얇고 깔끔한 부트스트랩 아이콘 삽입!
-        # (이미지에 있는 격자 모양 아이콘이 바로 'grid' 입니다)
-        icons=["grid", "box", "box-seam", "graph-up", "briefcase", "credit-card"], 
-        default_index=0, 
-        styles={
-            "container": {
-                "padding": "0!important", 
-                "background-color": "transparent"
-            },
-            "icon": {
-                "color": "#A0AEC0",               # 선택 안 된 아이콘
-                "font-size": "1.1rem"
-            },
-            "nav-link": {
-                "font-size": "1.05rem",
-                "text-align": "left", 
-                "margin": "0px 0px 4px 0px",
-                "padding": "10px 15px",
-                "border-radius": "0.5rem",        
-                "color": "#A0AEC0",               # 선택 안 된 글자
-                "font-weight": "400",
-                "border": "none"
-            },
-            "nav-link-hover": {
-                "background-color": "#2D3342",    # 🚀 [수정] 마우스 오버 시 확실히 보이는 밝은 다크그레이!
-                "color": "#FFFFFF"
-            },
-            "nav-link-selected": {
-                "background-color": "#374151",    # 선택된 메뉴 배경
-                "color": "#FFFFFF",               # 선택된 글자/아이콘
-                "font-weight": "600",             
-                "border": "none"
-            },
-        }
-    )
-
-    st.sidebar.markdown("---")
-
-# -----------------------------------------------------------------
-# 🚀 3. 메인 대시보드 (2열 구조 & 높이 고정 & 여백 추가)
-# -----------------------------------------------------------------
+# =================================================================
+# 🚀 2. 메인 대시보드 화면 (기존 로직 완벽 유지)
+# =================================================================
 def render_dashboard():
     st.title("마코펫 통합조회시스템")
     
+    # 대시보드 내부 카드 UI용 CSS (사이드바 CSS는 순정 테마를 쓰므로 삭제됨)
     st.markdown("""
         <style>
         .dash-card {
@@ -142,6 +66,11 @@ def render_dashboard():
         .status-err { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
         .status-warn { color: #f0ad4e; font-weight: bold; font-size: 1.2rem; }
         .sub-text { font-size: 1.1rem; margin-top: 5px; background: #f8f9fa; padding: 12px; border-radius: 6px; }
+        
+        /* 다크모드에서 대시보드 카드 글자색 깨짐 방지용 */
+        [data-theme="dark"] .dash-card { background: #262730; border-color: #333; }
+        [data-theme="dark"] .dash-title { color: #eee; border-color: #444; }
+        [data-theme="dark"] .sub-text { background: #1e1e1e; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -169,7 +98,6 @@ def render_dashboard():
                         if df is not None and not df.empty:
                             date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일', '시간', '일시', '업데이트'])), None)
                             
-                            # 🚀 여기서부터 들여쓰기 짝맞춤 (if와 elif 라인이 완벽하게 일치해야 합니다)
                             if m_info["type"] == "latest_only":
                                 latest_str = "확인 불가"
                                 if date_col:
@@ -190,7 +118,7 @@ def render_dashboard():
                                     </div>
                                 """, unsafe_allow_html=True)
 
-                            elif m_info["type"] == "missing_check":  # 🚀 [교정됨] if와 같은 세로 선상으로 우측 4칸 이동!
+                            elif m_info["type"] == "missing_check":
                                 if date_col:
                                     parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
                                     
@@ -263,18 +191,34 @@ def render_dashboard():
         
         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
-# -----------------------------------------------------------------
-# 🚀 4. 메뉴 선택에 따른 화면 전환
-# -----------------------------------------------------------------
-if main_menu == "대시보드" or main_menu is None:
-    render_dashboard()
-elif main_menu == "자사 재고":
+# =================================================================
+# 🚀 3. 서브 페이지 연결용 래퍼 함수 (데이터 로드 함수를 넘겨주기 위함)
+# =================================================================
+def page_own_stock():
     own_stock.run(load_sheet_data) 
-elif main_menu == "쿠팡 재고":
+
+def page_coupang_stock():
     coupang_stock.run(load_sheet_data)
-elif main_menu == "판매 현황":
+
+def page_trade_trend():
     trade_trend.run(load_sheet_data)
-elif main_menu == "채권 분석":
-    ar_trend.run(load_sheet_data)
-elif main_menu == "영업 실적":
+
+def page_sales_perf():
     sales_perf.run(load_sheet_data)
+
+def page_ar_trend():
+    ar_trend.run(load_sheet_data)
+
+# =================================================================
+# 🚀 4. 순정 네비게이션 실행 (스트림릿 최신 기능)
+# =================================================================
+pg = st.navigation([
+    st.Page(render_dashboard, title="대시보드", icon=":material/grid_view:"),
+    st.Page(page_own_stock, title="자사 재고", icon=":material/inventory_2:"),
+    st.Page(page_coupang_stock, title="쿠팡 재고", icon=":material/local_shipping:"),
+    st.Page(page_trade_trend, title="판매 현황", icon=":material/trending_up:"),
+    st.Page(page_sales_perf, title="영업 실적", icon=":material/work:"),
+    st.Page(page_ar_trend, title="채권 분석", icon=":material/credit_card:")
+])
+
+pg.run()
