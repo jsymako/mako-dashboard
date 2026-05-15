@@ -76,28 +76,45 @@ def run(load_data_func):
         return
 
     try:
-        if uploaded_file.name.endswith('.csv'):
-            try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
-            except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
-        else:
-            df_raw = pd.read_excel(uploaded_file)
-
-        header_idx = df_raw[df_raw.apply(lambda r: r.astype(str).str.contains('거래처명').any(), axis=1)].index[0]
-        df_raw.columns = df_raw.iloc[header_idx]
-        df = df_raw.iloc[header_idx+1:].reset_index(drop=True)
+        try:
+        # 🚀 [최적화 핵심] 파일 이름과 용량을 기억해두고, 똑같은 파일이면 무거운 엑셀 읽기 작업을 통과(Skip)합니다!
+        file_id = uploaded_file.name + str(uploaded_file.size)
         
-        df = df[~df['거래처명'].astype(str).str.contains('계|합계|누계', na=False)]
-        # 🚀 [수정] 혹시 모를 스페이스바 공백 때문에 다른 업체로 인식되는 것을 막기 위해 양옆 공백을 잘라냅니다.
-        df['거래처명'] = df['거래처명'].ffill().astype(str).str.strip()
-        
-        manager_col = next((c for c in df.columns if '담당자' in str(c)), None)
-        if manager_col:
-            df[manager_col] = df[manager_col].ffill().astype(str).str.strip().apply(lambda x: MANAGER_MAP.get(x, "기타/미지정"))
+        if "cached_file_id" not in st.session_state or st.session_state.cached_file_id != file_id:
+            # 처음 올린 파일일 때만 엑셀을 열심히 읽습니다.
+            if uploaded_file.name.endswith('.csv'):
+                try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
+                except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
+            else:
+                df_raw = pd.read_excel(uploaded_file)
 
-        month_cols = [c for c in df.columns if '20' in str(c) and ('/' in str(c) or '-' in str(c))]
-        df_melt = df.melt(id_vars=['거래처명', '구분'] + ([manager_col] if manager_col else []), value_vars=month_cols, var_name='기준월', value_name='금액')
-        df_melt['금액'] = pd.to_numeric(df_melt['금액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-        df_pivot = df_melt.pivot_table(index=['거래처명', '기준월'] + ([manager_col] if manager_col else []), columns='구분', values='금액', aggfunc='sum').reset_index()
+            header_idx = df_raw[df_raw.apply(lambda r: r.astype(str).str.contains('거래처명').any(), axis=1)].index[0]
+            df_raw.columns = df_raw.iloc[header_idx]
+            df = df_raw.iloc[header_idx+1:].reset_index(drop=True)
+            
+            df = df[~df['거래처명'].astype(str).str.contains('계|합계|누계', na=False)]
+            df['거래처명'] = df['거래처명'].ffill().astype(str).str.strip() # 공백 제거 안전장치
+            
+            manager_col = next((c for c in df.columns if '담당자' in str(c)), None)
+            if manager_col:
+                df[manager_col] = df[manager_col].ffill().astype(str).str.strip().apply(lambda x: MANAGER_MAP.get(x, "기타/미지정"))
+
+            month_cols = [c for c in df.columns if '20' in str(c) and ('/' in str(c) or '-' in str(c))]
+            df_melt = df.melt(id_vars=['거래처명', '구분'] + ([manager_col] if manager_col else []), value_vars=month_cols, var_name='기준월', value_name='금액')
+            df_melt['금액'] = pd.to_numeric(df_melt['금액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+            df_pivot = df_melt.pivot_table(index=['거래처명', '기준월'] + ([manager_col] if manager_col else []), columns='구분', values='금액', aggfunc='sum').reset_index()
+            
+            # 파싱이 끝난 결과를 임시 메모리(session_state)에 저장합니다.
+            st.session_state.cached_file_id = file_id
+            st.session_state.cached_df_pivot = df_pivot
+            st.session_state.cached_manager_col = manager_col
+        
+        # 🚀 저장을 눌러서 화면이 새로고침 되더라도, 메모리에서 0.1초 만에 완성본을 꺼내옵니다!
+        df_pivot = st.session_state.cached_df_pivot
+        manager_col = st.session_state.cached_manager_col
+        
+        month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
+        m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
