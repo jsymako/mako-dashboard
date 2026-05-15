@@ -76,7 +76,7 @@ def run(load_data_func):
         return
 
     try:
-        try:
+
         # 🚀 [최적화 핵심] 파일 이름과 용량을 기억해두고, 똑같은 파일이면 무거운 엑셀 읽기 작업을 통과(Skip)합니다!
         file_id = uploaded_file.name + str(uploaded_file.size)
         
