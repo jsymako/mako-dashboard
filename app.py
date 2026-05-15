@@ -101,12 +101,10 @@ with st.sidebar:
                 "border-radius": "0.5rem",        
                 "color": "#A0AEC0",               
                 "font-weight": "400",
-                "border": "none"
+                "border": "none",
+                "--hover-color": "#2D3342"        # 🚀 [해결 핵심!!] 호버 배경색은 반드시 이렇게 '--hover-color' 변수로 선언해야 작동합니다!
             },
-            "nav-link-hover": {
-                "background-color": "#2D3342 !important",  # 🚀 [수정] 무조건 작동하도록 !important 추가
-                "color": "#FFFFFF !important"              # 🚀 [수정] 글자색도 무조건 흰색으로!
-            },
+            # (작동하지 않던 nav-link-hover 블록은 아예 삭제했습니다)
             "nav-link-selected": {
                 "background-color": "#374151",    
                 "color": "#FFFFFF",               
