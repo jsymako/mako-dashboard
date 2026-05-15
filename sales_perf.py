@@ -311,7 +311,12 @@ def run(load_data_func):
         q_data['분기실적액'] = q_data['분기실적액'].apply(lambda x: f"{int(x):,}")
         q_data['분기달성률'] = q_data['분기달성률'].apply(lambda x: f"{x:.1f}%")
         q_t = q_data.set_index('직원명').T
-        q_t.index = ['목표액', '실적액', '달성률']
+        
+        # 🚀 [수정 포인트 3] 분기 표도 동일하게 수정 가능합니다.
+        q_t.index = ['📅 분기 목표', '💵 분기 실적', '📊 최종 달성률']
+        
+        # 🚀 [수정 포인트 4] '직원명' 머릿말 변경
+        q_t.rename_axis("영업 담당자", axis=1, inplace=True)
         html_q = q_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
                                {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
