@@ -42,19 +42,22 @@ def load_sheet_data(worksheet_name):
 # -----------------------------------------------------------------
 st.markdown("""
     <style>
-    /* 🚀 1. 스트림릿 최신 버전 대응 - 사이드바 전체 및 내부 배경색 다크 톤 강제 덮어쓰기 */
+    /* 🚀 1. 사이드바 겉껍질 색칠 및 너비 고정 */
     section[data-testid="stSidebar"] {
-        background-color: #1E212B !important;
         min-width: 230px !important;
         max-width: 230px !important;
+        background-color: #1E212B !important;
     }
     
-    /* 사이드바 안쪽의 숨겨진 하얀색 레이어까지 모조리 다크 톤으로 파괴 */
+    /* 🚀 2. 스트림릿이 몰래 숨겨둔 '안쪽 하얀색 상자'들까지 모조리 다크 톤으로 덮어쓰기! */
     section[data-testid="stSidebar"] > div {
-        background-color: transparent !important; 
+        background-color: #1E212B !important; 
     }
-
-    /* 🚀 2. 열기/닫기 화살표 흰색으로 변경 */
+    .stSidebar {
+        background-color: #1E212B !important;
+    }
+    
+    /* 🚀 3. 열기/닫기 화살표 흰색으로 변경 */
     [data-testid="collapsedControl"] * { display: none !important; }
     [data-testid="collapsedControl"]::after {
         content: "❯" !important;
