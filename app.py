@@ -117,7 +117,7 @@ with st.sidebar:
         }
     )
 
-    st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 10px 0px;">', unsafe_allow_html=True)
+    st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.5); margin: 10px 0px;">', unsafe_allow_html=True)
     
 # -----------------------------------------------------------------
 # 🚀 3. 메인 대시보드 화면
