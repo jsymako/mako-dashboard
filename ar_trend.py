@@ -220,16 +220,32 @@ def run(load_data_func):
                             """, unsafe_allow_html=True)
 
                 with col_graph:
-                    st.markdown('<div class="graph-title">📈 12개월 추이 (잔액/매출/수금)</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="graph-title">📈 12개월 추이</div>', unsafe_allow_html=True)
                     
-                    # 🚀 [UI 혁신] 데이터프레임을 통째로 넣으면 차트 우측 상단에 범례가 자동으로 예쁘게 생깁니다.
-                    # color 속성을 이용해 각 선의 색상을 명확하게 구분해 줍니다.
-                    st.line_chart(
-                        row['trend'], 
-                        height=240, 
-                        use_container_width=True,
-                        color=["#ff4b4b", "#007bff", "#28a745"] # 순서대로 빨강(잔액), 파랑(매출), 초록(수금)
-                    )
+                    # 🚀 [UI 혁신] X축 날짜를 '개월 수'로 압축하고, 범례를 최상단으로 끌어올립니다.
+                    # 1. 데이터를 그래프용으로 예쁘게 폅니다.
+                    plot_df = row['trend'].copy().reset_index(drop=True)
+                    plot_df.index = range(1, len(plot_df) + 1) # 1, 2, 3... 12 로 변경
+                    plot_df.index.name = 'M'
+                    plot_df = plot_df.reset_index().melt('M', var_name='항목', value_name='금액')
+                    
+                    # 2. Altair 차트로 섬세하게 디자인합니다.
+                    chart = alt.Chart(plot_df).mark_line(point=True, strokeWidth=2.5).encode(
+                        # X축: 각도를 0(가로)으로 눕히고 M(개월)만 표시
+                        x=alt.X('M:O', title=None, axis=alt.Axis(labelAngle=0, labelColor='#555')),
+                        # Y축: 천 단위 콤마 유지
+                        y=alt.Y('금액:Q', title=None, axis=alt.Axis(format=',.0f', labelColor='#555')),
+                        # 색상 및 범례: 원하는 색을 지정하고 orient='top'으로 머리 위로 올립니다!
+                        color=alt.Color(
+                            '항목:N', 
+                            scale=alt.Scale(domain=['잔액', '매출', '수금'], range=['#ff4b4b', '#007bff', '#28a745']),
+                            legend=alt.Legend(orient='top', title=None, direction='horizontal', padding=5)
+                        ),
+                        # 마우스 오버 시 뜨는 정보
+                        tooltip=[alt.Tooltip('M:O', title='개월차'), '항목', alt.Tooltip('금액:Q', format=',')]
+                    ).properties(height=240)
+                    
+                    st.altair_chart(chart, use_container_width=True)
 
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
