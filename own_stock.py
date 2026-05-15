@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 import os
 
 def run(load_data_func):
-    st.title("📦 자사 재고 현황")
+    st.title("자사 재고 현황")
     
     # 🚀 짝꿍 CSS 파일 불러오기
     try:
