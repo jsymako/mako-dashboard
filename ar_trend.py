@@ -232,23 +232,21 @@ def run(load_data_func):
                     
                     # 2. Altair 차트로 섬세하게 디자인합니다.
                     chart = alt.Chart(plot_df).mark_line(point=True, strokeWidth=2.5).encode(
-                        # X축: 각도를 0(가로)으로 눕히고 M(개월)만 표시
                         x=alt.X('M:O', title=None, axis=alt.Axis(labelAngle=0, labelColor='#555')),
-                        # Y축: 천 단위 콤마 유지
                         y=alt.Y('금액:Q', title=None, axis=alt.Axis(format=',.0f', labelColor='#555')),
-                        # 색상 및 범례: 원하는 색을 지정하고 orient='top'으로 머리 위로 올립니다!
                         color=alt.Color(
                             '항목:N', 
                             scale=alt.Scale(domain=['잔액', '매출', '수금'], range=['#ff4b4b', '#007bff', '#28a745']),
-                            # 🚀 [옵션] padding=0으로 줄여서 범례가 차지하는 불필요한 위아래 여백을 없앱니다.
                             legend=alt.Legend(orient='top', title=None, direction='horizontal', padding=0)
                         ),
                         tooltip=[alt.Tooltip('M:O', title='개월차'), '항목', alt.Tooltip('금액:Q', format=',')]
                     ).properties(
-                        height=310  # 🚀 [핵심 수정] 240이었던 높이를 310으로 늘려서 왼쪽 카드 높이와 비슷하게 맞춥니다!
+                        # 🚀 [수정 1] 높이를 아주 과감하게 380으로 키웁니다! (필요시 400 이상으로 팍팍 늘려보세요)
+                        height=380  
                     )
                     
-                    st.altair_chart(chart, use_container_width=True)
+                    # 🚀 [수정 2] theme=None 을 추가해서 "스트림릿 넌 빠져, 내 설정대로 그릴 거야!" 라고 강제합니다.
+                    st.altair_chart(chart, use_container_width=True, theme=None)
 
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
