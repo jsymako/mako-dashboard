@@ -135,20 +135,55 @@ def run(load_data_func):
         return
 
     # ==========================================
-    # 🚀 3. 날짜 기준 세팅 (연간/분기/월간)
+    # 🚀 3. 날짜 기준 세팅 (이동 버튼용 세션 스테이트 적용)
     # ==========================================
     today = datetime.date.today()
-    curr_y = str(today.year)
-    curr_m = today.month
-    curr_q = (curr_m - 1) // 3 + 1
+    
+    # 1️⃣ 현재 보고 있는 '월'과 '분기'를 메모리에 저장 (최초 접속 시 오늘 날짜)
+    if "v_year_m" not in st.session_state:
+        st.session_state.v_year_m = today.year
+        st.session_state.v_month = today.month
+    if "v_year_q" not in st.session_state:
+        st.session_state.v_year_q = today.year
+        st.session_state.v_quarter = (today.month - 1) // 3 + 1
 
+    # 2️⃣ 날짜 이동 함수 (화살표 클릭 시 실행)
+    def go_prev_m():
+        if st.session_state.v_month == 1:
+            st.session_state.v_month = 12
+            st.session_state.v_year_m -= 1
+        else: st.session_state.v_month -= 1
+
+    def go_next_m():
+        if st.session_state.v_month == 12:
+            st.session_state.v_month = 1
+            st.session_state.v_year_m += 1
+        else: st.session_state.v_month += 1
+
+    def go_prev_q():
+        if st.session_state.v_quarter == 1:
+            st.session_state.v_quarter = 4
+            st.session_state.v_year_q -= 1
+        else: st.session_state.v_quarter -= 1
+
+    def go_next_q():
+        if st.session_state.v_quarter == 4:
+            st.session_state.v_quarter = 1
+            st.session_state.v_year_q += 1
+        else: st.session_state.v_quarter += 1
+
+    # 데이터 날짜 파싱
     df_record['연도'] = df_record['입력월'].str[:4]
     df_record['월'] = pd.to_numeric(df_record['입력월'].str[5:7], errors='coerce').fillna(0).astype(int)
     df_record['분기'] = (df_record['월'] - 1) // 3 + 1
 
-    df_y = df_record[df_record['연도'] == curr_y]
-    df_q = df_y[df_y['분기'] == curr_q]
-    df_m = df_y[df_y['월'] == curr_m]
+    # 3️⃣ 선택된 시점의 데이터를 추출
+    view_y_m = str(st.session_state.v_year_m)
+    view_y_q = str(st.session_state.v_year_q)
+    
+    df_y = df_record[df_record['연도'] == view_y_m] # 선택된 월의 해당 연도 기준
+    df_q = df_record[(df_record['연도'] == view_y_q) & (df_record['분기'] == st.session_state.v_quarter)]
+    df_m = df_record[(df_record['연도'] == view_y_m) & (df_record['월'] == st.session_state.v_month)]
 
     y_target_total = df_target['연간목표액'].sum()
     q_target_total = y_target_total / 4
@@ -163,13 +198,11 @@ def run(load_data_func):
     m_rate = (m_actual_total / m_target_total * 100) if m_target_total > 0 else 0
 
     # ==========================================
-    # 🚀 4. 전사 KPI 상단 바 (한 줄 정렬 디자인 적용)
+    # 🚀 4. 전사 KPI 상단 바
     # ==========================================
-    st.subheader(f"🎯 {curr_y}년 전체 실적 현황")
-    
+    st.subheader(f"🎯 실적 현황 요약")
     kpi_cols = st.columns(3)
     
-    # KPI 박스를 그리는 내부 함수 (라벨 좌측, 수치 우측 정렬)
     def make_kpi_html(title, target, actual, rate):
         return f"""
         <div>
@@ -191,20 +224,18 @@ def run(load_data_func):
 
     with kpi_cols[0]:
         with st.container(border=True):
-            st.markdown(make_kpi_html("연간 누적", y_target_total, y_actual_total, y_rate), unsafe_allow_html=True)
-
+            st.markdown(make_kpi_html(f"{view_y_m}년 연간 누적", y_target_total, y_actual_total, y_rate), unsafe_allow_html=True)
     with kpi_cols[1]:
         with st.container(border=True):
-            st.markdown(make_kpi_html(f"{curr_q}분기 누적", q_target_total, q_actual_total, q_rate), unsafe_allow_html=True)
-
+            st.markdown(make_kpi_html(f"{view_y_q}년 {st.session_state.v_quarter}분기", q_target_total, q_actual_total, q_rate), unsafe_allow_html=True)
     with kpi_cols[2]:
         with st.container(border=True):
-            st.markdown(make_kpi_html(f"{curr_m}월 당월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
+            st.markdown(make_kpi_html(f"{view_y_m}년 {st.session_state.v_month}월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
 
     st.markdown("---")
 
     # ==========================================
-    # 🚀 5. 직원별 실적 가공 (당월 및 분기 분리)
+    # 🚀 5. 직원별 실적 가공
     # ==========================================
     emp_df = df_target[['직원명', '연간목표액']].copy()
     emp_df['분기목표액'] = emp_df['연간목표액'] / 4
@@ -220,89 +251,62 @@ def run(load_data_func):
     emp_df['분기달성률'] = np.where(emp_df['분기목표액'] > 0, (emp_df['분기실적액'] / emp_df['분기목표액'] * 100), 0)
 
     # ==========================================
-    # 🚀 6. 시각화 및 상세 데이터 표 (전치 레이아웃 적용)
+    # 🚀 6. 시각화 및 상세 데이터 표
     # ==========================================
-    
-    # 🚨 실수로 누락되었던 차트 생성 함수 복구
     def make_rate_chart(data, y_col, bar_color):
-        rule = alt.Chart(pd.DataFrame({'y': [100]})).mark_rule(
-            color='#E74C3C', strokeDash=[5, 5], strokeWidth=2
-        ).encode(y='y:Q')
-
+        rule = alt.Chart(pd.DataFrame({'y': [100]})).mark_rule(color='#E74C3C', strokeDash=[5, 5], strokeWidth=2).encode(y='y:Q')
         base = alt.Chart(data).encode(
-            # 🚀 [핵심 수정] sort=None 을 추가해서 알테어의 자동 '가나다순 정렬'을 강제로 끕니다.
-            # 이렇게 하면 구글 시트(sales_target)에 적힌 직원 순서가 표와 차트에 100% 동일하게 유지됩니다.
             x=alt.X('직원명:N', sort=None, title='', axis=alt.Axis(labelAngle=0, labelFontSize=18, labelFontWeight='bold')),
-            # 🚀 [선택] 세로축(달성률 %)의 글자 크기도 밸런스를 위해 살짝 키웠습니다.
             y=alt.Y(f'{y_col}:Q', title='달성률 (%)', axis=alt.Axis(labelFontSize=14, titleFontSize=15), scale=alt.Scale(domain=[0, max(110, data[y_col].max() + 10)])),
             tooltip=['직원명', alt.Tooltip(f'{y_col}:Q', format='.1f', title='달성률(%)')]
         )
         bar = base.mark_bar(size=40, cornerRadiusEnd=5, color=bar_color, opacity=0.8)
-        
-        # 🚀 [수정] 막대 위에 표시되는 달성률 숫자 폰트도 14에서 16으로 키웠습니다.
-        text = base.mark_text(
-            align='center', baseline='bottom', dy=-5, fontSize=16, fontWeight='bold', color='#333'
-        ).encode(text=alt.Text(f'{y_col}:Q', format='.1f'))
-        
+        text = base.mark_text(align='center', baseline='bottom', dy=-5, fontSize=16, fontWeight='bold', color='#333').encode(text=alt.Text(f'{y_col}:Q', format='.1f'))
         return (bar + text + rule).properties(height=350)
 
-    # 🚀 표 및 차트 출력
     col_chart1, col_chart2 = st.columns(2)
     
     with col_chart1:
-        st.subheader(f"당월({curr_m}월) 달성률 (%)")
+        # 🚀 [이동 버튼] 월간 차트 상단
+        hm1, hm2, hm3 = st.columns([1, 5, 1])
+        hm1.button("◀", on_click=go_prev_m, key="btn_pm", use_container_width=True)
+        hm2.markdown(f"<h4 style='text-align:center; margin-top:5px;'>{st.session_state.v_year_m}년 {st.session_state.v_month}월</h4>", unsafe_allow_html=True)
+        hm3.button("▶", on_click=go_next_m, key="btn_nm", use_container_width=True)
+        
         st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), use_container_width=True)
         
-        st.markdown(f"##### 📋 {curr_m}월 실적 상세 (직원별 열 정렬)")
-        # 행-열 전치 작업 및 단위 포맷팅
+        # 상세 데이터 표 (HTML 렌더링 기존 로직 유지)
+        st.markdown(f"##### 📋 {st.session_state.v_month}월 실적 상세")
         m_data = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
         m_data['월간목표액'] = m_data['월간목표액'].apply(lambda x: f"{int(x):,}")
         m_data['월간실적액'] = m_data['월간실적액'].apply(lambda x: f"{int(x):,}")
         m_data['월간달성률'] = m_data['월간달성률'].apply(lambda x: f"{x:.1f}%")
-        
         m_t = m_data.set_index('직원명').T
         m_t.index = ['목표액', '실적액', '달성률']
-        html_m = m_t.style.set_properties(**{
-            'font-size': '25px', 
-            'text-align': 'right', 
-            'padding': '12px',
-            'border': '1px solid #e0e0e0',
-            'width': '150px'
-        }).set_table_styles([{
-            'selector': 'th', 
-            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]
-        }, {
-            'selector': 'table',
-            'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]
-        }]).to_html()
-        
+        html_m = m_t.style.set_properties(**{'font-size': '25px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
+            .set_table_styles([{'selector': 'th', 'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
+                               {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
+            .to_html()
         st.markdown(html_m, unsafe_allow_html=True)
 
     with col_chart2:
-        st.subheader(f"{curr_q}분기 달성률 (%)")
+        # 🚀 [이동 버튼] 분기 차트 상단
+        hq1, hq2, hq3 = st.columns([1, 5, 1])
+        hq1.button("◀", on_click=go_prev_q, key="btn_pq", use_container_width=True)
+        hq2.markdown(f"<h4 style='text-align:center; margin-top:5px;'>{st.session_state.v_year_q}년 {st.session_state.v_quarter}분기</h4>", unsafe_allow_html=True)
+        hq3.button("▶", on_click=go_next_q, key="btn_nq", use_container_width=True)
+        
         st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
         
-        st.markdown(f"##### 📋 {curr_q}분기 실적 상세 (직원별 열 정렬)")
-        # 행-열 전치 작업 및 단위 포맷팅
+        st.markdown(f"##### 📋 {st.session_state.v_quarter}분기 실적 상세")
         q_data = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
         q_data['분기목표액'] = q_data['분기목표액'].apply(lambda x: f"{int(x):,}")
         q_data['분기실적액'] = q_data['분기실적액'].apply(lambda x: f"{int(x):,}")
         q_data['분기달성률'] = q_data['분기달성률'].apply(lambda x: f"{x:.1f}%")
-        
         q_t = q_data.set_index('직원명').T
         q_t.index = ['목표액', '실적액', '달성률']
-        html_q = q_t.style.set_properties(**{
-            'font-size': '25px', 
-            'text-align': 'right', 
-            'padding': '12px',
-            'border': '1px solid #e0e0e0',
-            'width': '150px'
-        }).set_table_styles([{
-            'selector': 'th', 
-            'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]
-        }, {
-            'selector': 'table',
-            'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]
-        }]).to_html()
-        
+        html_q = q_t.style.set_properties(**{'font-size': '25px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
+            .set_table_styles([{'selector': 'th', 'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
+                               {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
+            .to_html()
         st.markdown(html_q, unsafe_allow_html=True)
