@@ -42,16 +42,17 @@ def load_sheet_data(worksheet_name):
 # -----------------------------------------------------------------
 st.markdown("""
     <style>
-    [data-testid="collapsedControl"] {
-        color: transparent !important;
-        background: transparent !important;
+    [data-testid="stSidebar"] {
+        min-width: 230px !important;
+        max-width: 230px !important;
+        background-color: #1E212B !important;  /* 🚀 아주 세련된 다크 네이비/그레이 색상 */
     }
     [data-testid="collapsedControl"] * { display: none !important; }
     [data-testid="collapsedControl"]::after {
         content: "❯" !important;
         font-size: 22px !important;
         font-weight: 900 !important;
-        color: #333333 !important;
+        color: #FFFFFF !important;
         display: block !important;
         margin-left: 10px !important;
     }
@@ -72,31 +73,37 @@ with st.sidebar:
     main_menu = option_menu(
         menu_title=None, 
         options=["대시보드", "자사 재고", "쿠팡 재고", "판매 현황", "영업 실적", "채권 분석"],
-        icons=["", "", "", "", "", ""],
+        # 🚀 [추가] 촌스러운 이모지 대신 얇고 깔끔한 부트스트랩 아이콘 삽입!
+        # (이미지에 있는 격자 모양 아이콘이 바로 'grid' 입니다)
+        icons=["grid", "box", "box-seam", "graph-up", "briefcase", "credit-card"], 
         default_index=0, 
         styles={
             "container": {
                 "padding": "0!important", 
                 "background-color": "transparent"
             },
+            "icon": {
+                "color": "#A0AEC0",               # 선택 안 된 아이콘은 은은한 회색
+                "font-size": "1.1rem"
+            },
             "nav-link": {
-                "font-size": "1.05rem",           # 글자 크기를 살짝 줄여서 세련되게
+                "font-size": "1.05rem",
                 "text-align": "left", 
                 "margin": "0px 0px 4px 0px",
-                "padding": "10px 15px",           # 위아래 여백을 줘서 클릭하기 편하게
-                "border-radius": "0.5rem",        # 모서리를 부드럽게 둥글림
-                "color": "#31333F",               # 진한 차콜색 (스트림릿 기본 글자색)
+                "padding": "10px 15px",
+                "border-radius": "0.5rem",        # 이미지처럼 모서리가 둥근 박스
+                "color": "#A0AEC0",               # 글자색도 은은한 회색
                 "font-weight": "400",
-                "border": "none"                  # 🚀 테두리 완전 제거
+                "border": "none"
             },
             "nav-link-hover": {
-                "background-color": "#F0F2F6",    # 마우스 올렸을 때 부드러운 연회색
-                "color": "#31333F"
+                "background-color": "rgba(255, 255, 255, 0.05)", # 마우스 올리면 살짝 밝아짐
+                "color": "#FFFFFF"
             },
             "nav-link-selected": {
-                "background-color": "#F0F2F6",    # 선택된 메뉴도 연회색 배경
-                "color": "#31333F",               # 글자색 유지
-                "font-weight": "700",             # 🚀 선택된 메뉴만 굵고 선명하게
+                "background-color": "#374151",    # 🚀 이미지와 똑같은 짙은 둥근 회색 배경
+                "color": "#FFFFFF",               # 글자와 아이콘이 순백색으로 빛남
+                "font-weight": "600",             # 선택된 메뉴 글자만 볼드 처리
                 "border": "none"
             },
         }
