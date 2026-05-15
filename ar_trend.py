@@ -248,7 +248,7 @@ def run(load_data_func):
                     # 🚀 [수정 2] theme=None 을 추가해서 "스트림릿 넌 빠져, 내 설정대로 그릴 거야!" 라고 강제합니다.
                     st.altair_chart(chart, use_container_width=True, theme=None)
 
-                st.markdown('<div class="memo-section">', unsafe_allow_html=True)
+                # st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
                 m_col, b_col = st.columns([6, 1])
                 with m_col:
