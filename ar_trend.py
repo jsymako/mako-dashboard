@@ -145,10 +145,13 @@ def run(load_data_func):
 
             p1 = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
             p2 = group[group['기준월'] == m2].iloc[0] if m2 in group['기준월'].values else None
-            trend = group[group['기준월'].isin(sorted(month_list[:12]))].sort_values('기준월')['잔액'].tolist()
+            
+            # 🚀 [핵심 수정] 잔액 하나만 가져오던 것을 '잔액, 매출, 수금' 3개 모두 묶어서 표(DataFrame) 형태로 가져옵니다.
+            trend_df = group[group['기준월'].isin(sorted(month_list[:12]))].sort_values('기준월')
+            trend_data = trend_df.set_index('기준월')[['잔액', '매출', '수금']]
             
             cards_data.append({
-                'name': trader, 'mgr': curr[manager_col], 'trend': trend,
+                'name': trader, 'mgr': curr[manager_col], 'trend': trend_data, # 🚀 trend_data로 변경!
                 'm0': curr['매출'], 's0': curr['수금'], 'j0': curr['잔액'], 'd0': d0,
                 'm1': p1['매출'] if p1 is not None else 0, 's1': p1['수금'] if p1 is not None else 0, 'j1': p1['잔액'] if p1 is not None else 0, 'd1': get_dso(1),
                 'm2': p2['매출'] if p2 is not None else 0, 's2': p2['수금'] if p2 is not None else 0, 'j2': p2['잔액'] if p2 is not None else 0, 'd2': get_dso(2)
@@ -217,8 +220,16 @@ def run(load_data_func):
                             """, unsafe_allow_html=True)
 
                 with col_graph:
-                    st.markdown('<div class="graph-title">📈 12개월간 잔액 추이</div>', unsafe_allow_html=True)
-                    st.line_chart(row['trend'], height=240, use_container_width=True)
+                    st.markdown('<div class="graph-title">📈 12개월 추이 (잔액/매출/수금)</div>', unsafe_allow_html=True)
+                    
+                    # 🚀 [UI 혁신] 데이터프레임을 통째로 넣으면 차트 우측 상단에 범례가 자동으로 예쁘게 생깁니다.
+                    # color 속성을 이용해 각 선의 색상을 명확하게 구분해 줍니다.
+                    st.line_chart(
+                        row['trend'], 
+                        height=240, 
+                        use_container_width=True,
+                        color=["#ff4b4b", "#007bff", "#28a745"] # 순서대로 빨강(잔액), 파랑(매출), 초록(수금)
+                    )
 
                 st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
