@@ -45,13 +45,15 @@ st.markdown("""
     /* 메인 화면은 하얗게 두고, 사이드바 껍데기만 다크 네이비로 강제 지정 */
     [data-testid="stSidebar"] {
         background-color: #1E212B !important;
-        min-width: 240px !important;
-        max-width: 240px !important;
+        min-width: 200px !important;
+        max-width: 200px !important;
     }
     
     /* 스트림릿 내부의 숨겨진 하얀색 레이어도 다크 네이비로 덮어쓰기 */
     [data-testid="stSidebar"] > div:first-child {
         background-color: #1E212B !important;
+        min-width: 200px !important;   /* 🚀 안쪽 레이어도 똑같이 200px로 맞춰서 삐져나옴 방지 */
+        max-width: 200px !important;
     }
     
     /* 열기/닫기 화살표 색상을 흰색으로 */
