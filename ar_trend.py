@@ -182,7 +182,7 @@ def run(load_data_func):
                         </div>
                 """, unsafe_allow_html=True)
 
-                col_data, col_graph = st.columns([3.5, 1])
+                col_data, col_graph = st.columns([2.5, 1.5])
                 
                 with col_data:
                     c_m2, c_m1, c_m0 = st.columns(3)
