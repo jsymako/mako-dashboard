@@ -94,7 +94,7 @@ with st.sidebar:
                 "border": "none"                    # 🚀 [추가] 혹시 모를 외곽선도 제거
             },
             "icon": {
-                "color": "#A0AEC0",               
+                "color": "#FFFFFF",               
                 "font-size": "1.1rem"               # 🚀 1. [수정] 아이콘 크기 (기본 1.1rem -> 더 키우려면 1.2rem, 1.3rem)
             },
             "nav-link": {
@@ -103,7 +103,7 @@ with st.sidebar:
                 "margin": "0px 0px 4px 0px",        # 🚀 3. [수정] 버튼과 버튼 사이의 간격 (4px을 8px로 늘리면 메뉴 사이가 벌어집니다)
                 "padding": "6px 15px",            # 🚀 4. [수정] 버튼 자체의 크기 (위아래 10px, 양옆 15px 여백. 15px 20px로 늘리면 버튼이 훨씬 커집니다)
                 "border-radius": "0.5rem",          # (개별 메뉴 버튼의 둥근 모서리는 그대로 유지)
-                "color": "#A0AEC0",               
+                "color": "#FFFFFF",               
                 "font-weight": "400",
                 "border": "none",
                 "--hover-color": "#2D3342"        
