@@ -283,8 +283,8 @@ def run(load_data_func):
         m_data['월간달성률'] = m_data['월간달성률'].apply(lambda x: f"{x:.1f}%")
         m_t = m_data.set_index('직원명').T
         m_t.index = ['목표액', '실적액', '달성률']
-        html_m = m_t.style.set_properties(**{'font-size': '25px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
-            .set_table_styles([{'selector': 'th', 'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
+        html_m = m_t.style.set_properties(**{'font-size': '22px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
+            .set_table_styles([{'selector': 'th', 'props': [('font-size', '18px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
                                {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
             .to_html()
         st.markdown(html_m, unsafe_allow_html=True)
@@ -305,8 +305,8 @@ def run(load_data_func):
         q_data['분기달성률'] = q_data['분기달성률'].apply(lambda x: f"{x:.1f}%")
         q_t = q_data.set_index('직원명').T
         q_t.index = ['목표액', '실적액', '달성률']
-        html_q = q_t.style.set_properties(**{'font-size': '25px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
-            .set_table_styles([{'selector': 'th', 'props': [('font-size', '20px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
+        html_q = q_t.style.set_properties(**{'font-size': '22px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
+            .set_table_styles([{'selector': 'th', 'props': [('font-size', '18px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
                                {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
             .to_html()
         st.markdown(html_q, unsafe_allow_html=True)
