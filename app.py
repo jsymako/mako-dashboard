@@ -64,6 +64,14 @@ st.markdown("""
         display: block !important;
         margin-left: 10px !important;
     }
+    [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
+    
+    /* 혹시 모를 iframe 하얀색 모서리 잔재 제거 */
+    iframe {
+        background-color: transparent !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -79,10 +87,10 @@ with st.sidebar:
         styles={
             "container": {
                 "padding": "0!important", 
-                "background-color": "#1E212B"     # 🚀 배경을 투명이 아닌 강제 다크 네이비로 
+                "background-color": "#1E212B"     
             },
             "icon": {
-                "color": "#A0AEC0",               # 선택 안 된 아이콘
+                "color": "#A0AEC0",               
                 "font-size": "1.1rem"
             },
             "nav-link": {
@@ -91,17 +99,17 @@ with st.sidebar:
                 "margin": "0px 0px 4px 0px",
                 "padding": "10px 15px",
                 "border-radius": "0.5rem",        
-                "color": "#A0AEC0",               # 선택 안 된 글자
+                "color": "#A0AEC0",               
                 "font-weight": "400",
                 "border": "none"
             },
             "nav-link-hover": {
-                "background-color": "#2D3342",    # 🚀 마우스 오버 시 밝은 다크그레이
-                "color": "#FFFFFF"
+                "background-color": "#2D3342 !important",  # 🚀 [수정] 무조건 작동하도록 !important 추가
+                "color": "#FFFFFF !important"              # 🚀 [수정] 글자색도 무조건 흰색으로!
             },
             "nav-link-selected": {
-                "background-color": "#374151",    # 선택된 메뉴 배경
-                "color": "#FFFFFF",               # 선택된 글자/아이콘
+                "background-color": "#374151",    
+                "color": "#FFFFFF",               
                 "font-weight": "600",             
                 "border": "none"
             },
