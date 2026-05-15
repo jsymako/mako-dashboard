@@ -223,27 +223,31 @@ def run(load_data_func):
                     memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
                 with b_col:
                     if st.button("💾 저장", key=f"save_{row['name']}", use_container_width=True):
-                        # 🚀 [UI 추가] 저장하는 동안 마우스 쪽에 눈에 띄는 로딩 UI(스피너)를 띄웁니다.
-                        with st.spinner(f"⏳ [{row['name']}] 코멘트 저장 중..."):
-                            
-                            # 1. 구글 시트에 저장 (약 1~2초 소요)
-                            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                            creds_dict = json.loads(st.secrets["gcp_service_account"])
-                            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-                            client = gspread.authorize(creds)
-                            doc = client.open("통합재고관리")
-                            sheet = doc.worksheet("ar_memo")
-                            
-                            all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
-                            all_memos[row['name']] = memo_input
-                            sheet.clear()
-                            sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
-                            
-                            # 🚀 [최적화 2] st.cache_data.clear()를 과감히 삭제!
-                            # 대신 방금 저장한 최신 상태를 내 임시 메모리(session_state)에만 쏙 덮어씌웁니다.
-                            st.session_state.ar_memo_data = pd.DataFrame(list(all_memos.items()), columns=['거래처명', '메모'])
-                            
-                        # 스피너가 끝나면 완료 알림을 띄우고 1초만에 화면을 새로고침합니다.
+                        # 🚀 [UI 혁신] 클릭하는 순간 화면 정중앙에 까맣고 큼지막한 저장 알림 팝업을 띄웁니다!
+                        st.markdown(f"""
+                            <div style='position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                        background-color: rgba(0, 0, 0, 0.85); color: #fff; padding: 30px 50px; 
+                                        border-radius: 15px; font-size: 22px; font-weight: bold; z-index: 99999;
+                                        box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;'>
+                                ⏳ {row['name']}<br><br>구글 시트에 코멘트 저장 중...
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # 구글 시트에 즉시 저장
+                        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                        creds_dict = json.loads(st.secrets["gcp_service_account"])
+                        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+                        client = gspread.authorize(creds)
+                        doc = client.open("통합재고관리")
+                        sheet = doc.worksheet("ar_memo")
+                        
+                        all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
+                        all_memos[row['name']] = memo_input
+                        sheet.clear()
+                        sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
+                        
+                        # 최신 상태 업데이트 후 새로고침 (이젠 엑셀을 다시 읽지 않으니 즉시 새로고침 됩니다!)
+                        st.session_state.ar_memo_data = pd.DataFrame(list(all_memos.items()), columns=['거래처명', '메모'])
                         st.toast(f"{row['name']} 저장 완료!", icon="✅")
                         st.rerun()
                 st.markdown('</div></div>', unsafe_allow_html=True)
