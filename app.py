@@ -71,7 +71,7 @@ with st.sidebar:
 
     main_menu = option_menu(
         menu_title=None, 
-        options=["🏠", "📦 자사 재고", "🚀 쿠팡 재고", "📈 판매 현황", "📊 영업 실적", "💳 채권 분석"],
+        options=["대시보드", "자사 재고", "쿠팡 재고", "판매 현황", "영업 실적", "채권 분석"],
         icons=["", "", "", "", "", ""],
         default_index=0, 
         styles={
@@ -237,15 +237,15 @@ def render_dashboard():
 # -----------------------------------------------------------------
 # 🚀 4. 메뉴 선택에 따른 화면 전환
 # -----------------------------------------------------------------
-if main_menu == "🏠" or main_menu is None:
+if main_menu == "대시보드" or main_menu is None:
     render_dashboard()
-elif main_menu == "📦 자사 재고":
+elif main_menu == "자사 재고":
     own_stock.run(load_sheet_data) 
-elif main_menu == "🚀 쿠팡 재고":
+elif main_menu == "쿠팡 재고":
     coupang_stock.run(load_sheet_data)
-elif main_menu == "📈 판매 현황":
+elif main_menu == "판매 현황":
     trade_trend.run(load_sheet_data)
-elif main_menu == "💳 채권 분석":
+elif main_menu == "채권 분석":
     ar_trend.run(load_sheet_data)
-elif main_menu == "📊 영업 실적":
+elif main_menu == "영업 실적":
     sales_perf.run(load_sheet_data)
