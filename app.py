@@ -109,7 +109,7 @@ with st.sidebar:
                 "--hover-color": "#2D3342"        
             },
             "nav-link-selected": {
-                "background-color": "#374151",    
+                "background-color": "#574151",    
                 "color": "#FFFFFF",               
                 "font-weight": "600",             
                 "border": "none"
