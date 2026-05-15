@@ -87,7 +87,9 @@ with st.sidebar:
         styles={
             "container": {
                 "padding": "0!important", 
-                "background-color": "#1E212B"     
+                "background-color": "#1E212B",
+                "border-radius": "0px !important",  # 🚀 [추가] 전체 껍데기의 둥근 모서리를 직각으로 펴서 하얀 틈새를 완벽 차단합니다!
+                "border": "none"                    # 🚀 [추가] 혹시 모를 외곽선도 제거
             },
             "icon": {
                 "color": "#A0AEC0",               
@@ -98,13 +100,12 @@ with st.sidebar:
                 "text-align": "left", 
                 "margin": "0px 0px 4px 0px",
                 "padding": "10px 15px",
-                "border-radius": "0.5rem",        
+                "border-radius": "0.5rem",          # (개별 메뉴 버튼의 둥근 모서리는 그대로 유지)
                 "color": "#A0AEC0",               
                 "font-weight": "400",
                 "border": "none",
-                "--hover-color": "#2D3342"        # 🚀 [해결 핵심!!] 호버 배경색은 반드시 이렇게 '--hover-color' 변수로 선언해야 작동합니다!
+                "--hover-color": "#2D3342"        
             },
-            # (작동하지 않던 nav-link-hover 블록은 아예 삭제했습니다)
             "nav-link-selected": {
                 "background-color": "#374151",    
                 "color": "#FFFFFF",               
