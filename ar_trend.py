@@ -240,11 +240,13 @@ def run(load_data_func):
                         color=alt.Color(
                             '항목:N', 
                             scale=alt.Scale(domain=['잔액', '매출', '수금'], range=['#ff4b4b', '#007bff', '#28a745']),
-                            legend=alt.Legend(orient='top', title=None, direction='horizontal', padding=5)
+                            # 🚀 [옵션] padding=0으로 줄여서 범례가 차지하는 불필요한 위아래 여백을 없앱니다.
+                            legend=alt.Legend(orient='top', title=None, direction='horizontal', padding=0)
                         ),
-                        # 마우스 오버 시 뜨는 정보
                         tooltip=[alt.Tooltip('M:O', title='개월차'), '항목', alt.Tooltip('금액:Q', format=',')]
-                    ).properties(height=240)
+                    ).properties(
+                        height=310  # 🚀 [핵심 수정] 240이었던 높이를 310으로 늘려서 왼쪽 카드 높이와 비슷하게 맞춥니다!
+                    )
                     
                     st.altair_chart(chart, use_container_width=True)
 
