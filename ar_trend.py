@@ -56,10 +56,14 @@ def run(load_data_func):
 
     
 
-    try:
-        df_memo_gs = load_data_func("ar_memo")
-    except:
-        df_memo_gs = pd.DataFrame(columns=['거래처명', '메모'])
+    # 🚀 [최적화 1] 캐시를 통째로 날리지 않기 위해, 코멘트 데이터를 '세션(임시 메모리)'에 담아둡니다.
+    if "ar_memo_data" not in st.session_state:
+        try:
+            st.session_state.ar_memo_data = load_data_func("ar_memo")
+        except:
+            st.session_state.ar_memo_data = pd.DataFrame(columns=['거래처명', '메모'])
+            
+    df_memo_gs = st.session_state.ar_memo_data
 
     # =================================================================
     # 🚀 [UI 혁신] 뚱뚱한 박스를 안 보이게 접어두는 얇은 바(Expander) 적용
@@ -202,20 +206,27 @@ def run(load_data_func):
                     memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
                 with b_col:
                     if st.button("💾 저장", key=f"save_{row['name']}", use_container_width=True):
-                        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                        creds_dict = json.loads(st.secrets["gcp_service_account"])
-                        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-                        client = gspread.authorize(creds)
-                        doc = client.open("통합재고관리")
-                        sheet = doc.worksheet("ar_memo")
-                        
-                        all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
-                        all_memos[row['name']] = memo_input
-                        sheet.clear()
-                        sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
-                        
-                        # 🚀 [추가] 구글 시트에 저장한 직후, 스트림릿의 낡은 기억(캐시)을 강제로 지우고 화면을 새로고침합니다!
-                        st.cache_data.clear()
+                        # 🚀 [UI 추가] 저장하는 동안 마우스 쪽에 눈에 띄는 로딩 UI(스피너)를 띄웁니다.
+                        with st.spinner(f"⏳ [{row['name']}] 코멘트 저장 중..."):
+                            
+                            # 1. 구글 시트에 저장 (약 1~2초 소요)
+                            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                            creds_dict = json.loads(st.secrets["gcp_service_account"])
+                            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+                            client = gspread.authorize(creds)
+                            doc = client.open("통합재고관리")
+                            sheet = doc.worksheet("ar_memo")
+                            
+                            all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
+                            all_memos[row['name']] = memo_input
+                            sheet.clear()
+                            sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
+                            
+                            # 🚀 [최적화 2] st.cache_data.clear()를 과감히 삭제!
+                            # 대신 방금 저장한 최신 상태를 내 임시 메모리(session_state)에만 쏙 덮어씌웁니다.
+                            st.session_state.ar_memo_data = pd.DataFrame(list(all_memos.items()), columns=['거래처명', '메모'])
+                            
+                        # 스피너가 끝나면 완료 알림을 띄우고 1초만에 화면을 새로고침합니다.
                         st.toast(f"{row['name']} 저장 완료!", icon="✅")
                         st.rerun()
                 st.markdown('</div></div>', unsafe_allow_html=True)
