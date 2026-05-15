@@ -83,7 +83,8 @@ def run(load_data_func):
         df = df_raw.iloc[header_idx+1:].reset_index(drop=True)
         
         df = df[~df['거래처명'].astype(str).str.contains('계|합계|누계', na=False)]
-        df['거래처명'] = df['거래처명'].ffill()
+        # 🚀 [수정] 혹시 모를 스페이스바 공백 때문에 다른 업체로 인식되는 것을 막기 위해 양옆 공백을 잘라냅니다.
+        df['거래처명'] = df['거래처명'].ffill().astype(str).str.strip()
         
         manager_col = next((c for c in df.columns if '담당자' in str(c)), None)
         if manager_col:
@@ -212,7 +213,11 @@ def run(load_data_func):
                         all_memos[row['name']] = memo_input
                         sheet.clear()
                         sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
-                        st.toast(f"{row['name']} 저장!", icon="✅")
+                        
+                        # 🚀 [추가] 구글 시트에 저장한 직후, 스트림릿의 낡은 기억(캐시)을 강제로 지우고 화면을 새로고침합니다!
+                        st.cache_data.clear()
+                        st.toast(f"{row['name']} 저장 완료!", icon="✅")
+                        st.rerun()
                 st.markdown('</div></div>', unsafe_allow_html=True)
 
     except Exception as e:
