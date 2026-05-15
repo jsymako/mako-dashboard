@@ -242,7 +242,7 @@ def run(load_data_func):
                         tooltip=[alt.Tooltip('M:O', title='개월차'), '항목', alt.Tooltip('금액:Q', format=',')]
                     ).properties(
                         # 🚀 [수정 1] 높이를 아주 과감하게 380으로 키웁니다! (필요시 400 이상으로 팍팍 늘려보세요)
-                        height=320  
+                        height=310  
                     )
                     
                     # 🚀 [수정 2] theme=None 을 추가해서 "스트림릿 넌 빠져, 내 설정대로 그릴 거야!" 라고 강제합니다.
