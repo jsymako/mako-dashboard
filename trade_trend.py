@@ -6,7 +6,7 @@ import altair as alt
 import holidays
 
 def run(load_data_func):
-    st.title("🤝 통합 거래처 및 판매 현황")
+    st.title("판매 현황")
     
     try:
         with open("sales_trend.css", "r", encoding="utf-8") as f:
