@@ -55,6 +55,12 @@ st.markdown("""
         display: block !important;
         margin-left: 10px !important;
     }
+
+    /* 🚀 추가: 사이드바 너비 강제 축소 (숫자를 바꿔가며 최적의 비율을 찾아보세요!) */
+    [data-testid="stSidebar"] {
+        min-width: 220px !important;
+        max-width: 220px !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
