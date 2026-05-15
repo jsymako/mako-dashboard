@@ -285,10 +285,10 @@ def run(load_data_func):
         
         # 🚀 [수정 포인트 1] 화면에 보일 '행 이름'을 여기서 자유롭게 수정하세요.
         # (리스트의 순서는 ['목표액', '실적액', '달성률'] 순서를 유지해야 데이터가 꼬이지 않습니다.)
-        m_t.index = ['🎯 당월 목표', '💰 실제 실적', '📈 달성 수치'] 
+        m_t.index = ['목표', '실적', '달성'] 
         
         # 🚀 [수정 포인트 2] 왼쪽 상단에 표시되는 '직원명'이라는 타이틀을 변경하고 싶을 때 사용하세요.
-        m_t.rename_axis("영업 담당자", axis=1, inplace=True)
+        m_t.rename_axis("담당", axis=1, inplace=True)
         
         html_m = m_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
@@ -313,10 +313,10 @@ def run(load_data_func):
         q_t = q_data.set_index('직원명').T
         
         # 🚀 [수정 포인트 3] 분기 표도 동일하게 수정 가능합니다.
-        q_t.index = ['📅 분기 목표', '💵 분기 실적', '📊 최종 달성률']
+        q_t.index = ['목표', '실적', '달성']
         
         # 🚀 [수정 포인트 4] '직원명' 머릿말 변경
-        q_t.rename_axis("영업 담당자", axis=1, inplace=True)
+        q_t.rename_axis("담당", axis=1, inplace=True)
         html_q = q_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
                                {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
