@@ -74,30 +74,29 @@ with st.sidebar:
         options=["대시보드", "자사 재고", "쿠팡 재고", "판매 현황", "영업 실적", "채권 분석"],
         icons=["", "", "", "", "", ""],
         default_index=0, 
-        # 🚀 [여기부터 수정] 딱딱한 테두리를 없애고 부드러운 스트림릿 순정 테마로 변경
         styles={
             "container": {
                 "padding": "0!important", 
                 "background-color": "transparent"
             },
             "nav-link": {
-                "font-size": "1.05rem",           /* 글자 크기를 살짝 줄여서 세련되게 */
+                "font-size": "1.05rem",           # 글자 크기를 살짝 줄여서 세련되게
                 "text-align": "left", 
                 "margin": "0px 0px 4px 0px",
-                "padding": "10px 15px",           /* 위아래 여백을 줘서 클릭하기 편하게 */
-                "border-radius": "0.5rem",        /* 모서리를 부드럽게 둥글림 */
-                "color": "#31333F",               /* 진한 차콜색 (스트림릿 기본 글자색) */
+                "padding": "10px 15px",           # 위아래 여백을 줘서 클릭하기 편하게
+                "border-radius": "0.5rem",        # 모서리를 부드럽게 둥글림
+                "color": "#31333F",               # 진한 차콜색 (스트림릿 기본 글자색)
                 "font-weight": "400",
-                "border": "none"                  /* 🚀 테두리 완전 제거 */
+                "border": "none"                  # 🚀 테두리 완전 제거
             },
             "nav-link-hover": {
-                "background-color": "#F0F2F6",    /* 마우스 올렸을 때 부드러운 연회색 */
+                "background-color": "#F0F2F6",    # 마우스 올렸을 때 부드러운 연회색
                 "color": "#31333F"
             },
             "nav-link-selected": {
-                "background-color": "#F0F2F6",    /* 선택된 메뉴도 연회색 배경 */
-                "color": "#31333F",               /* 글자색 유지 */
-                "font-weight": "700",             /* 🚀 선택된 메뉴만 굵고 선명하게 */
+                "background-color": "#F0F2F6",    # 선택된 메뉴도 연회색 배경
+                "color": "#31333F",               # 글자색 유지
+                "font-weight": "700",             # 🚀 선택된 메뉴만 굵고 선명하게
                 "border": "none"
             },
         }
