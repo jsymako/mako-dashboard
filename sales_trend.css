@@ -99,7 +99,7 @@ div[data-baseweb="popover"] li:hover {
 /* =========================================
    🚀 4. 날짜 선택기 (Date Input) 다크 모드 완벽 패치 (진짜 최종)
 ========================================= */
-/* ① 입력창 겉면 & 파란 테두리 완벽 차단 */
+/* 입력창 겉면 및 포커스(클릭) 테두리 잔재 제거 */
 .stDateInput div[data-baseweb="input"] > div,
 .stDateInput div[data-baseweb="base-input"] {
     background-color: #2D3342 !important;
@@ -118,38 +118,38 @@ div[data-baseweb="popover"] li:hover {
 }
 .stDateInput svg { fill: #A0AEC0 !important; }
 
-/* ② 🚀 [핵심 해결] 팝업창 최상위 껍데기의 하얀 바탕을 다크 네이비로 파괴! */
-div[data-baseweb="popover"] > div {
+/* 🔒 [독립 제어] 캘린더 전용 팝업창 최상위 껍데기만 정밀 타격 */
+div[data-baseweb="popover"]:has([data-baseweb="calendar"]) > div,
+div[data-baseweb="popover"]:has([data-baseweb="calendar"]) {
     background-color: #2D3342 !important;
+    border: 1px solid #4A5568 !important;
+    border-radius: 8px !important;
 }
 
-/* ③ 달력(Calendar) 뼈대 및 빈 공간 배경 투명화 */
-[data-baseweb="calendar"] {
+/* 💥 [하얀 네모 파괴] 달력 내부의 일반 요소 및 가상 요소(::before, ::after)까지 전부 투명화! */
+div[data-baseweb="calendar"],
+div[data-baseweb="calendar"] *,
+div[data-baseweb="calendar"] *::before,
+div[data-baseweb="calendar"] *::after {
     background-color: transparent !important;
-    border: none !important;
-}
-
-/* ④ 달력 안의 빈칸 네모들 배경 날리고 글자는 하얗게 */
-[data-baseweb="calendar"] div {
-    background-color: transparent !important;
-}
-[data-baseweb="calendar"] * {
     color: #FFFFFF !important;
 }
 
-/* ⑤ 단, 선택된 날짜(빨간 동그라미)는 강제로 색상 부여! */
-[data-baseweb="calendar"] [aria-selected="true"],
-[data-baseweb="calendar"] [aria-selected="true"] * {
+/* 선택된 날짜 (빨간 동그라미) 강제 브랜딩 */
+div[data-baseweb="calendar"] [aria-selected="true"] {
     background-color: #FF4B4B !important; 
-    color: #FFFFFF !important;
     border-radius: 50% !important;
 }
+div[data-baseweb="calendar"] [aria-selected="true"] * {
+    color: #FFFFFF !important;
+}
 
-/* ⑥ 일반 날짜 마우스 호버 효과 */
-[data-baseweb="calendar"] [role="button"]:hover {
+/* 일반 날짜 마우스 호버 효과 */
+div[data-baseweb="calendar"] [role="button"]:hover {
     background-color: #4A5568 !important;
     border-radius: 50% !important;
 }
+
 /* =========================================
    🚀 4. 날짜 선택기 (Date Input) 다크 모드 패치
 ========================================= */
