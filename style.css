@@ -78,7 +78,7 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
 /* 셀렉트박스 드롭다운 팝업창 (잔상 방지) */
 div[data-baseweb="popover"]:has(ul) > div { background-color: #2D3342 !important; border: 1px solid #4A5568 !important; border-radius: 8px !important; }
 div[data-baseweb="popover"] ul { background-color: transparent !important; }
-div[data-baseweb="popover"] li { color: #FFFFFF !important; font-size: 1rem !important; background-color: transparent !important; }
+div[data-baseweb="popover"] li { color: #FFFFFF !important; font-size: 0.8rem !important; background-color: transparent !important; }
 div[data-baseweb="popover"] li * { background-color: transparent !important; } 
 div[data-baseweb="popover"] li:hover { background-color: #374151 !important; }
 
