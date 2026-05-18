@@ -53,10 +53,46 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
     color: #495057 !important;      /* 짙은 회색으로 밸런스 맞춤 */
 }
 
-/* 3. 셀렉트박스 내부 '선택된 글자' (전체보기 등) */
-[data-testid="stSidebar"] div[data-baseweb="select"] { 
+/* =========================================
+   🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
+========================================= */
+
+/* ① 셀렉트박스 겉면 (클릭 전 배경색 및 테두리) */
+[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+    background-color: #2D3342 !important; /* 메뉴 호버 색상과 동일한 밝은 다크그레이 */
+    border: 1px solid #4A5568 !important; /* 은은한 테두리로 입체감 부여 */
+    border-radius: 8px !important;        /* 모서리 둥글게 */
+}
+
+/* ② 셀렉트박스 안의 글자색 ("전체 보기" 등) */
+[data-testid="stSidebar"] div[data-baseweb="select"] span {
+    color: #FFFFFF !important;            /* 글자는 쨍한 흰색 */
+    font-size: 1.05rem !important;
+    font-weight: 500 !important;
+}
+
+/* ③ 우측 꺾은선 화살표 아이콘 색상 */
+[data-testid="stSidebar"] div[data-baseweb="select"] svg {
+    fill: #A0AEC0 !important;             /* 아이콘은 은은한 회색 */
+}
+
+/* ④ 클릭 시 아래로 펼쳐지는 드롭다운 리스트 (팝업창) */
+/* (스트림릿 구조상 팝업은 사이드바 밖에서 생성되므로 전역으로 타격합니다) */
+div[data-baseweb="popover"] ul {
+    background-color: #2D3342 !important; /* 펼쳐진 창 배경색 */
+    border: 1px solid #4A5568 !important;
+    border-radius: 8px !important;
+}
+div[data-baseweb="popover"] li {
+    color: #FFFFFF !important;            /* 펼쳐진 창 내부 글자색 */
     font-size: 1rem !important;
 }
+div[data-baseweb="popover"] li:hover {
+    background-color: #374151 !important; /* 마우스 올렸을 때 살짝 밝아짐 */
+}
+/* =========================================
+   🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
+========================================= */
 
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
     font-size: 1rem !important;   /* 옵션은 타이틀보다 살짝 작게 */
