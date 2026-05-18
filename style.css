@@ -72,7 +72,7 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
 /* 셀렉트박스 겉면 및 아이콘 */
 [data-testid="stSidebar"] div[data-baseweb="select"] > div { background-color: #2D3342 !important; border: 1px solid #4A5568 !important; border-radius: 8px !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] * { color: #FFFFFF !important; }
-[data-testid="stSidebar"] div[data-baseweb="select"] { font-size: 1.05rem !important; font-weight: 400 !important; }
+[data-testid="stSidebar"] div[data-baseweb="select"] { font-size: 1rem !important; font-weight: 400 !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] svg { fill: #A0AEC0 !important; }
 
 /* 셀렉트박스 드롭다운 팝업창 (잔상 방지) */
