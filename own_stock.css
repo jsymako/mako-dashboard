@@ -65,8 +65,10 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 }
 
 /* ② 셀렉트박스 안의 글자색 ("전체 보기" 등) */
-[data-testid="stSidebar"] div[data-baseweb="select"] span {
-    color: #FFFFFF !important;            /* 글자는 쨍한 흰색 */
+[data-testid="stSidebar"] div[data-baseweb="select"] * {
+    color: #FFFFFF !important;            /* 내부의 모든 div, span 글자를 흰색으로 강제! */
+}
+[data-testid="stSidebar"] div[data-baseweb="select"] {
     font-size: 1.05rem !important;
     font-weight: 500 !important;
 }
