@@ -56,6 +56,7 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 /* 3. 셀렉트박스 내부 '선택된 글자' (전체보기 등) */
 [data-testid="stSidebar"] div[data-baseweb="select"] { 
     font-size: 1rem !important;
+   color: #495057
 }
 
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
