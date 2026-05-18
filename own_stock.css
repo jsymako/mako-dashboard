@@ -17,16 +17,15 @@
     font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
 
+/* 메인 화면 대제목 스타일 */
 .block-container h1 {
-    font-size: 2.5rem !important;        /* 글자 크기 (기본보다 더 크고 시원하게) */
-    font-weight: 700 !important;         /* 글자 굵기 (가장 두껍고 단단하게) */
-    color: #111111 !important;           /* 글자 색상 (세련된 진한 검정색) */
-    
-    padding-bottom: 12px !important;     /* 글자와 밑줄 사이의 간격 */
-    border-bottom: 4px solid #2E86C1 !important; /* 🚀 제목 아래에 파란색 두꺼운 밑줄 포인트 */
-    
-    margin-bottom: 30px !important;      /* 제목과 그 아래 내용(컨텐츠) 사이의 넉넉한 여백 */
-    letter-spacing: -1px !important;     /* 자간을 살짝 좁혀서 타이틀의 밀도감 상승 */
+    font-size: 2.5rem !important;        
+    font-weight: 700 !important;         
+    color: #111111 !important;           
+    padding-bottom: 12px !important;     
+    border-bottom: 4px solid #2E86C1 !important; 
+    margin-bottom: 30px !important;      
+    letter-spacing: -1px !important;     
 }
 
 /* [1] 공통 텍스트 및 레이아웃 */
@@ -37,144 +36,163 @@ h2 { font-size: 1.5rem !important; font-weight: 700 !important; }
 h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 
 
-/* 1. 모든 위젯의 '메인 타이틀' (브랜드 선택, 분석 모드 등) */
-/* 🚀 스트림릿 전용 이름표(stWidgetLabel) 안의 p 태그를 직접 타격! */
+/* =========================================
+   🚀 2. 사이드바 텍스트 및 제목 (다크모드 최적화)
+========================================= */
+/* 위젯 메인 타이틀 ("브랜드 선택" 등) */
 [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
-    font-size: 1rem !important;  /* 타이틀답게 확실히 키움 (1.2rem ~ 1.25rem 추천) */
-    font-weight: 400 !important;    /* 진하게 */
-    color: #FFFFFF !important;      /* 짙은 남색 */
-    margin-bottom: 5px !important;  /* 아래 옵션들과의 간격 */
+    font-size: 1rem !important;  
+    font-weight: 400 !important;    
+    color: #FFFFFF !important;      
+    margin-bottom: 5px !important;  
 }
 
-/* 2. 라디오 위젯의 '개별 옵션들' (월별 현황, 일별 현황 등) */
+/* 라디오 위젯 개별 옵션 */
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
-    font-size: 1rem !important;  /* 타이틀보다 살짝 작게 */
-    font-weight: 400 !important;    /* 일반 굵기 */
-    color: #495057 !important;      /* 짙은 회색으로 밸런스 맞춤 */
+    font-size: 1rem !important;  
+    font-weight: 400 !important;    
+    color: #A0AEC0 !important; /* 어두운 배경에 잘 보이도록 밝은 회색 변경 */
 }
+
+/* 사이드바 내부 대제목 (# 1개) */
+[data-testid="stSidebar"] h1 {
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    color: #FFFFFF !important; /* 🚀 흰색으로 변경 */
+    margin-bottom: 15px !important;
+}
+
+/* 사이드바 내부 중간 제목 (## 2개) */
+[data-testid="stSidebar"] h2 {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    color: #F8F9FA !important; /* 🚀 연흰색으로 변경 */
+    margin-bottom: 12px !important;
+}
+
+/* 사이드바 내부 소제목 (### 3개) - '🔍 조회 조건' 등 */
+[data-testid="stSidebar"] h3 {
+   font-size: 1.2rem !important; 
+   font-weight: 400 !important; 
+   color: #A0AEC0 !important; /* 🚀 은은한 회색으로 변경 */
+   margin-bottom: 10px !important;
+}
+
+/* 사이드바 내부 꼬마 제목 (#### 4개) - '📅 날짜 지정' 등 */
+[data-testid="stSidebar"] h4 {
+    font-size: 1.0rem !important;
+    font-weight: 500 !important;
+    color: #A0AEC0 !important; /* 🚀 은은한 회색으로 변경 */
+    margin-bottom: 8px !important;
+    margin-top: 10px !important;
+}
+
 
 /* =========================================
    🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
 ========================================= */
-
-/* ① 셀렉트박스 겉면 (클릭 전 배경색 및 테두리) */
+/* 셀렉트박스 겉면 (클릭 전) */
 [data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    background-color: #2D3342 !important; /* 메뉴 호버 색상과 동일한 밝은 다크그레이 */
-    border: 1px solid #4A5568 !important; /* 은은한 테두리로 입체감 부여 */
-    border-radius: 8px !important;        /* 모서리 둥글게 */
+    background-color: #2D3342 !important; 
+    border: 1px solid #4A5568 !important; 
+    border-radius: 8px !important;       
 }
 
-/* ② 셀렉트박스 안의 글자색 ("전체 보기" 등) */
-[data-testid="stSidebar"] div[data-baseweb="select"] * {
-    color: #FFFFFF !important;            /* 내부의 모든 div, span 글자를 흰색으로 강제! */
-}
-[data-testid="stSidebar"] div[data-baseweb="select"] {
-    font-size: 1.05rem !important;
-    font-weight: 500 !important;
-}
+/* 셀렉트박스 안의 글자색 및 화살표 */
+[data-testid="stSidebar"] div[data-baseweb="select"] * { color: #FFFFFF !important; }
+[data-testid="stSidebar"] div[data-baseweb="select"] { font-size: 1.05rem !important; font-weight: 500 !important; }
+[data-testid="stSidebar"] div[data-baseweb="select"] svg { fill: #A0AEC0 !important; }
 
-/* ③ 우측 꺾은선 화살표 아이콘 색상 */
-[data-testid="stSidebar"] div[data-baseweb="select"] svg {
-    fill: #A0AEC0 !important;             /* 아이콘은 은은한 회색 */
-}
-
-/* 🔒 [독립 제어] 셀렉트박스 전용 드롭다운 팝업창 (달력과 철저히 분리) */
+/* 🔒 [독립 제어] 셀렉트박스 전용 드롭다운 팝업창 (잔상 버그 완벽 해결) */
 div[data-baseweb="popover"]:has(ul) > div {
     background-color: #2D3342 !important; 
     border: 1px solid #4A5568 !important;
     border-radius: 8px !important;
 }
-div[data-baseweb="popover"] ul {
-    background-color: transparent !important;
-}
+div[data-baseweb="popover"] ul { background-color: transparent !important; }
 div[data-baseweb="popover"] li {
     color: #FFFFFF !important;            
     font-size: 1rem !important;
-    background-color: transparent !important; /* 기본 배경 투명화 */
+    background-color: transparent !important; 
 }
+div[data-baseweb="popover"] li * { background-color: transparent !important; } /* 이중 잔상 제거 */
+div[data-baseweb="popover"] li:hover { background-color: #374151 !important; }
 
-/* 🚀 [버그 해결 핵심] li 내부의 자식 div들이 제멋대로 그리는 하얀색/회색 이중 배경을 완전히 박멸합니다 */
-div[data-baseweb="popover"] li * {
+
+/* =========================================
+   🚀 4. 날짜 선택기 (Date Input) 다크 모드 완벽 패치
+========================================= */
+/* 입력창 겉면 및 우측 틈새 흰색 박멸 */
+[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] {
+    background-color: #2D3342 !important;
+    border: 1px solid #4A5568 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] > div,
+[data-testid="stSidebar"] .stDateInput div[data-baseweb="base-input"],
+[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] button {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.stDateInput input {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    font-size: 1.05rem !important;
     background-color: transparent !important;
 }
+.stDateInput svg { fill: #A0AEC0 !important; }
 
-/* 마우스 올렸을 때 오직 단 하나의 깔끔한 레이어(#374151)만 채워지도록 통제 */
-div[data-baseweb="popover"] li:hover {
-    background-color: #374151 !important; 
+/* 🔒 [독립 제어] 캘린더 전용 팝업창 최상위 껍데기 */
+div[data-baseweb="popover"]:has([data-baseweb="calendar"]) > div,
+div[data-baseweb="popover"]:has([data-baseweb="calendar"]) {
+    background-color: #2D3342 !important;
+    border: 1px solid #4A5568 !important;
+    border-radius: 8px !important;
 }
-/* =========================================
-   🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
-========================================= */
+
+/* 달력 내부 가상 요소 및 빈칸 흰색 박멸 */
+div[data-baseweb="calendar"], div[data-baseweb="calendar"] *,
+div[data-baseweb="calendar"] *::before, div[data-baseweb="calendar"] *::after {
+    background-color: transparent !important;
+    color: #FFFFFF !important;
+}
+div[data-baseweb="calendar"] [aria-selected="true"] { background-color: #FF4B4B !important; border-radius: 50% !important; }
+div[data-baseweb="calendar"] [aria-selected="true"] * { color: #FFFFFF !important; }
+div[data-baseweb="calendar"] [role="button"]:hover { background-color: #4A5568 !important; border-radius: 50% !important; }
+
 
 /* =========================================
-   🚀 5. 셀렉트박스 펼침 메뉴 스크롤바 완벽 표출
+   🚀 5. 셀렉트박스 펼침 메뉴 스크롤바 강제 활성화
 ========================================= */
-
-/* ① 스트림릿이 숨겨놓은 팝업 내부 리스트의 스크롤 기능 강제 활성화 */
+/* 팝업 내부 리스트에 스크롤 무조건 생성 */
 div[data-baseweb="popover"] ul {
-    scrollbar-width: thin !important;       /* 파이어폭스용 활성화 */
-    -ms-overflow-style: auto !important;     /* 익스플로러/엣지용 활성화 */
+    scrollbar-width: thin !important;       
+    -ms-overflow-style: auto !important;     
     overflow-y: auto !important;
 }
 
-/* ② 팝업창 내부의 모든 스크롤바 영역 크기 강제 지정 (슬림한 6px) */
+/* 셀렉트박스 팝업 내부 스크롤바 크기 및 표출 강제 지시 */
 div[data-baseweb="popover"] *::-webkit-scrollbar {
     width: 6px !important;
     height: 6px !important;
-    display: block !important;               /* 숨겨진 스크롤바 강제 노출 */
+    display: block !important; /* 👈 숨겨진 스크롤바를 억지로 끄집어냅니다 */
 }
-
-/* ③ 스크롤바 레일(트랙) 배경 - 투명 처리 */
 div[data-baseweb="popover"] *::-webkit-scrollbar-track {
     background: transparent !important;
 }
-
-/* ④ 진짜 움직이는 스크롤바 막대기 - 어두운 배경에 잘 보이는 다크회색 */
 div[data-baseweb="popover"] *::-webkit-scrollbar-thumb {
-    background-color: #4A5568 !important;    /* 은은한 회색 바 */
+    background-color: #4A5568 !important;    
     border-radius: 10px !important;
 }
-
-/* ⑤ 스크롤바 막대에 마우스 올렸을 때 하이라이트 효과 */
 div[data-baseweb="popover"] *::-webkit-scrollbar-thumb:hover {
-    background-color: #A0AEC0 !important;    /* 마우스 올리면 더 밝아짐 */
+    background-color: #A0AEC0 !important;    
 }
 
-/* 1. 제일 큰 왕 제목 (# 1개) */
-[data-testid="stSidebar"] h1 {
-    font-size: 1.8rem !important;
-    font-weight: 600 !important;
-    color: #2C3E50 !important;
-    margin-bottom: 15px !important;
-}
-
-/* 2. 중간 제목 (## 2개) */
-[data-testid="stSidebar"] h2 {
-    font-size: 1.5rem !important;
-    font-weight: 600 !important;
-    color: #2C3E50 !important;
-    margin-bottom: 12px !important;
-}
-
-/* 3. 소제목 (### 3개) - 현재 '🔍 조회 조건' 등 */
-[data-testid="stSidebar"] h3 {
-   font-size: 1.2rem !important; 
-   font-weight: 300 !important; 
-   color: #34495E !important;
-   margin-bottom: 10px !important;
-}
-
-/* 4. 꼬마 제목 (#### 4개) - 현재 '📅 날짜 지정' 등 */
-[data-testid="stSidebar"] h4 {
-    font-size: 1.0rem !important;
-    font-weight: 500 !important;
-    color: #2C3E50 !important;
-    margin-bottom: 8px !important;
-    margin-top: 10px !important;
-}
 
 /* =========================================
-   [3] 자사 재고 전용: 카드 디자인
+   [6] 자사 재고 전용: 카드 디자인 및 기타 (기존 코드 유지)
 ========================================= */
 .brand-section { background-color: rgba(150, 150, 150, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 30px; }
 .brand-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 15px; border-bottom: 2px solid rgba(150, 150, 150, 0.2); padding-bottom: 10px; }
@@ -198,40 +216,14 @@ div[data-baseweb="popover"] *::-webkit-scrollbar-thumb:hover {
     color: #000000; 
     line-height: 1; 
 }
-
 .stock-unit { font-size: 1.1rem; font-weight: 400; color: #000000; margin-left: 4px; }
-
 .card-divider { display: none; }
 .card-body { flex-grow: 1; }
 .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1rem; }
 .info-label { font-size: 1rem; color: #777; }
 .info-val { font-weight: 700 !important; }
 
-
-/* =========================================
-   💡 상단 정보 박스 (st.info) 커스텀 스타일 완벽 수정본
-========================================= */
-/* 1. 겉 포장지(Wrapper) 초기화: 투명하게 만들고 테두리 없애기 */
-[data-testid="stAlert"] {
-    background-color: transparent !important;
-    border: none !important;
-    padding: 0px 0px 20px 0px !important;
-}
-
-/* 2. 🚀 진짜 알맹이 박스(내부 div)에 디자인 입히기 */
-[data-testid="stAlert"] > div {
-    background-color: transparent !important;  /* 고급스러운 연회색 배경 */
-    border: 0px solid #dae1e7 !important;  /* 깔끔한 테두리 */
-    border-radius: 10px !important;        /* 모서리 둥글게 */
-    padding: 0px !important;         /* 박스 안쪽 여백 */
-}
-
-/* 3. 글자 폰트 및 색상 설정 */
-[data-testid="stAlert"] p {
-    font-size: 1.25rem !important;
-    font-weight: 600 !important;
-    color: #2c3e50 !important;             /* 진한 네이비/회색계열 */
-    line-height: 1.6 !important;
-    margin: 0 !important;
-}
-
+/* 상단 정보 박스 (st.info) 커스텀 */
+[data-testid="stAlert"] { background-color: transparent !important; border: none !important; padding: 0px 0px 20px 0px !important; }
+[data-testid="stAlert"] > div { background-color: transparent !important; border: 0px solid #dae1e7 !important; border-radius: 10px !important; padding: 0px !important; }
+[data-testid="stAlert"] p { font-size: 1.25rem !important; font-weight: 600 !important; color: #2c3e50 !important; line-height: 1.6 !important; margin: 0 !important; }
