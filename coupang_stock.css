@@ -94,6 +94,49 @@ div[data-baseweb="popover"] li:hover {
 /* =========================================
    🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
 ========================================= */
+
+/* =========================================
+   🚀 5. 셀렉트박스 펼침 메뉴 스크롤바 완벽 표출 (휠 스크롤 복구 완료)
+========================================= */
+
+
+/* ① 강제로 꼬아놨던 오버플로우 속성을 제거하고, 라이브러리 본연의 가둠 기능을 복원합니다 */
+div[data-baseweb="popover"] div,
+div[data-baseweb="popover"] ul {
+    overflow: opacity !important; /* 빈 공간 스크롤 버그 원천 봉쇄 */
+}
+
+/* ② 팝업창 내부에 숨겨진 모든 스크롤 기능의 빗장을 풀고 정상화 */
+div[data-baseweb="popover"] * {
+    scrollbar-width: thin !important;         /* 파이어폭스 휠 복구 */
+    -ms-overflow-style: auto !important;       /* 엣지 휠 복구 */
+}
+
+/* ③ 🚀 [가시성 200%] 배경색에 묻히지 않도록 팝업창 내의 모든 스크롤바를 강제 노출 시킵니다 */
+div[data-baseweb="popover"] ::-webkit-scrollbar {
+    width: 7px !important;            
+    height: 7px !important;
+    display: block !important;                 /* 투명화 레이어 강제 파괴 */
+}
+
+/* ④ 스크롤바 레일(트랙) 배경색 - 메뉴판 배경과 일치 */
+div[data-baseweb="popover"] ::-webkit-scrollbar-track {
+    background: #2D3342 !important;   
+    border-radius: 8px !important;
+}
+
+/* ⑤ 🚀 [보호색 해제] 평소에도 휠을 굴릴 때 눈에 확 띄도록 훨씬 밝은 블루회색으로 막대기 고정 */
+div[data-baseweb="popover"] ::-webkit-scrollbar-thumb {
+    background-color: #718096 !important;    /* 👈 기존보다 훨씬 밝고 선명한 톤으로 업그레이드 */
+    border-radius: 10px !important;
+    border: 1px solid #2D3342 !important;    /* 깔끔한 인라인 마감 */
+}
+
+/* ⑥ 스크롤바 막대에 마우스가 올라갔을 때 하이라이트 효과 */
+div[data-baseweb="popover"] ::-webkit-scrollbar-thumb:hover {
+    background-color: #A0AEC0 !important;    /* 마우스 호버 시 쨍하게 밝아짐 */
+}
+
 /* =========================================
    🚀 4. 날짜 선택기 (Date Input) 다크 모드 완벽 패치 (진짜 최종)
 ========================================= */
