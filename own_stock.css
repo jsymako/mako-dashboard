@@ -107,37 +107,38 @@ div[data-baseweb="popover"] li:hover {
 ========================================= */
 
 /* =========================================
-   🚀 5. 사이드바 및 셀렉트박스 팝업 스크롤바 가시성 패치
+   🚀 5. 셀렉트박스 펼침 메뉴 스크롤바 완벽 표출
 ========================================= */
 
-/* ① 스크롤바 전체 영역 크기 설정 (얄쌍하고 슬림하게 6px) */
-[data-testid="stSidebar"] ::-webkit-scrollbar,
-div[data-baseweb="popover"] ::-webkit-scrollbar {
-    width: 6px !important;
-    height: 6px !important;
-    display: block !important;
+/* ① 스트림릿이 숨겨놓은 팝업 내부 리스트의 스크롤 기능 강제 활성화 */
+div[data-baseweb="popover"] ul {
+    scrollbar-width: thin !important;       /* 파이어폭스용 활성화 */
+    -ms-overflow-style: auto !important;     /* 익스플로러/엣지용 활성화 */
+    overflow-y: auto !important;
 }
 
-/* ② 스크롤바가 지나가는 레일(트랙) 배경 - 투명하게 처리 */
-[data-testid="stSidebar"] ::-webkit-scrollbar-track,
-div[data-baseweb="popover"] ::-webkit-scrollbar-track {
+/* ② 팝업창 내부의 모든 스크롤바 영역 크기 강제 지정 (슬림한 6px) */
+div[data-baseweb="popover"] *::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+    display: block !important;               /* 숨겨진 스크롤바 강제 노출 */
+}
+
+/* ③ 스크롤바 레일(트랙) 배경 - 투명 처리 */
+div[data-baseweb="popover"] *::-webkit-scrollbar-track {
     background: transparent !important;
 }
 
-/* ③ 진짜 스크롤바 막대기 (움직이는 부분) - 은은한 다크회색 */
-[data-testid="stSidebar"] ::-webkit-scrollbar-thumb,
-div[data-baseweb="popover"] ::-webkit-scrollbar-thumb {
-    background-color: #4A5568 !important; 
+/* ④ 진짜 움직이는 스크롤바 막대기 - 어두운 배경에 잘 보이는 다크회색 */
+div[data-baseweb="popover"] *::-webkit-scrollbar-thumb {
+    background-color: #4A5568 !important;    /* 은은한 회색 바 */
     border-radius: 10px !important;
 }
 
-/* ④ 스크롤바 막대기에 마우스 올렸을 때 (더 잘 보이게 밝은 회색으로 변경) */
-[data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover,
-div[data-baseweb="popover"] ::-webkit-scrollbar-thumb:hover {
-    background-color: #A0AEC0 !important; 
+/* ⑤ 스크롤바 막대에 마우스 올렸을 때 하이라이트 효과 */
+div[data-baseweb="popover"] *::-webkit-scrollbar-thumb:hover {
+    background-color: #A0AEC0 !important;    /* 마우스 올리면 더 밝아짐 */
 }
-
-
 
 /* 1. 제일 큰 왕 제목 (# 1개) */
 [data-testid="stSidebar"] h1 {
