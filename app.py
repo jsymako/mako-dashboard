@@ -83,7 +83,7 @@ st.markdown("""
 with st.sidebar:
     main_menu = option_menu(
         menu_title=None, 
-        options=["대시보드", "자사 재고", "쿠팡 재고", "판매 현황", "영업 실적", "채권 분석"],
+        options=["대시 보드", "자사 재고", "쿠팡 재고", "판매 현황", "영업 실적", "채권 분석"],
         icons=["grid", "box", "box-seam", "graph-up", "briefcase", "credit-card"], 
         default_index=0, 
         styles={
@@ -268,7 +268,7 @@ def render_dashboard():
 # -----------------------------------------------------------------
 # 🚀 4. 메뉴 선택에 따른 화면 전환 (다시 복구!)
 # -----------------------------------------------------------------
-if main_menu == "대시보드" or main_menu is None:
+if main_menu == "대시 보드" or main_menu is None:
     render_dashboard()
 elif main_menu == "자사 재고":
     own_stock.run(load_sheet_data) 
