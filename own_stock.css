@@ -94,16 +94,7 @@ div[data-baseweb="popover"] li:hover {
    🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
 ========================================= */
 
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
-    font-size: 1rem !important;   /* 옵션은 타이틀보다 살짝 작게 */
-    font-weight: 400 !important;    /* 일반 굵기로 얄쌍하게 */
-    
-}
 
-[data-testid="stSidebar"] div[data-baseweb="select"] { 
-    font-size: 1rem !important;
-    font-weight: 400 !important;
-}
 
 /* 1. 제일 큰 왕 제목 (# 1개) */
 [data-testid="stSidebar"] h1 {
