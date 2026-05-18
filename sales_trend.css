@@ -47,7 +47,7 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 
 /* 2. 라디오 위젯의 '개별 옵션들' (월별 현황, 일별 현황 등) */
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
-    font-size: 11rem !important;  /* 타이틀보다 살짝 작게 */
+    font-size: 1rem !important;  /* 타이틀보다 살짝 작게 */
     font-weight: 400 !important;    /* 일반 굵기 */
     color: #FFFFFF !important;      /* 짙은 회색으로 밸런스 맞춤 */
 }
