@@ -166,37 +166,43 @@ div[data-baseweb="calendar"] [role="button"]:hover { background-color: #4A5568 !
 /* =========================================
    🚀 5. 셀렉트박스 펼침 메뉴 스크롤바 강제 활성화
 ========================================= */
-/* ① 팝업 내부의 리스트 및 박스에 스크롤 기능 강제 주입 */
-div[data-baseweb="popover"] ul,
+/* ① 겉을 감싸고 있는 중간 div 상자들의 유령 스크롤바 생성 기능을 원천 차단 */
 div[data-baseweb="popover"] div {
-    overflow-y: auto !important;
+    overflow: hidden !important; 
 }
 
-/* ② 🚀 [핵심] 와일드카드(*) 제거 후 모든 자손의 스크롤바 영역을 강제 노출 (폭 8px로 시원하게 증가) */
-div[data-baseweb="popover"] ::-webkit-scrollbar {
-    width: 8px !important;            
-    height: 8px !important;
+/* ② 오직 진짜 메뉴 리스트(ul)에만 스크롤 기능 집중 부여 */
+div[data-baseweb="popover"] ul {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: thin !important;       /* 파이어폭스 대응 */
+    -ms-overflow-style: auto !important;     /* IE/엣지 대응 */
+}
+
+/* ③ 🚀 다른 레이어와 꼬이지 않도록 'ul' 경로를 정확히 명시하여 단 하나의 스크롤바만 생성 */
+div[data-baseweb="popover"] ul::-webkit-scrollbar {
+    width: 7px !important;            
+    height: 7px !important;
     display: block !important; 
 }
 
-/* ③ 스크롤바 레일(트랙) 배경색 지정 */
-div[data-baseweb="popover"] ::-webkit-scrollbar-track {
+/* ④ 스크롤바 레일(트랙) 배경색 설정 */
+div[data-baseweb="popover"] ul::-webkit-scrollbar-track {
     background: #2D3342 !important;   
     border-radius: 8px !important;
 }
 
-/* ④ 🚀 [보호색 파괴] 진짜 움직이는 스크롤바 막대기를 훨씬 밝고 선명한 다크회색으로 변경 */
-div[data-baseweb="popover"] ::-webkit-scrollbar-thumb {
-    background-color: #5A6578 !important;    /* 👈 팝업 배경보다 확실히 밝은 톤으로 매칭 */
+/* ⑤ 🚀 [기본 가시성 확보] 마우스를 올리지 않아도 상시 보이도록 막대기 색상을 배경보다 밝게 상향 고정 */
+div[data-baseweb="popover"] ul::-webkit-scrollbar-thumb {
+    background-color: #5A6578 !important;    /* 덮어씌워진 배경보다 확실히 밝은 다크회색 */
     border-radius: 10px !important;
-    border: 2px solid #2D3342 !important;    /* 👈 상하좌우 선을 주어 붕 떠 있는 깔끔한 캡슐 모양 연출 */
+    border: 1px solid #2D3342 !important;    /* 깔끔한 캡슐 모양 디자인 마감 */
 }
 
-/* ⑤ 스크롤바 막대에 마우스 올렸을 때 하이라이트 */
-div[data-baseweb="popover"] ::-webkit-scrollbar-thumb:hover {
-    background-color: #A0AEC0 !important;    /* 마우스 올리면 쨍하게 밝아짐 */
+/* ⑥ 스크롤바 막대에 마우스가 완전히 올라갔을 때 하이라이트 */
+div[data-baseweb="popover"] ul::-webkit-scrollbar-thumb:hover {
+    background-color: #A0AEC0 !important;    /* 마우스 호버 시 쨍하게 밝아짐 */
 }
-
 
 /* =========================================
    [6] 자사 재고 전용: 카드 디자인 및 기타 (기존 코드 유지)
