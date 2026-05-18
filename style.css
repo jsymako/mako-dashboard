@@ -3,23 +3,25 @@
    - 모든 대시보드(자사재고, 채권분석, 판매현황, 쿠팡) 공통 적용
 ===================================================================== */
 
-/* =========================================
-   [1] 폰트 및 글로벌 셋업
-========================================= */
+/* =====================================================================
+   [1] 폰트 및 글로벌 셋업 (아이콘 깨짐 방지 완벽 적용)
+===================================================================== */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 @import url('https://fonts.googleapis.com/css2?family=Abel&display=swap');
 
-/* 전역 폰트 강제 적용 (Pretendard) - 아이콘 깨짐 방지 포함 */
-h1, h2, h3, h4, h5, h6, p, label, li, table, button, input, span, div {
+/* ① 전체 화면 폰트 적용 (아이콘 폰트가 덮어씌워지지 않도록 span, div 무력화 방지) */
+html, body, .stApp, h1, h2, h3, h4, h5, h6, p, label, li, table, button, input {
     font-family: 'Pretendard', sans-serif !important;
 }
+
+/* ② 🚀 [버그 해결 핵심] 스트림릿 내부 시스템 아이콘(업로드 등) 전용 폰트 강제 보호막 */
 .stApp .material-symbols-rounded, 
 .stApp .icon, 
+[data-testid="stIconMaterial"],        /* 👈 업로드 버튼 아이콘을 보호하는 핵심 코드 */
 [data-testid="collapsedControl"] span,
 [data-testid="stSidebarCollapseButton"] span {
     font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
 }
-
 /* =========================================
    [2] 메인 화면 레이아웃 & 공통 UI
 ========================================= */
