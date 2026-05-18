@@ -78,19 +78,29 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
     fill: #A0AEC0 !important;             /* 아이콘은 은은한 회색 */
 }
 
-/* ④ 클릭 시 아래로 펼쳐지는 드롭다운 리스트 (팝업창) */
-/* (스트림릿 구조상 팝업은 사이드바 밖에서 생성되므로 전역으로 타격합니다) */
-div[data-baseweb="popover"] ul {
-    background-color: #2D3342 !important; /* 펼쳐진 창 배경색 */
+/* 🔒 [독립 제어] 셀렉트박스 전용 드롭다운 팝업창 (달력과 철저히 분리) */
+div[data-baseweb="popover"]:has(ul) > div {
+    background-color: #2D3342 !important; 
     border: 1px solid #4A5568 !important;
     border-radius: 8px !important;
 }
-div[data-baseweb="popover"] li {
-    color: #FFFFFF !important;            /* 펼쳐진 창 내부 글자색 */
-    font-size: 1rem !important;
+div[data-baseweb="popover"] ul {
+    background-color: transparent !important;
 }
+div[data-baseweb="popover"] li {
+    color: #FFFFFF !important;            
+    font-size: 1rem !important;
+    background-color: transparent !important; /* 기본 배경 투명화 */
+}
+
+/* 🚀 [버그 해결 핵심] li 내부의 자식 div들이 제멋대로 그리는 하얀색/회색 이중 배경을 완전히 박멸합니다 */
+div[data-baseweb="popover"] li * {
+    background-color: transparent !important;
+}
+
+/* 마우스 올렸을 때 오직 단 하나의 깔끔한 레이어(#374151)만 채워지도록 통제 */
 div[data-baseweb="popover"] li:hover {
-    background-color: #374151 !important; /* 마우스 올렸을 때 살짝 밝아짐 */
+    background-color: #374151 !important; 
 }
 /* =========================================
    🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
