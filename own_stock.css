@@ -166,42 +166,43 @@ div[data-baseweb="calendar"] [role="button"]:hover { background-color: #4A5568 !
    🚀 5. 셀렉트박스 펼침 메뉴 스크롤바 완벽 표출 (휠 스크롤 복구 완료)
 ========================================= */
 
-/* ① [복구] 휠 스크롤을 막아버렸던 모든 div의 족쇄를 풀고 원래대로 복원합니다 */
-div[data-baseweb="popover"] div {
-    overflow: visible !important; 
-}
 
-/* ② 오직 진짜 메뉴 리스트(ul) 상자에만 마우스 휠 스크롤 기능 강제 허용 */
+/* ① 강제로 꼬아놨던 오버플로우 속성을 제거하고, 라이브러리 본연의 가둠 기능을 복원합니다 */
+div[data-baseweb="popover"] div,
 div[data-baseweb="popover"] ul {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow: opacity !important; /* 빈 공간 스크롤 버그 원천 봉쇄 */
 }
 
-/* ③ 🚀 [정밀 타격] 오직 'ul' 태그에만 딱 하나의 커스텀 스크롤바를 강제로 생성시킵니다 */
-div[data-basWeb="popover"] ul::-webkit-scrollbar {
-    width: 8px !important;            
-    height: 8px !important;
-    display: block !important; /* 👈 숨겨져 있던 스크롤바를 밖으로 강제 노출 */
+/* ② 팝업창 내부에 숨겨진 모든 스크롤 기능의 빗장을 풀고 정상화 */
+div[data-baseweb="popover"] * {
+    scrollbar-width: thin !important;         /* 파이어폭스 휠 복구 */
+    -ms-overflow-style: auto !important;       /* 엣지 휠 복구 */
 }
 
-/* ④ 스크롤바 레일(트랙) 배경색 설정 */
-div[data-baseweb="popover"] ul::-webkit-scrollbar-track {
+/* ③ 🚀 [가시성 200%] 배경색에 묻히지 않도록 팝업창 내의 모든 스크롤바를 강제 노출 시킵니다 */
+div[data-baseweb="popover"] ::-webkit-scrollbar {
+    width: 7px !important;            
+    height: 7px !important;
+    display: block !important;                 /* 투명화 레이어 강제 파괴 */
+}
+
+/* ④ 스크롤바 레일(트랙) 배경색 - 메뉴판 배경과 일치 */
+div[data-baseweb="popover"] ::-webkit-scrollbar-track {
     background: #2D3342 !important;   
     border-radius: 8px !important;
 }
 
-/* ⑤ 🚀 [상시 표출] 휠만 굴려도 무조건 보이도록, 막대기 색상을 배경보다 훨씬 밝게 고정 */
-div[data-baseweb="popover"] ul::-webkit-scrollbar-thumb {
-    background-color: #5A6578 !important;    /* 👈 어두운 팝업 배경과 확실히 구별되는 밝은 다크회색 */
+/* ⑤ 🚀 [보호색 해제] 평소에도 휠을 굴릴 때 눈에 확 띄도록 훨씬 밝은 블루회색으로 막대기 고정 */
+div[data-baseweb="popover"] ::-webkit-scrollbar-thumb {
+    background-color: #718096 !important;    /* 👈 기존보다 훨씬 밝고 선명한 톤으로 업그레이드 */
     border-radius: 10px !important;
-    border: 2px solid #2D3342 !important;    /* 👈 바깥 여백을 주어 캡슐 모양으로 예쁘게 마감 */
+    border: 1px solid #2D3342 !important;    /* 깔끔한 인라인 마감 */
 }
 
 /* ⑥ 스크롤바 막대에 마우스가 올라갔을 때 하이라이트 효과 */
-div[data-baseweb="popover"] ul::-webkit-scrollbar-thumb:hover {
+div[data-baseweb="popover"] ::-webkit-scrollbar-thumb:hover {
     background-color: #A0AEC0 !important;    /* 마우스 호버 시 쨍하게 밝아짐 */
 }
-
 /* =========================================
    [6] 자사 재고 전용: 카드 디자인 및 기타 (기존 코드 유지)
 ========================================= */
