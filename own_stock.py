@@ -10,7 +10,7 @@ def run(load_data_func):
     
     # 🚀 짝꿍 CSS 파일 불러오기
     try:
-        with open("own_stock.css", "r", encoding="utf-8") as f:
+        with open("style.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         pass
