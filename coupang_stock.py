@@ -47,7 +47,7 @@ def run(load_data_func):
 
 
 
-        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "💰 판매가 변동", "📊 모두 보기"], index=2)
+        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "판매가 변동", "모두 보기"], index=2)
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
@@ -126,7 +126,7 @@ def run(load_data_func):
         # 차트 제목에 품목명도 함께 표시되도록 디테일 추가
         title_prefix = selected_product if selected_product != '전체보기' else (selected_brand if selected_brand != '전체보기' else '전체')
 
-        if view_target in ["재고량 추이", "📊 모두 보기"]:
+        if view_target in ["재고량 추이", "모두 보기"]:
             st.subheader(f"📦 {title_prefix} 재고량 변동 흐름")
             
             stock_line = alt.Chart(display_df).mark_line(point=True).encode(
@@ -147,7 +147,7 @@ def run(load_data_func):
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if view_target in ["💰 판매가 변동", "📊 모두 보기"]:
+        if view_target in ["판매가 변동", "모두 보기"]:
             st.subheader(f"💰 {title_prefix} 판매가 변동 흐름")
             
             price_line = alt.Chart(display_df).mark_line(point=True).encode(
@@ -209,7 +209,7 @@ def run(load_data_func):
         # 🚀 2. 조회 항목별 데이터 매핑
         if view_target == "재고량 추이":
             show_df['표시값'] = show_df['재고 현황']
-        elif view_target == "💰 판매가 변동":
+        elif view_target == "판매가 변동":
             show_df['표시값'] = show_df['판매가 현황']
         else:
             show_df['표시값'] = show_df['재고 현황'] + " | " + show_df['판매가 현황']
@@ -229,7 +229,7 @@ def run(load_data_func):
         final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
         pivot_df = pivot_df[final_cols].fillna("-")
 
-        if view_target == "📊 모두 보기":
+        if view_target == "모두 보기":
             target_width = 140  # '재고 | 판매가'가 다 보이도록 넉넉하게 설정
         else:
             target_width = 90   # 단일 항목일 때는 90으로 콤팩트하게 유지
