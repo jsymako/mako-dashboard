@@ -61,7 +61,7 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
     font-size: 1rem !important;   /* 옵션은 타이틀보다 살짝 작게 */
     font-weight: 400 !important;    /* 일반 굵기로 얄쌍하게 */
-    color: #000000 !important;      /* 살짝 연한 회색으로 위계 차이 주기 */
+    
 }
 
 [data-testid="stSidebar"] div[data-baseweb="select"] { 
