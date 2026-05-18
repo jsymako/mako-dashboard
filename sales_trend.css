@@ -95,6 +95,49 @@ div[data-baseweb="popover"] li:hover {
    🚀 3. 셀렉트박스 (다크 모드 완벽 패치)
 ========================================= */
 
+/* =========================================
+   🚀 4. 날짜 선택기 (Date Input) 다크 모드 패치
+========================================= */
+
+/* ① 날짜 입력창 겉면 (클릭 전) */
+[data-testid="stSidebar"] div[data-baseweb="input"] > div {
+    background-color: #2D3342 !important; /* 셀렉트박스와 동일한 배경색 */
+    border: 1px solid #4A5568 !important;
+    border-radius: 8px !important;
+}
+
+/* ② 날짜 입력창 안의 글자와 우측 달력 아이콘 */
+[data-testid="stSidebar"] div[data-baseweb="input"] input {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important; /* 브라우저 강제 흰색 적용 */
+    font-size: 1.05rem !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="input"] svg {
+    fill: #A0AEC0 !important; /* 아이콘 은은한 회색 */
+}
+
+/* ③ 클릭 시 뜨는 달력(Calendar) 팝업창 뼈대 */
+div[data-baseweb="calendar"] {
+    background-color: #2D3342 !important;
+    border: 1px solid #4A5568 !important;
+    border-radius: 8px !important;
+    padding: 5px !important;
+}
+
+/* ④ 달력 안의 모든 글자(년/월, 요일, 날짜)를 하얀색으로! */
+div[data-baseweb="calendar"] * {
+    color: #FFFFFF !important;
+}
+
+/* ⑤ 달력에서 특정 날짜에 마우스 올렸을 때 (Hover) */
+div[data-baseweb="calendar"] div[role="button"]:hover {
+    background-color: #4A5568 !important;
+}
+
+/* =========================================
+   🚀 4. 날짜 선택기 (Date Input) 다크 모드 패치
+========================================= */
+
 /* 1. 제일 큰 왕 제목 (# 1개) */
 [data-testid="stSidebar"] h1 {
     font-size: 1.8rem !important;
