@@ -31,7 +31,7 @@
 
 /* [1] 공통 텍스트 및 레이아웃 */
 .main .block-container { font-size: 1.0rem; }
-p { font-size: 1.0rem; color: #FFFFFF;}
+p { font-size: 1.0rem;}
 h1 { font-size: 1.8rem !important; font-weight: 800 !important; }
 h2 { font-size: 1.5rem !important; font-weight: 700 !important; }
 h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
@@ -42,7 +42,7 @@ h3 { font-size: 1.2rem !important; font-weight: 600 !important; }
 [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
     font-size: 1.25rem !important;  /* 타이틀답게 확실히 키움 (1.2rem ~ 1.25rem 추천) */
     font-weight: 600 !important;    /* 진하게 */
-    color: #2C3E50 !important;      /* 짙은 남색 */
+    color: #FFFFFF !important;      /* 짙은 남색 */
     margin-bottom: 5px !important;  /* 아래 옵션들과의 간격 */
 }
 
