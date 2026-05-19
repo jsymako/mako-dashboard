@@ -71,30 +71,42 @@ def run(load_sheet_data):
             try:
                 sheet_r = get_worksheet_for_write("WorkReports")
                 
-                # 기존 데이터 전체를 가져옵니다 (업데이트 효율을 위해)
-                all_data = sheet_r.get_all_values()
-                
                 for emp_name in target_employees:
-                    # 각 직원별 에디터에 담긴 데이터를 가져옴
-                    edited_df = st.session_state.get(f"editor_{emp_name}_{target_week}")
+                    # 1. 🚀 [핵심 수정] st.data_editor에서 나온 결과를 확실하게 데이터프레임으로 변환
+                    # st.session_state를 통해 가져올 때 바로 DataFrame으로 만듭니다.
+                    raw_data = st.session_state.get(f"editor_{emp_name}_{target_week}")
+                    if raw_data is None: continue
                     
-                    # 💡 표(Pivot)를 다시 시트 형태(Long Format)로 변환 (Melt)
-                    # 요일(가로)과 분류(세로)를 행으로 풀어서 저장
+                    edited_df = pd.DataFrame(raw_data)
+                    target_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
+
+                    # 2. 💡 기존 데이터 삭제 (해당 주차 + 해당 직원 데이터만)
+                    all_values = sheet_r.get_all_values()
+                    rows_to_keep = []
+                    for row in all_values:
+                        # 행이 [보고ID, 직원ID, 보고일자, 요일, 분류, 내용] 구조라고 가정
+                        # 여기서 [직원ID(인덱스1), 보고일자(인덱스2)] 가 일치하는 행은 제외(삭제)
+                        if not (row[1] == target_id and row[2] == target_week):
+                            rows_to_keep.append(row)
+                    
+                    # 시트 초기화 후 다시 쓰기
+                    sheet_r.clear()
+                    sheet_r.update(rows_to_keep)
+
+                    # 3. 데이터 추가 (Melt)
+                    new_rows = []
                     for cat in cat_order:
                         for day in day_order:
-                            content = edited_df.loc[cat, day]
-                            
-                            # 날짜 텍스트 제거 (저번주 할일 (05/11...) -> 저번주 할일)
+                            # 괄호와 날짜 구간 제거 (예: '저번주 할일 (05/11~15)' -> '저번주 할일')
                             clean_cat = cat.split(' (')[0]
+                            content = str(edited_df.loc[cat, day])
                             
-                            # 행 데이터 구성: [보고ID, 직원ID, 보고일자, 요일, 분류, 내용]
-                            # 기존에 데이터가 있다면 보고ID를 찾아 업데이트, 없으면 추가
-                            new_row = [f"{emp_name}_{target_week}_{cat}_{day}", target_id, target_week, day, clean_cat, content]
-                            
-                            # 구글 시트에 행 업데이트 (간단한 append 방식 적용)
-                            sheet_r.append_row(new_row)
+                            new_row = [f"{emp_name}_{target_week}_{clean_cat}_{day}", target_id, target_week, day, clean_cat, content]
+                            new_rows.append(new_row)
+                    
+                    sheet_r.append_rows(new_rows)
                 
-                st.success("✅ 모든 데이터가 구글 시트에 저장되었습니다!")
+                st.success("✅ 전체 데이터가 안전하게 업데이트되었습니다!")
                 time.sleep(1)
                 st.rerun()
                 
