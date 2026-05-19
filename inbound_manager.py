@@ -7,7 +7,7 @@ from datetime import datetime
 import time
 
 # =====================================================================
-# 🔑 [1] 쓰기/수정용 구글 시트 연결 (st.secrets 사용)
+# 🔑 [1] 쓰기/수정용 구글 시트 연결
 # =====================================================================
 def get_worksheet_for_write(sheet_name):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -18,7 +18,7 @@ def get_worksheet_for_write(sheet_name):
     return doc.worksheet(sheet_name)
 
 # =====================================================================
-# 🚀 [2] 입력 및 수정 팝업 모달창 (st.dialog)
+# 🚀 [2] 입력 및 수정 팝업 모달창
 # =====================================================================
 @st.dialog("📦 컨테이너 정보 관리")
 def container_form_dialog(mode="add", container_data=None, df_m=None):
@@ -179,30 +179,26 @@ def run(load_sheet_data):
                 elif arr_dt: status_html = f"<span style='color:#3498DB; font-weight:bold;'>[🛬 입항 대기중]</span>"
                 elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[🚢 출항 대기중]</span>"
                 else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
-                    
+                
+                # 💡 글자 크기 수정 팁: 아래 f-string 내의 font-size 숫자(1.15rem, 0.95rem, 1.05rem)를 변경하시면 됩니다.
                 with st.container():
-                    # 🚀 [디자인 수정] 바깥쪽 여백(padding)을 지우고, 하나의 선명한 표(table)로 일체화했습니다.
                     st.markdown(f"""
                     <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 5px;">
                         <table style="width:100%; border-collapse: collapse; text-align: left;">
-                            
                             <tr style="border-bottom: 1px solid #E2E8F0; font-size: 1.15rem;">
                                 <td style="padding: 12px 15px; width:25%;"><b>차수:</b> {row['차수']}차</td>
                                 <td style="padding: 12px 15px; width:25%;"><b>사이즈:</b> {row.get('피트', '40FT')}</td>
                                 <td colspan="2" style="padding: 12px 15px;">{status_html}</td>
                             </tr>
-                            
                             <tr style="border-bottom: 1px solid #E2E8F0; color:#555555; font-size: 0.95rem;">
                                 <td style="padding: 10px 15px;">📦 <b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
                                 <td style="padding: 10px 15px;">🛬 <b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
                                 <td style="padding: 10px 15px;">🚢 <b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
                                 <td style="padding: 10px 15px;">📅 <b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
                             </tr>
-                            
                             <tr style="font-size: 1.05rem;">
                                 <td colspan="4" style="padding: 12px 15px; color:#2C3E50;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
                             </tr>
-                            
                         </table>
                     </div>
                     """, unsafe_allow_html=True)
