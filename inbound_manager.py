@@ -10,7 +10,7 @@ import time
 # ⚙️ 글자 크기 조정 변수
 # =====================================================================
 TABLE_HEADER_SIZE = "1.05rem"  
-TABLE_BODY_SIZE = "0.98rem"    
+TABLE_BODY_SIZE = "0.95rem"    
 
 # =====================================================================
 # 🔑 [1] 쓰기/수정용 구글 시트 연결
@@ -144,7 +144,7 @@ def run(load_sheet_data):
     except: pass
 
     # -----------------------------------------------------------------
-    # 파트 A: 컨테이너 입고 현황 엔진 가동
+    # 파트 A: 컨테이너 입고 현황 
     # -----------------------------------------------------------------
     st.markdown("<h1>📦 입고 현황 (컨테이너 스케줄 관리)</h1>", unsafe_allow_html=True)
     
@@ -220,7 +220,6 @@ def run(load_sheet_data):
                         elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[🚢 출항 대기중]</span>"
                         else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
                         
-                        # 🚀 HTML 줄바꿈(엔터) 파괴 공법 적용 (.replace('\n', ''))
                         container_html = f"""
                         <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 5px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left;">
@@ -248,7 +247,7 @@ def run(load_sheet_data):
                     st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
-    # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동
+    # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동 (버튼 일체형 테이블)
     # -----------------------------------------------------------------
     st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
     
@@ -302,44 +301,42 @@ def run(load_sheet_data):
 
     df_calc = pd.DataFrame(calc_rows).sort_values(by='sort_key', ascending=True)
 
-    table_rows_html = ""
+    # 🚀 표 너비 비율 설정 (총합 10 근처)
+    col_ratios = [1.5, 1.2, 1.4, 1.1, 1.1, 1.1, 0.8, 0.8, 0.8]
+
+    # 표 뼈대 및 헤더 생성 (스트림릿 컬럼을 이용한 가짜 테이블)
+    st.markdown("<div style='border-top: 3px solid #2E86C1; background-color: #F8F9FA; border-radius: 4px 4px 0 0;'>", unsafe_allow_html=True)
+    hcols = st.columns(col_ratios)
+    headers = ["사료의 명칭", "제품 종류", "현물검정제품", "관련제품", "현물검정완료일", "검정예정일", "잔존일", "상태", "관리"]
+    for i, h in enumerate(headers):
+        align = "center" if h in ["상태", "관리"] else "left"
+        hcols[i].markdown(f"<div style='font-size: {TABLE_HEADER_SIZE}; font-weight: bold; color: #2C3E50; padding: 12px 5px; border-bottom: 2px solid #E2E8F0; text-align: {align};'>{h}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 표 내부 데이터 렌더링 (각 행마다 컬럼을 쪼개고 마지막 칸에 버튼 탑재)
     for _, row in df_calc.iterrows():
         done_str = row.get('현물검정완료일', '') if str(row.get('현물검정완료일', '')).strip() else "미정"
         next_str = row.get('검정예정일', '') if str(row.get('검정예정일', '')).strip() else "미정"
-        
-        # 🚀 줄바꿈을 원천 차단하여 한 줄로 표 행(Row) 생성
-        tr_html = f"<tr style='border-bottom: 1px solid #E2E8F0; font-size: {TABLE_BODY_SIZE};'><td style='padding: 12px 10px;'><b>{row.get('사료명칭', '')}</b></td><td style='padding: 12px 10px;'>{row.get('제품종류', '')}</td><td style='padding: 12px 10px;'>{row.get('현물검정제품', '')}</td><td style='padding: 12px 10px;'>{row.get('관련제품', '')}</td><td style='padding: 12px 10px; color:#555;'>{done_str}</td><td style='padding: 12px 10px; font-weight:600;'>{next_str}</td><td style='padding: 12px 10px; font-weight:bold;'>{row['잔존일']}</td><td style='padding: 12px 10px; text-align:center;'><span style='{row['상태스타일']}'>{row['상태']}</span></td></tr>"
-        table_rows_html += tr_html
 
-    # 🚀 최종 표 렌더링 시 .replace('\n', '') 로 줄바꿈 완벽 소독
-    final_table_html = f"""
-    <div style="border: 1px solid #E2E8F0; border-top: 3px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 15px; background-color: transparent;">
-        <table style="width:100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="border-bottom: 2px solid #E2E8F0; background-color: #F8F9FA; font-size: {TABLE_HEADER_SIZE}; font-weight: bold; color: #2C3E50;">
-                    <th style="padding: 12px 10px; width:16%;">사료의 명칭</th>
-                    <th style="padding: 12px 10px; width:12%;">제품 종류</th>
-                    <th style="padding: 12px 10px; width:14%;">현물검정제품</th>
-                    <th style="padding: 12px 10px; width:14%;">관련제품</th>
-                    <th style="padding: 12px 10px; width:11%;">현물검정완료일</th>
-                    <th style="padding: 12px 10px; width:11%;">검정예정일</th>
-                    <th style="padding: 12px 10px; width:11%;">잔존일</th>
-                    <th style="padding: 12px 10px; width:11%; text-align:center;">상태</th>
-                </tr>
-            </thead>
-            <tbody>
-                {table_rows_html}
-            </tbody>
-        </table>
-    </div>
-    """
-    st.markdown(final_table_html.replace('\n', ''), unsafe_allow_html=True)
+        with st.container():
+            bcols = st.columns(col_ratios)
+            
+            # 버튼과 텍스트의 세로 높이를 맞추기 위해 상단 여백(padding-top) 적용
+            cell_style = f"font-size: {TABLE_BODY_SIZE}; color: #333; padding-top: 10px;"
 
-    st.markdown("<div style='font-size:0.9rem; color:#7F8C8D; margin-bottom:5px;'>⚙️ 데이터 수정 관리 구역:</div>", unsafe_allow_html=True)
-    
-    btn_cols = st.columns(4)
-    for idx, (_, row) in enumerate(df_calc.iterrows()):
-        col_idx = idx % 4
-        with btn_cols[col_idx]:
-            if st.button(f"✏️ {row.get('사료명칭', '이름없음')} 수정", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
-                inspection_form_dialog(mode="edit", insp_data=row)
+            bcols[0].markdown(f"<div style='{cell_style}'><b>{row.get('사료명칭', '')}</b></div>", unsafe_allow_html=True)
+            bcols[1].markdown(f"<div style='{cell_style}'>{row.get('제품종류', '')}</div>", unsafe_allow_html=True)
+            bcols[2].markdown(f"<div style='{cell_style}'>{row.get('현물검정제품', '')}</div>", unsafe_allow_html=True)
+            bcols[3].markdown(f"<div style='{cell_style}'>{row.get('관련제품', '')}</div>", unsafe_allow_html=True)
+            bcols[4].markdown(f"<div style='{cell_style} color:#555;'>{done_str}</div>", unsafe_allow_html=True)
+            bcols[5].markdown(f"<div style='{cell_style} font-weight:600;'>{next_str}</div>", unsafe_allow_html=True)
+            bcols[6].markdown(f"<div style='{cell_style} font-weight:bold;'>{row['잔존일']}</div>", unsafe_allow_html=True)
+            bcols[7].markdown(f"<div style='{cell_style} text-align:center;'><span style='{row['상태스타일']}'>{row['상태']}</span></div>", unsafe_allow_html=True)
+
+            # 🚀 핵심: 마지막 9번째 칸에 해당 행 전용 '수정' 버튼 배치
+            with bcols[8]:
+                if st.button("✏️ 수정", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
+                    inspection_form_dialog(mode="edit", insp_data=row)
+
+            # 행마다 연한 회색 구분선 추가
+            st.markdown("<hr style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
