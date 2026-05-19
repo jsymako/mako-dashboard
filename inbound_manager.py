@@ -25,7 +25,6 @@ def get_worksheet_for_write(sheet_name):
 def container_form_dialog(mode="add", container_data=None, df_m=None):
     st.write(f"### {'✨ 신규 컨테이너 등록' if mode=='add' else '📝 컨테이너 정보 수정'}")
     
-    # 제조사 선택 리스트 구성
     m_options = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
     
     with st.form("container_form", clear_on_submit=True):
@@ -43,20 +42,28 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
         # 2. 정보 입력
         cha_su = st.number_input("차수", min_value=1, value=int(container_data.get('차수', 1)) if mode=='edit' else 1)
         
-        # 날짜 파싱 도우미 (값이 없으면 None을 주어 달력을 비워둠)
+        # 🚀 [버그 해결] 날짜 파싱 및 안전한 기본값 할당 로직
         def safe_date_parse(date_str):
-            if not date_str or str(date_str).strip() == "" or str(date_str).strip() == "미정":
+            if not date_str or str(date_str).strip() in ["", "미정", "nan", "None"]:
                 return None
-            try: return datetime.strptime(str(date_str).strip(), "%Y-%m-%d").date()
-            except: return None
+            try: 
+                return datetime.strptime(str(date_str).strip(), "%Y-%m-%d").date()
+            except: 
+                return None
 
         st.caption("💡 날짜창 우측의 'X' 버튼을 누르면 날짜를 '미정' 상태로 비워둘 수 있습니다.")
         
-        # 🚀 [수정] 체크박스를 없애고 모든 날짜 입력창을 원클릭으로 입력/비우기 가능하도록 변경
-        order_d = st.date_input("발주일", safe_date_parse(container_data.get('발주일', '')) if mode=='edit' else datetime.today(), value=None)
-        dept_d = st.date_input("출항일", safe_date_parse(container_data.get('출항일', '')) if mode=='edit' else None, value=None)
-        arr_d = st.date_input("입항일", safe_date_parse(container_data.get('입항일', '')) if mode=='edit' else None, value=None)
-        inbound_d = st.date_input("입고일", safe_date_parse(container_data.get('입고일', '')) if mode=='edit' else None, value=None)
+        # 신규 등록(add)일 때는 전부 None(미정)으로 시작, 수정(edit)일 때는 기존 값 불러오기
+        val_order = safe_date_parse(container_data.get('발주일', '')) if mode == 'edit' else None
+        val_dept = safe_date_parse(container_data.get('출항일', '')) if mode == 'edit' else None
+        val_arr = safe_date_parse(container_data.get('입항일', '')) if mode == 'edit' else None
+        val_inbound = safe_date_parse(container_data.get('입고일', '')) if mode == 'edit' else None
+
+        # 올바른 st.date_input 문법 적용 (충돌 방지)
+        order_d = st.date_input("발주일", value=val_order)
+        dept_d = st.date_input("출항일", value=val_dept)
+        arr_d = st.date_input("입항일", value=val_arr)
+        inbound_d = st.date_input("입고일", value=val_inbound)
         
         summary = st.text_input("적요", value=str(container_data.get('적요', '')) if mode=='edit' else "")
         feet = st.selectbox("피트 (FT)", ["20FT", "40FT", "40HQ", "기타"], index=["20FT", "40FT", "40HQ", "기타"].index(str(container_data.get('피트', '20FT'))) if mode=='edit' else 1)
@@ -66,7 +73,6 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
         if submit_btn:
             sheet_c = get_worksheet_for_write("Containers")
             
-            # None 값은 구글 시트에 빈칸("")으로 저장되도록 치환
             str_order = str(order_d) if order_d else ""
             str_dept = str(dept_d) if dept_d else ""
             str_arr = str(arr_d) if arr_d else ""
@@ -148,7 +154,6 @@ def run(load_sheet_data):
         st.warning("📅 구글 시트 'Containers' 탭에 등록된 데이터가 없습니다. 신규 추가를 진행해 주세요.")
         return
 
-    # 데이터 타입 정돈 및 정렬
     df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
     df_c = df_c.sort_values(by=['제조사ID', '차수'], ascending=[True, False])
     today_str = datetime.today().strftime("%Y-%m-%d")
@@ -162,7 +167,6 @@ def run(load_sheet_data):
         target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
         filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
 
-    # 🚀 [수정] 모든 기록보기 미체크 시 확정여부 상관없이 오늘 날짜 지난 것만 필터링해서 차단
     if not view_all_history:
         filtered_df = filtered_df[
             (filtered_df['입고일'] == "") | 
@@ -183,13 +187,12 @@ def run(load_sheet_data):
         st.markdown(f"## 🏭 {m_name} 입고 스케줄")
         
         for _, row in group.iterrows():
-            # 날짜 및 상태 찌꺼기 정리
             ord_dt = str(row.get('발주일', '')).strip()
             dep_dt = str(row.get('출항일', '')).strip()
             arr_dt = str(row.get('입항일', '')).strip()
             inb_dt = str(row.get('입고일', '')).strip()
 
-            # 🚀 [수정] 대표님이 지정해주신 4단계 우선순위 상태 체계 구현
+            # 4단계 우선순위 상태 체계
             if inb_dt:
                 if inb_dt < today_str:
                     status_html = f"<span style='color:#2ECC71; font-weight:bold;'>[✅ 입고 완료]</span>"
@@ -202,9 +205,7 @@ def run(load_sheet_data):
             else:
                 status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
                 
-            # 카드 디자인 렌더링 시작
             with st.container():
-                # 🚀 [수정] 수정버튼을 카드 바깥 열에 따로 분리하지 않고, 하나의 카드 컨테이너 내부로 흡수
                 st.markdown(f"""
                 <div style="background-color: #F8F9FA; padding: 18px; border-left: 5px solid #2E86C1; border-radius: 6px; margin-bottom: 5px; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0;">
                     <table style="width:100%; border:none; font-size:1.05rem; margin-bottom: 5px;">
@@ -226,7 +227,6 @@ def run(load_sheet_data):
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # 🚀 [수정] 카드 회색 박스 바로 내부 하단에 정렬되는 수정 버튼 배치
                 if st.button("⚙️ 이 컨테이너 정보 수정", key=f"edit_{row['컨테이너ID']}", use_container_width=True):
                     container_form_dialog(mode="edit", container_data=row, df_m=df_m)
                     
