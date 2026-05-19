@@ -15,39 +15,42 @@ def run(load_sheet_data):
         st.error("데이터 로드 실패")
         return
 
-    # 사이드바
+    # 🚀 [방어 코드] 시트 헤더 공백 제거 (이게 있으면 에러가 싹 사라집니다)
+    df_report.columns = df_report.columns.str.strip()
+    
+    # 🚀 [방어 코드] '요일' 열이 있는지 확인
+    if '요일' not in df_report.columns:
+        st.error(f"🚨 시트에 '요일' 열이 없습니다! 현재 시트 헤더: {list(df_report.columns)}")
+        return
+
     st.sidebar.markdown("### 📅 조회 조건")
     target_date = st.sidebar.date_input("주차 선택", datetime.today())
     target_week = get_week_start(target_date)
     emp_names = df_emp['성명'].tolist()
     selected_emp = st.sidebar.selectbox("직원 선택", emp_names)
 
-    # 데이터 필터링 및 매트릭스 변환
     target_id = df_emp[df_emp['성명'] == selected_emp]['직원ID'].values[0]
+    
+    # 데이터 타입 통일
+    df_report['보고일자'] = df_report['보고일자'].astype(str).str.strip()
+    df_report['직원ID'] = df_report['직원ID'].astype(str).str.strip()
+    
     subset = df_report[(df_report['보고일자'] == target_week) & (df_report['직원ID'] == str(target_id))]
     
-    # 💡 노션처럼 요일을 가로로, 분류를 세로로 만들기 위한 피벗
+    if subset.empty:
+        st.warning(f"{target_week} 주차에 등록된 {selected_emp} 님의 업무 데이터가 없습니다.")
+        return
+    
     pivot_df = subset.pivot(index='분류', columns='요일', values='내용')
     
-    # 요일 순서 보장 (월, 화, 수, 목, 금)
     day_order = ['월', '화', '수', '목', '금']
-    pivot_df = pivot_df.reindex(columns=day_order)
+    # 🚀 [방어 코드] 요일이 없는 경우 예외 처리
+    existing_days = [d for d in day_order if d in pivot_df.columns]
+    pivot_df = pivot_df.reindex(columns=existing_days)
 
     st.subheader(f"{selected_emp} 님의 {target_week} 주간 보고")
     
-    # 수정 가능한 표 (노션 뷰)
-    edited_df = st.data_editor(
-        pivot_df,
-        column_config={
-            "월": st.column_config.TextColumn("월", width="medium"),
-            "화": st.column_config.TextColumn("화", width="medium"),
-            "수": st.column_config.TextColumn("수", width="medium"),
-            "목": st.column_config.TextColumn("목", width="medium"),
-            "금": st.column_config.TextColumn("금", width="medium"),
-        },
-        use_container_width=True
-    )
+    edited_df = st.data_editor(pivot_df, use_container_width=True)
 
     if st.button("💾 변경사항 저장"):
-        # 저장 로직 (edited_df를 다시 긴 형식으로 melt해서 시트 저장)
         st.success("저장 완료!")
