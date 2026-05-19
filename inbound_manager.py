@@ -220,10 +220,9 @@ def run(load_sheet_data):
                         elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[🚢 출항 대기중]</span>"
                         else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
                         
-                        # 🚀 [버그 픽스] margin: 0px !important 를 넣어 표 아래의 투명한 여백(빈 줄)을 강제 제거했습니다.
-                        # 🚀 [테두리 수정] 각 <td>에 직접 선을 긋고, 마지막 줄은 선을 없애서 스트림릿의 지저분한 기본 테두리를 덮어버렸습니다.
+                        # 🚀 [수정] 표 하단 여백 박멸은 유지하되, 버튼이 표 아래에 풀사이즈로 매끄럽게 붙도록 재구성했습니다.
                         container_html = f"""
-                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF;">
+                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 2px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
                                 <tr style="font-size: 1.15rem;">
                                     <td style="padding: 12px 15px; width:25%; border-bottom: 1px solid #E2E8F0;"><b>차수:</b> {row['차수']}차</td>
@@ -243,16 +242,15 @@ def run(load_sheet_data):
                         </div>
                         """
                         
-                        # 🚀 [UI 업그레이드] 현물검정과 똑같이 수정 버튼을 표 우측으로 일체화시켰습니다.
-                        col_info, col_btn = st.columns([8.5, 1.5])
-                        with col_info:
+                        with st.container():
                             st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
-                        with col_btn:
-                            st.markdown("<div style='padding-top: 36px;'></div>", unsafe_allow_html=True)
-                            if st.button("⚙️ 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
+                            
+                            # 🚀 [수정] 우측으로 빠졌던 버튼을 다시 원래대로 시원한 가로형으로 되돌렸습니다.
+                            if st.button("⚙️ 이 컨테이너 정보 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
                                 container_form_dialog(mode="edit", container_data=row, df_m=df_m)
-                                
-                    st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
+                            
+                            # 🚀 [수정] 버튼 바로 아래에 35px 넉넉한 띄어쓰기를 주어 카드끼리 엉겨붙지 않게 차단했습니다.
+                            st.markdown("<div style='margin-bottom: 35px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
     # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동
