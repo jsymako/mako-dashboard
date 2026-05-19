@@ -220,34 +220,42 @@ def run(load_sheet_data):
                         elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[🚢 출항 대기중]</span>"
                         else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
                         
+                        # 🚀 [버그 픽스] margin: 0px !important 를 넣어 표 아래의 투명한 여백(빈 줄)을 강제 제거했습니다.
+                        # 🚀 [테두리 수정] 각 <td>에 직접 선을 긋고, 마지막 줄은 선을 없애서 스트림릿의 지저분한 기본 테두리를 덮어버렸습니다.
                         container_html = f"""
-                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 5px;">
-                            <table style="width:100%; border-collapse: collapse; text-align: left;">
-                                <tr style="border-bottom: 1px solid #E2E8F0; font-size: 1.15rem;">
-                                    <td style="padding: 12px 15px; width:25%;"><b>차수:</b> {row['차수']}차</td>
-                                    <td style="padding: 12px 15px; width:25%;"><b>사이즈:</b> {row.get('피트', '40FT')}</td>
-                                    <td colspan="2" style="padding: 12px 15px;">{status_html}</td>
+                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF;">
+                            <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
+                                <tr style="font-size: 1.15rem;">
+                                    <td style="padding: 12px 15px; width:25%; border-bottom: 1px solid #E2E8F0;"><b>차수:</b> {row['차수']}차</td>
+                                    <td style="padding: 12px 15px; width:25%; border-bottom: 1px solid #E2E8F0;"><b>사이즈:</b> {row.get('피트', '40FT')}</td>
+                                    <td colspan="2" style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0;">{status_html}</td>
                                 </tr>
-                                <tr style="border-bottom: 1px solid #E2E8F0; color:#555555; font-size: 0.95rem;">
-                                    <td style="padding: 10px 15px;">📦 <b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                    <td style="padding: 10px 15px;">🛬 <b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                    <td style="padding: 10px 15px;">🚢 <b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                    <td style="padding: 10px 15px;">📅 <b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                <tr style="color:#555555; font-size: 0.95rem;">
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">📦 <b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">🛬 <b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">🚢 <b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">📅 <b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
                                 </tr>
                                 <tr style="font-size: 1.05rem;">
-                                    <td colspan="4" style="padding: 12px 15px; color:#2C3E50;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
+                                    <td colspan="4" style="padding: 12px 15px; color:#2C3E50; border-bottom: none;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
                                 </tr>
                             </table>
                         </div>
                         """
-                        st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
                         
-                        if st.button("⚙️ 이 컨테이너 정보 수정", key=f"edit_{row['컨테이너ID']}", use_container_width=True):
-                            container_form_dialog(mode="edit", container_data=row, df_m=df_m)
-                    st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
+                        # 🚀 [UI 업그레이드] 현물검정과 똑같이 수정 버튼을 표 우측으로 일체화시켰습니다.
+                        col_info, col_btn = st.columns([8.5, 1.5])
+                        with col_info:
+                            st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
+                        with col_btn:
+                            st.markdown("<div style='padding-top: 36px;'></div>", unsafe_allow_html=True)
+                            if st.button("⚙️ 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
+                                container_form_dialog(mode="edit", container_data=row, df_m=df_m)
+                                
+                    st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
-    # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동 (버튼 일체형 테이블)
+    # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동
     # -----------------------------------------------------------------
     st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
     
@@ -301,10 +309,8 @@ def run(load_sheet_data):
 
     df_calc = pd.DataFrame(calc_rows).sort_values(by='sort_key', ascending=True)
 
-    # 🚀 표 너비 비율 설정 (총합 10 근처)
     col_ratios = [1.5, 1.2, 1.4, 1.1, 1.1, 1.1, 0.8, 0.8, 0.8]
 
-    # 표 뼈대 및 헤더 생성 (스트림릿 컬럼을 이용한 가짜 테이블)
     st.markdown("<div style='border-top: 3px solid #2E86C1; background-color: #F8F9FA; border-radius: 4px 4px 0 0;'>", unsafe_allow_html=True)
     hcols = st.columns(col_ratios)
     headers = ["사료의 명칭", "제품 종류", "현물검정제품", "관련제품", "현물검정완료일", "검정예정일", "잔존일", "상태", "관리"]
@@ -313,15 +319,12 @@ def run(load_sheet_data):
         hcols[i].markdown(f"<div style='font-size: {TABLE_HEADER_SIZE}; font-weight: bold; color: #2C3E50; padding: 12px 5px; border-bottom: 2px solid #E2E8F0; text-align: {align};'>{h}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 표 내부 데이터 렌더링 (각 행마다 컬럼을 쪼개고 마지막 칸에 버튼 탑재)
     for _, row in df_calc.iterrows():
         done_str = row.get('현물검정완료일', '') if str(row.get('현물검정완료일', '')).strip() else "미정"
         next_str = row.get('검정예정일', '') if str(row.get('검정예정일', '')).strip() else "미정"
 
         with st.container():
             bcols = st.columns(col_ratios)
-            
-            # 버튼과 텍스트의 세로 높이를 맞추기 위해 상단 여백(padding-top) 적용
             cell_style = f"font-size: {TABLE_BODY_SIZE}; color: #333; padding-top: 10px;"
 
             bcols[0].markdown(f"<div style='{cell_style}'><b>{row.get('사료명칭', '')}</b></div>", unsafe_allow_html=True)
@@ -333,10 +336,8 @@ def run(load_sheet_data):
             bcols[6].markdown(f"<div style='{cell_style} font-weight:bold;'>{row['잔존일']}</div>", unsafe_allow_html=True)
             bcols[7].markdown(f"<div style='{cell_style} text-align:center;'><span style='{row['상태스타일']}'>{row['상태']}</span></div>", unsafe_allow_html=True)
 
-            # 🚀 핵심: 마지막 9번째 칸에 해당 행 전용 '수정' 버튼 배치
             with bcols[8]:
                 if st.button("✏️ 수정", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
                     inspection_form_dialog(mode="edit", insp_data=row)
 
-            # 행마다 연한 회색 구분선 추가
             st.markdown("<hr style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
