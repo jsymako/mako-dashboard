@@ -3,7 +3,7 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-from datetime import datetime, list as dt_list
+from datetime import datetime  # 🚀 [수정] 쓸데없는 오타(list as dt_list)를 삭제했습니다!
 import time
 
 # =====================================================================
@@ -156,7 +156,7 @@ def run(load_sheet_data):
     
     df_m = load_sheet_data("Manufacturers")
     df_c = load_sheet_data("Containers")
-    df_i = load_sheet_data("Inspection") # 🚀 신규 현물검정 시트 연동
+    df_i = load_sheet_data("Inspection") # 신규 현물검정 시트 연동
 
     if df_m is None or df_c is None:
         st.error("🚨 구글 시트 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
@@ -254,11 +254,10 @@ def run(load_sheet_data):
                     st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
-    # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동 (신규 추가 건)
+    # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동
     # -----------------------------------------------------------------
     st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
     
-    # 상단 서브 타이틀 및 등록 버튼 정렬 배치
     col_title, col_add_btn = st.columns([5, 1])
     with col_title:
         st.markdown("<h2>🔍 사료 현물검정 예정일 현황</h2>", unsafe_allow_html=True)
@@ -271,37 +270,34 @@ def run(load_sheet_data):
         st.warning("📅 현물검정 현황 데이터가 시트에 존재하지 않습니다. 우측 버튼을 눌러 첫 데이터를 등록해 주십시오.")
         return
 
-    # 실시간 데이터 연산 엔진 작동
     calc_rows = []
     today = datetime.today().date()
     
     for _, row in df_i.iterrows():
         next_dt = safe_date_parse(row.get('검정예정일', ''))
         
-        # 1. 잔존일 및 상태값 계산 처리
         if next_dt:
             rem_days = (next_dt - today).days
             if rem_days < 0:
                 status_txt = "초과"
-                status_style = "color:#D9534F; font-weight:bold;" # 빨간색
+                status_style = "color:#D9534F; font-weight:bold;" 
             elif rem_days < 50:
                 status_txt = "임박"
-                status_style = "color:#E67E22; font-weight:bold;" # 주황색
+                status_style = "color:#E67E22; font-weight:bold;" 
             elif rem_days < 100:
                 status_txt = "준비"
-                status_style = "color:#9B59B6; font-weight:bold;" # 보라색
+                status_style = "color:#9B59B6; font-weight:bold;" 
             else:
                 status_txt = "정상"
-                status_style = "color:#2ECC71;" # 녹색
+                status_style = "color:#2ECC71;" 
                 
             rem_days_str = f"{rem_days}일"
-            sort_val = rem_days # 정렬을 위한 숫자형 가중치 지정
+            sort_val = rem_days 
         else:
-            # 날짜 미정인 경우 마감 처리
             rem_days_str = "미정"
             status_txt = "미정"
             status_style = "color:#A0AEC0;"
-            sort_val = 999999 # 정렬 우선순위 최하위 배치
+            sort_val = 999999 
             
         row_dict = dict(row)
         row_dict['잔존일'] = rem_days_str
@@ -310,21 +306,19 @@ def run(load_sheet_data):
         row_dict['sort_key'] = sort_val
         calc_rows.append(row_dict)
 
-    # 🚀 [정렬] 검정예정일이 가장 적게 남은(혹은 초과된) 제품 순으로 오름차순 정렬
     df_calc = pd.DataFrame(calc_rows).sort_values(by='sort_key', ascending=True)
 
-    # 🚀 [디자인 완비] 이중선 겹침이 완전히 박멸된 일체형 슬림 단일 테이블 렌더링
     table_rows_html = ""
     for _, row in df_calc.iterrows():
-        done_str = row['현물검정완료일'] if row['현물검정완료일'] else "미정"
-        next_str = row['검정예정일'] if row['검정예정일'] else "미정"
+        done_str = row.get('현물검정완료일', '') if str(row.get('현물검정완료일', '')).strip() else "미정"
+        next_str = row.get('검정예정일', '') if str(row.get('검정예정일', '')).strip() else "미정"
         
         table_rows_html += f"""
         <tr style="border-bottom: 1px solid #E2E8F0; font-size: {TABLE_BODY_SIZE};">
-            <td style="padding: 12px 10px;"><b>{row['사료명칭']}</b></td>
-            <td style="padding: 12px 10px;">{row['제품종류']}</td>
-            <td style="padding: 12px 10px;">{row['현물검정제품']}</td>
-            <td style="padding: 12px 10px;">{row['관련제품']}</td>
+            <td style="padding: 12px 10px;"><b>{row.get('사료명칭', '')}</b></td>
+            <td style="padding: 12px 10px;">{row.get('제품종류', '')}</td>
+            <td style="padding: 12px 10px;">{row.get('현물검정제품', '')}</td>
+            <td style="padding: 12px 10px;">{row.get('관련제품', '')}</td>
             <td style="padding: 12px 10px; color:#555;">{done_str}</td>
             <td style="padding: 12px 10px; font-weight:600;">{next_str}</td>
             <td style="padding: 12px 10px; font-weight:bold;">{row['잔존일']}</td>
@@ -332,7 +326,6 @@ def run(load_sheet_data):
         </tr>
         """
 
-    # 표 껍데기 헤더 구조 출력
     st.markdown(f"""
     <div style="border: 1px solid #E2E8F0; border-top: 3px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 15px; background-color: transparent;">
         <table style="width:100%; border-collapse: collapse; text-align: left;">
@@ -355,13 +348,11 @@ def run(load_sheet_data):
     </div>
     """, unsafe_allow_html=True)
 
-    # 🚀 행별 제어 버튼 인터페이스 (표 바로 아래 깔끔하게 전개)
     st.markdown("<div style='font-size:0.9rem; color:#7F8C8D; margin-bottom:5px;'>⚙️ 데이터 수정 관리 구역:</div>", unsafe_allow_html=True)
     
-    # 공간 효율을 위해 한 열에 4개씩 가로 분할 버튼 배치
     btn_cols = st.columns(4)
     for idx, (_, row) in enumerate(df_calc.iterrows()):
         col_idx = idx % 4
         with btn_cols[col_idx]:
-            if st.button(f"✏️ {row['사료명칭']} 수정", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
+            if st.button(f"✏️ {row.get('사료명칭', '이름없음')} 수정", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
                 inspection_form_dialog(mode="edit", insp_data=row)
