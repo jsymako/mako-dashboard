@@ -65,5 +65,38 @@ def run(load_sheet_data):
         st.subheader(f"👤 {emp_name} 님 ({target_week} 주차)")
         st.data_editor(pivot_df, use_container_width=True, key=f"editor_{emp_name}_{target_week}")
 
+    # 기존 if st.button("💾 모든 변경사항 저장"): 부분을 아래로 교체하세요
     if st.button("💾 모든 변경사항 저장"):
-        st.success("데이터가 성공적으로 저장되었습니다!")
+        with st.spinner("구글 시트에 저장 중..."):
+            try:
+                sheet_r = get_worksheet_for_write("WorkReports")
+                
+                # 기존 데이터 전체를 가져옵니다 (업데이트 효율을 위해)
+                all_data = sheet_r.get_all_values()
+                
+                for emp_name in target_employees:
+                    # 각 직원별 에디터에 담긴 데이터를 가져옴
+                    edited_df = st.session_state.get(f"editor_{emp_name}_{target_week}")
+                    
+                    # 💡 표(Pivot)를 다시 시트 형태(Long Format)로 변환 (Melt)
+                    # 요일(가로)과 분류(세로)를 행으로 풀어서 저장
+                    for cat in cat_order:
+                        for day in day_order:
+                            content = edited_df.loc[cat, day]
+                            
+                            # 날짜 텍스트 제거 (저번주 할일 (05/11...) -> 저번주 할일)
+                            clean_cat = cat.split(' (')[0]
+                            
+                            # 행 데이터 구성: [보고ID, 직원ID, 보고일자, 요일, 분류, 내용]
+                            # 기존에 데이터가 있다면 보고ID를 찾아 업데이트, 없으면 추가
+                            new_row = [f"{emp_name}_{target_week}_{cat}_{day}", target_id, target_week, day, clean_cat, content]
+                            
+                            # 구글 시트에 행 업데이트 (간단한 append 방식 적용)
+                            sheet_r.append_row(new_row)
+                
+                st.success("✅ 모든 데이터가 구글 시트에 저장되었습니다!")
+                time.sleep(1)
+                st.rerun()
+                
+            except Exception as e:
+                st.error(f"저장 중 오류 발생: {e}")
