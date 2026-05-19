@@ -1,22 +1,9 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-import time
-import json
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
-# Google Sheets 연결
-def get_worksheet_for_write(sheet_name):
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = json.loads(st.secrets["gcp_service_account"])
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    client = gspread.authorize(creds)
-    doc = client.open("통합재고관리")
-    return doc.worksheet(sheet_name)
 
 def get_week_start(d):
-    return (d - timedelta(days=d.weekday()))
+    return (d - timedelta(days=d.weekday())).strftime("%Y-%m-%d")
 
 def run(load_sheet_data):
     st.markdown("<h1>📝 주간 업무 보고 시스템</h1>", unsafe_allow_html=True)
@@ -26,36 +13,49 @@ def run(load_sheet_data):
     
     if df_emp is None or df_report is None: return
 
-    # 날짜 구간 계산
+    # 1. 날짜 구간 계산
     target_date = st.sidebar.date_input("기준 주차 선택", datetime.today())
-    monday = get_week_start(target_date)
-    last_monday = monday - timedelta(days=7)
+    monday = datetime.strptime(get_week_start(target_date), "%Y-%m-%d")
+    target_week = monday.strftime("%Y-%m-%d")
     
-    # 예: 5월 11일 ~ 15일
+    last_monday = monday - timedelta(days=7)
     last_week_range = f"({last_monday.strftime('%m월%d일')} ~ {(last_monday + timedelta(days=4)).strftime('%m월%d일')})"
     this_week_range = f"({monday.strftime('%m월%d일')} ~ {(monday + timedelta(days=4)).strftime('%m월%d일')})"
     
-    # 🚀 행 이름 정의 (날짜 구간 포함)
+    # 2. 사이드바 및 필터 설정
+    emp_names = ["전체"] + df_emp['성명'].tolist()
+    selected_emp = st.sidebar.selectbox("직원 선택", emp_names)
+    
+    # 3. 데이터 로드 및 매트릭스 변환
+    df_report['보고일자'] = df_report['보고일자'].astype(str).str.strip()
+    subset = df_report[df_report['보고일자'] == target_week]
+    
+    if selected_emp != "전체":
+        target_id = str(df_emp[df_emp['성명'] == selected_emp]['직원ID'].values[0])
+        subset = subset[subset['직원ID'] == target_id]
+
+    # 4. 💡 빈 데이터 처리 및 매트릭스 구성 (에러 방지 핵심)
+    day_order = ['월', '화', '수', '목', '금']
+    cat_order = ['저번주 할일', '결과', '이번주 할일']
+    
+    if subset.empty:
+        pivot_df = pd.DataFrame("", index=cat_order, columns=day_order)
+    else:
+        pivot_df = subset.pivot(index='분류', columns='요일', values='내용')
+        # 데이터가 일부만 있어도 3x5 구조로 정렬
+        pivot_df = pivot_df.reindex(index=cat_order, columns=day_order).fillna("")
+
+    # 5. 행 이름 매핑 (날짜 구간 포함)
     cat_mapping = {
         '저번주 할일': f'저번주 할일 {last_week_range}',
         '결과': '결과',
         '이번주 할일': f'이번주 할일 {this_week_range}'
     }
-    
-    # 사이드바 직원 선택
-    emp_names = ["전체"] + df_emp['성명'].tolist()
-    selected_emp = st.sidebar.selectbox("직원 선택", emp_names)
-    
-    # (생략: 데이터 로드 및 subset 추출 로직은 이전과 동일)
-    # ... subset 생성 ...
-
-    # 💡 데이터 에디터에 적용
-    st.subheader(f"{selected_emp} 님의 업무 상세")
-    
-    # pivot_df 생성 후
     pivot_df = pivot_df.rename(index=cat_mapping)
+
+    # 6. 화면 출력
+    st.subheader(f"{selected_emp} 님의 업무 상세")
     edited_df = st.data_editor(pivot_df, use_container_width=True)
 
-    if st.button("💾 저장"):
-        # 🚀 저장 시에는 cat_mapping 역으로 돌려서 '저번주 할일' 키워드로 시트에 저장
-        st.success("저장 완료!")
+    if st.button("💾 변경사항 저장"):
+        st.success("데이터를 시트로 전송할 준비가 되었습니다! (저장 로직 연동 중)")
