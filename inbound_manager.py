@@ -5,6 +5,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 from datetime import datetime
 import time
+import os
 
 # =====================================================================
 # 🔑 [1] 쓰기/수정용 구글 시트 연결 (st.secrets 사용)
@@ -26,7 +27,7 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
     st.write(f"### {'✨ 신규 컨테이너 등록' if mode=='add' else '📝 컨테이너 정보 수정'}")
     
     # 제조사 선택 리스트 구성
-    m_options = {row['제조사명']: str(row['제조사ID']) for _, row in df_m.iterrows()}
+    m_options = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
     
     with st.form("container_form", clear_on_submit=True):
         # 1. 제조사 선택
@@ -92,26 +93,48 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
                     st.error("해당 컨테이너 정보를 찾을 수 없습니다.")
             
             time.sleep(1)
-            st.cache_data.clear() # 🚀 저장 후 캐시를 비워줘서 app.py가 새 데이터를 불러오게 함
+            st.cache_data.clear() # 저장 후 캐시 비우기
             st.rerun()
 
 # =====================================================================
-# 🖥️ [3] 메인 실행 함수 (app.py와 완벽 호환)
+# 🖥️ [3] 메인 실행 함수 (app.py와 호환)
 # =====================================================================
 def run(load_sheet_data):
+    # 🚀 공통 CSS 불러오기 강제 적용!
+    try:
+        with open('style.css', encoding='utf-8') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except Exception as e:
+        pass # 파일이 없으면 그냥 넘어감
+
     st.markdown("<h1>📦 입고 현황 (컨테이너 스케줄 관리)</h1>", unsafe_allow_html=True)
     st.info("💡 컨테이너별 발주, 출항, 입항 및 최종 입고 일정을 실시간으로 관리하고 수정하는 마스터 보드입니다.")
     
-    # app.py에서 넘겨받은 load_sheet_data 함수를 이용해 데이터 로드!
     df_m = load_sheet_data("Manufacturers")
     df_c = load_sheet_data("Containers")
 
     if df_m is None or df_c is None:
-        st.error("구글 시트(Manufacturers 또는 Containers) 데이터를 불러올 수 없습니다. 시트 이름을 확인해 주세요.")
+        st.error("🚨 구글 시트(Manufacturers 또는 Containers) 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
+        return
+
+    # 🚀 [에러 해결 핵심] 구글 시트 헤더의 숨겨진 공백들을 모두 강제로 잘라냅니다.
+    if not df_m.empty:
+        df_m.columns = df_m.columns.astype(str).str.strip()
+    if not df_c.empty:
+        df_c.columns = df_c.columns.astype(str).str.strip()
+
+    # 🚀 [안전장치] 만약 그래도 '제조사명' 열이 없다면 뻗지 않고 친절하게 안내합니다.
+    if not df_m.empty and '제조사명' not in df_m.columns:
+        st.error(f"🚨 'Manufacturers' 시트의 첫 번째 줄(헤더)에 '제조사명' 열이 없습니다.\n현재 있는 열: {', '.join(df_m.columns)}")
+        st.error("구글 시트를 열어서 첫 번째 줄에 '제조사ID'와 '제조사명'이 정확히 적혀있는지 확인해 주세요!")
+        return
+        
+    if not df_c.empty and '제조사ID' not in df_c.columns:
+        st.error(f"🚨 'Containers' 시트의 첫 번째 줄(헤더)에 '제조사ID' 열이 없습니다.\n현재 있는 열: {', '.join(df_c.columns)}")
         return
 
     # 데이터 정돈
-    if not df_c.empty:
+    if not df_c.empty and not df_m.empty:
         df_c['제조사ID'] = df_c['제조사ID'].astype(str)
         df_m['제조사ID'] = df_m['제조사ID'].astype(str)
         df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
@@ -124,7 +147,10 @@ def run(load_sheet_data):
     # -----------------------------------------------------------------
     st.sidebar.markdown("### 🔍 입고 조회 조건")
     
-    m_list = ["전체보기"] + list(df_m['제조사명'].unique())
+    m_list = ["전체보기"]
+    if not df_m.empty:
+        m_list += list(df_m['제조사명'].unique())
+        
     selected_m = st.sidebar.selectbox("🏭 제조사별 분류", m_list)
     
     st.sidebar.markdown("<br>", unsafe_allow_html=True)
@@ -132,23 +158,27 @@ def run(load_sheet_data):
     st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
     
     if st.sidebar.button("✨ 신규 컨테이너 추가", use_container_width=True):
-        container_form_dialog(mode="add", df_m=df_m)
+        if df_m.empty:
+            st.warning("먼저 구글 시트 'Manufacturers' 탭에 제조사를 등록해 주세요!")
+        else:
+            container_form_dialog(mode="add", df_m=df_m)
 
     # -----------------------------------------------------------------
     # 📝 3-2. 필터링 로직
     # -----------------------------------------------------------------
     filtered_df = df_c.copy()
 
-    if selected_m != "전체보기":
-        target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
-        filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
+    if not filtered_df.empty:
+        if selected_m != "전체보기":
+            target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
+            filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
 
-    if not view_all_history:
-        # 입고일이 공백이거나, 오늘 날짜 이상인 것만 필터링
-        filtered_df = filtered_df[
-            (filtered_df['입고일'] == "") | 
-            (filtered_df['입고일'].astype(str) >= today_str)
-        ]
+        if not view_all_history:
+            # 입고일이 공백이거나, 오늘 날짜 이상인 것만 필터링
+            filtered_df = filtered_df[
+                (filtered_df['입고일'] == "") | 
+                (filtered_df['입고일'].astype(str) >= today_str)
+            ]
 
     # -----------------------------------------------------------------
     # 🗂️ 3-3. 리스트 출력
@@ -179,14 +209,14 @@ def run(load_sheet_data):
                         <table style="width:100%; border:none; font-size:1.05rem;">
                             <tr>
                                 <td style="width:25%;"><b>차수:</b> {row['차수']}차</td>
-                                <td style="width:25%;"><b>사이즈:</b> <span style="background-color:#E2E8F0; padding:2px 6px; border-radius:4px;">{row['피트']}</span></td>
+                                <td style="width:25%;"><b>사이즈:</b> <span style="background-color:#E2E8F0; padding:2px 6px; border-radius:4px;">{row.get('피트', '20FT')}</span></td>
                                 <td colspan="2">{status_html}</td>
                             </tr>
                             <tr style="color:#555555; font-size:0.95rem;">
                                 <td>📅 <b>발주:</b> {row.get('발주일','')}</td>
                                 <td>🚢 <b>출항:</b> {row.get('출항일','')}</td>
                                 <td>🛬 <b>입항:</b> {row.get('입항일','')}</td>
-                                <td>📦 <b>입고예정:</b> {row['입고일'] if str(row['입고일']).strip() != "" else "미지정"}</td>
+                                <td>📦 <b>입고예정:</b> {row['입고일'] if str(row.get('입고일','')).strip() != "" else "미지정"}</td>
                             </tr>
                             <tr>
                                 <td colspan="4" style="padding-top:8px; color:#2C3E50;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "없음"}</td>
