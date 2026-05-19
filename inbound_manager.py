@@ -42,7 +42,7 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
         # 2. 정보 입력
         cha_su = st.number_input("차수", min_value=1, value=int(container_data.get('차수', 1)) if mode=='edit' else 1)
         
-        # 🚀 [버그 해결] 날짜 파싱 및 안전한 기본값 할당 로직
+        # 날짜 파싱 및 안전한 기본값 할당 로직
         def safe_date_parse(date_str):
             if not date_str or str(date_str).strip() in ["", "미정", "nan", "None"]:
                 return None
@@ -51,22 +51,26 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
             except: 
                 return None
 
-        st.caption("💡 날짜창 우측의 'X' 버튼을 누르면 날짜를 '미정' 상태로 비워둘 수 있습니다.")
+        # 🚀 [수정] 안내 글자 크기를 확 줄이고, 백스페이스로 지우는 방법으로 안내 변경
+        st.markdown("<div style='font-size: 0.85rem; color: #7F8C8D; margin-bottom: 10px;'>💡 날짜가 아직 정해지지 않았다면, 달력창을 클릭 후 <b>백스페이스(지우기) 키</b>를 눌러 칸을 텅 비워두세요. (자동으로 '미정' 처리됩니다)</div>", unsafe_allow_html=True)
         
-        # 신규 등록(add)일 때는 전부 None(미정)으로 시작, 수정(edit)일 때는 기존 값 불러오기
         val_order = safe_date_parse(container_data.get('발주일', '')) if mode == 'edit' else None
         val_dept = safe_date_parse(container_data.get('출항일', '')) if mode == 'edit' else None
         val_arr = safe_date_parse(container_data.get('입항일', '')) if mode == 'edit' else None
         val_inbound = safe_date_parse(container_data.get('입고일', '')) if mode == 'edit' else None
 
-        # 올바른 st.date_input 문법 적용 (충돌 방지)
         order_d = st.date_input("발주일", value=val_order)
         dept_d = st.date_input("출항일", value=val_dept)
         arr_d = st.date_input("입항일", value=val_arr)
         inbound_d = st.date_input("입고일", value=val_inbound)
         
         summary = st.text_input("적요", value=str(container_data.get('적요', '')) if mode=='edit' else "")
-        feet = st.selectbox("피트 (FT)", ["20FT", "40FT", "40HQ", "기타"], index=["20FT", "40FT", "40HQ", "기타"].index(str(container_data.get('피트', '20FT'))) if mode=='edit' else 1)
+        
+        # 🚀 [수정] 40HQ 제거 및 에러 방지 로직 적용
+        feet_options = ["20FT", "40FT", "기타"]
+        current_feet = str(container_data.get('피트', '20FT')) if mode == 'edit' else "20FT"
+        feet_idx = feet_options.index(current_feet) if current_feet in feet_options else 0
+        feet = st.selectbox("피트 (FT)", feet_options, index=feet_idx)
         
         submit_btn = st.form_submit_button("💾 데이터 저장하기")
         
