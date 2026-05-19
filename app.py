@@ -14,6 +14,7 @@ import sales_trend
 import trade_trend
 import ar_trend
 import sales_perf
+import inbound_manager
 
 st.set_page_config(page_title="통합재고관리", page_icon="🏠", layout="wide")
 
@@ -83,7 +84,7 @@ st.markdown("""
 with st.sidebar:
     main_menu = option_menu(
         menu_title=None, 
-        options=["대시 보드", "자사 재고", "쿠팡 재고", "판매 현황", "영업 실적", "채권 분석"],
+        options=["대시 보드", "자사 재고", "쿠팡 재고", "판매 현황", "입고 현황", "영업 실적", "채권 분석"],
         icons=["grid", "box", "box-seam", "graph-up", "briefcase", "credit-card"], 
         default_index=0, 
         styles={
@@ -274,6 +275,8 @@ elif main_menu == "자사 재고":
     own_stock.run(load_sheet_data) 
 elif main_menu == "쿠팡 재고":
     coupang_stock.run(load_sheet_data)
+elif main_menu == "입고 현황":
+    inbound_manager.run(load_sheet_data)
 elif main_menu == "판매 현황":
     trade_trend.run(load_sheet_data)
 elif main_menu == "채권 분석":
