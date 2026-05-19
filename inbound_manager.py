@@ -3,14 +3,14 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-from datetime import datetime  # 🚀 [수정] 쓸데없는 오타(list as dt_list)를 삭제했습니다!
+from datetime import datetime
 import time
 
 # =====================================================================
-# ⚙️ 글자 크기 조정 변수 (대표님이 언제든 수정하실 수 있습니다)
+# ⚙️ 글자 크기 조정 변수
 # =====================================================================
-TABLE_HEADER_SIZE = "1.05rem"  # 표 제목 글자 크기
-TABLE_BODY_SIZE = "0.98rem"    # 표 내용 글자 크기
+TABLE_HEADER_SIZE = "1.05rem"  
+TABLE_BODY_SIZE = "0.98rem"    
 
 # =====================================================================
 # 🔑 [1] 쓰기/수정용 구글 시트 연결
@@ -23,14 +23,10 @@ def get_worksheet_for_write(sheet_name):
     doc = client.open("통합재고관리")
     return doc.worksheet(sheet_name)
 
-# 윤년 대응 안전하게 1년(다음해) 더하는 로직
 def add_one_year(d):
     if d is None: return ""
-    try:
-        return str(d.replace(year=d.year + 1))
-    except ValueError:
-        # 윤년 2월 29일 예외 처리 (다음해 2월 28일로 지정)
-        return str(d.replace(month=2, day=28, year=d.year + 1))
+    try: return str(d.replace(year=d.year + 1))
+    except ValueError: return str(d.replace(month=2, day=28, year=d.year + 1))
 
 def safe_date_parse(date_str):
     if not date_str or str(date_str).strip() in ["", "미정", "nan", "None"]: return None
@@ -38,7 +34,7 @@ def safe_date_parse(date_str):
     except: return None
 
 # =====================================================================
-# 🚀 [2] 다이얼로그 팝업창 모음 (컨테이너 / 현물검정)
+# 🚀 [2] 다이얼로그 팝업창 모음
 # =====================================================================
 @st.dialog("📦 컨테이너 정보 관리")
 def container_form_dialog(mode="add", container_data=None, df_m=None):
@@ -102,7 +98,6 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
 
 @st.dialog("🔍 현물검정 정보 관리")
 def inspection_form_dialog(mode="add", insp_data=None):
-    """현물검정 신규 및 수정을 처리하는 팝업창"""
     st.write(f"### {'✨ 신규 현물검정 제품 등록' if mode=='add' else '📝 현물검정 정보 수정'}")
     
     with st.form("inspection_form", clear_on_submit=True):
@@ -121,7 +116,7 @@ def inspection_form_dialog(mode="add", insp_data=None):
         if submit_btn:
             sheet_i = get_worksheet_for_write("Inspection")
             str_done = str(done_d) if done_d else ""
-            str_next = add_one_year(done_d) # 완료일 기준 자동 1년 뒤 계산 장착
+            str_next = add_one_year(done_d)
             
             if mode == "add":
                 new_id = f"INSP_{int(time.time())}"
@@ -139,7 +134,6 @@ def inspection_form_dialog(mode="add", insp_data=None):
             st.cache_data.clear()
             st.rerun()
 
-
 # =====================================================================
 # 🖥️ [3] 메인 실행 함수
 # =====================================================================
@@ -156,13 +150,12 @@ def run(load_sheet_data):
     
     df_m = load_sheet_data("Manufacturers")
     df_c = load_sheet_data("Containers")
-    df_i = load_sheet_data("Inspection") # 신규 현물검정 시트 연동
+    df_i = load_sheet_data("Inspection") 
 
     if df_m is None or df_c is None:
         st.error("🚨 구글 시트 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
         return
 
-    # 공백 소독
     if not df_m.empty:
         df_m.columns = df_m.columns.astype(str).str.strip()
         for col in df_m.columns: df_m[col] = df_m[col].astype(str).str.strip()
@@ -192,7 +185,6 @@ def run(load_sheet_data):
     if st.sidebar.button("✨ 신규 컨테이너 추가", use_container_width=True):
         container_form_dialog(mode="add", df_m=df_m)
 
-    # 컨테이너 데이터 정렬 및 렌더링
     if not df_c.empty:
         df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
         m_id_order = [mid for mid in df_m['제조사ID'].tolist()]
@@ -228,29 +220,31 @@ def run(load_sheet_data):
                         elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[🚢 출항 대기중]</span>"
                         else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
                         
-                        with st.container():
-                            st.markdown(f"""
-                            <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 5px;">
-                                <table style="width:100%; border-collapse: collapse; text-align: left;">
-                                    <tr style="border-bottom: 1px solid #E2E8F0; font-size: 1.15rem;">
-                                        <td style="padding: 12px 15px; width:25%;"><b>차수:</b> {row['차수']}차</td>
-                                        <td style="padding: 12px 15px; width:25%;"><b>사이즈:</b> {row.get('피트', '40FT')}</td>
-                                        <td colspan="2" style="padding: 12px 15px;">{status_html}</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid #E2E8F0; color:#555555; font-size: 0.95rem;">
-                                        <td style="padding: 10px 15px;">📦 <b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                        <td style="padding: 10px 15px;">🛬 <b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                        <td style="padding: 10px 15px;">🚢 <b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                        <td style="padding: 10px 15px;">📅 <b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                    </tr>
-                                    <tr style="font-size: 1.05rem;">
-                                        <td colspan="4" style="padding: 12px 15px; color:#2C3E50;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            if st.button("⚙️ 이 컨테이너 정보 수정", key=f"edit_{row['컨테이너ID']}", use_container_width=True):
-                                container_form_dialog(mode="edit", container_data=row, df_m=df_m)
+                        # 🚀 HTML 줄바꿈(엔터) 파괴 공법 적용 (.replace('\n', ''))
+                        container_html = f"""
+                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 5px;">
+                            <table style="width:100%; border-collapse: collapse; text-align: left;">
+                                <tr style="border-bottom: 1px solid #E2E8F0; font-size: 1.15rem;">
+                                    <td style="padding: 12px 15px; width:25%;"><b>차수:</b> {row['차수']}차</td>
+                                    <td style="padding: 12px 15px; width:25%;"><b>사이즈:</b> {row.get('피트', '40FT')}</td>
+                                    <td colspan="2" style="padding: 12px 15px;">{status_html}</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #E2E8F0; color:#555555; font-size: 0.95rem;">
+                                    <td style="padding: 10px 15px;">📦 <b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px;">🛬 <b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px;">🚢 <b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px;">📅 <b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                </tr>
+                                <tr style="font-size: 1.05rem;">
+                                    <td colspan="4" style="padding: 12px 15px; color:#2C3E50;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        """
+                        st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
+                        
+                        if st.button("⚙️ 이 컨테이너 정보 수정", key=f"edit_{row['컨테이너ID']}", use_container_width=True):
+                            container_form_dialog(mode="edit", container_data=row, df_m=df_m)
                     st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
@@ -313,20 +307,12 @@ def run(load_sheet_data):
         done_str = row.get('현물검정완료일', '') if str(row.get('현물검정완료일', '')).strip() else "미정"
         next_str = row.get('검정예정일', '') if str(row.get('검정예정일', '')).strip() else "미정"
         
-        table_rows_html += f"""
-        <tr style="border-bottom: 1px solid #E2E8F0; font-size: {TABLE_BODY_SIZE};">
-            <td style="padding: 12px 10px;"><b>{row.get('사료명칭', '')}</b></td>
-            <td style="padding: 12px 10px;">{row.get('제품종류', '')}</td>
-            <td style="padding: 12px 10px;">{row.get('현물검정제품', '')}</td>
-            <td style="padding: 12px 10px;">{row.get('관련제품', '')}</td>
-            <td style="padding: 12px 10px; color:#555;">{done_str}</td>
-            <td style="padding: 12px 10px; font-weight:600;">{next_str}</td>
-            <td style="padding: 12px 10px; font-weight:bold;">{row['잔존일']}</td>
-            <td style="padding: 12px 10px; text-align:center;"><span style="{row['상태스타일']}">{row['상태']}</span></td>
-        </tr>
-        """
+        # 🚀 줄바꿈을 원천 차단하여 한 줄로 표 행(Row) 생성
+        tr_html = f"<tr style='border-bottom: 1px solid #E2E8F0; font-size: {TABLE_BODY_SIZE};'><td style='padding: 12px 10px;'><b>{row.get('사료명칭', '')}</b></td><td style='padding: 12px 10px;'>{row.get('제품종류', '')}</td><td style='padding: 12px 10px;'>{row.get('현물검정제품', '')}</td><td style='padding: 12px 10px;'>{row.get('관련제품', '')}</td><td style='padding: 12px 10px; color:#555;'>{done_str}</td><td style='padding: 12px 10px; font-weight:600;'>{next_str}</td><td style='padding: 12px 10px; font-weight:bold;'>{row['잔존일']}</td><td style='padding: 12px 10px; text-align:center;'><span style='{row['상태스타일']}'>{row['상태']}</span></td></tr>"
+        table_rows_html += tr_html
 
-    st.markdown(f"""
+    # 🚀 최종 표 렌더링 시 .replace('\n', '') 로 줄바꿈 완벽 소독
+    final_table_html = f"""
     <div style="border: 1px solid #E2E8F0; border-top: 3px solid #2E86C1; border-radius: 6px; overflow: hidden; margin-bottom: 15px; background-color: transparent;">
         <table style="width:100%; border-collapse: collapse; text-align: left;">
             <thead>
@@ -346,7 +332,8 @@ def run(load_sheet_data):
             </tbody>
         </table>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(final_table_html.replace('\n', ''), unsafe_allow_html=True)
 
     st.markdown("<div style='font-size:0.9rem; color:#7F8C8D; margin-bottom:5px;'>⚙️ 데이터 수정 관리 구역:</div>", unsafe_allow_html=True)
     
