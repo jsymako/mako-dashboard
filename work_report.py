@@ -72,29 +72,30 @@ def run(load_sheet_data):
                 sheet_r = get_worksheet_for_write("WorkReports")
                 
                 for emp_name in target_employees:
-                    # 🚀 [핵심 수정] 딕셔너리든 리스트든 무조건 DataFrame으로 강제 변환
+                    # 1. 🚀 [핵심] st.data_editor에서 나온 raw 데이터를 가져옴
                     raw_data = st.session_state.get(f"editor_{emp_name}_{target_week}")
                     if raw_data is None: continue
                     
-                    # 💡 여기가 에러를 잡는 마법의 한 줄입니다.
-                    edited_df = pd.DataFrame.from_dict(raw_data)
-                    
-                    # 만약 인덱스가 '분류'가 아니면 세팅
-                    if edited_df.index.name != '분류':
-                        edited_df.index = cat_order
+                    # 2. 💡 dict 형태를 명확히 데이터프레임으로 재구성 (에러 원천 차단)
+                    edited_df = pd.DataFrame(raw_data)
                     
                     target_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
 
-                    # 💡 안전한 데이터 저장 (기존 방식 유지)
+                    # 3. 데이터 저장 (List of Lists 형태로 수동 구성)
                     new_rows = []
-                    for cat in cat_order:
+                    # cat_order는 위에서 정의한 ['저번주 할일', '결과', '이번주 할일']
+                    for i, cat in enumerate(cat_order):
                         for day in day_order:
-                            # 괄호 안 날짜 텍스트 제거
+                            # 괄호와 날짜 제거하여 깨끗한 분류값 추출
                             clean_cat = cat.split(' (')[0]
-                            content = str(edited_df.loc[cat, day])
-                            new_rows.append([f"{emp_name}_{target_week}_{clean_cat}_{day}", target_id, target_week, day, clean_cat, content])
+                            
+                            # 🚀 [수정] 데이터프레임의 위치(iloc) 기반으로 안전하게 값 추출
+                            content = str(edited_df.iloc[i][day])
+                            
+                            new_row = [f"{emp_name}_{target_week}_{clean_cat}_{day}", target_id, target_week, day, clean_cat, content]
+                            new_rows.append(new_row)
                     
-                    # 💡 저장: Append 방식 (중복 방지 로직은 추후 필요시 보강)
+                    # 4. 시트에 추가
                     sheet_r.append_rows(new_rows)
                 
                 st.success("✅ 저장 완료!")
