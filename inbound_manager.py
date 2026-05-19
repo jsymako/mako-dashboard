@@ -43,25 +43,20 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
         # 2. 정보 입력
         cha_su = st.number_input("차수", min_value=1, value=int(container_data.get('차수', 1)) if mode=='edit' else 1)
         
+        # 날짜 파싱 도우미 (값이 없으면 None을 주어 달력을 비워둠)
         def safe_date_parse(date_str):
+            if not date_str or str(date_str).strip() == "" or str(date_str).strip() == "미정":
+                return None
             try: return datetime.strptime(str(date_str).strip(), "%Y-%m-%d").date()
-            except: return datetime.today().date()
+            except: return None
 
-        order_d = st.date_input("발주일", safe_date_parse(container_data['발주일']) if mode=='edit' else datetime.today())
-        dept_d = st.date_input("출항일", safe_date_parse(container_data['출항일']) if mode=='edit' else datetime.today())
-        arr_d = st.date_input("입항일", safe_date_parse(container_data['입항일']) if mode=='edit' else datetime.today())
+        st.caption("💡 날짜창 우측의 'X' 버튼을 누르면 날짜를 '미정' 상태로 비워둘 수 있습니다.")
         
-        # 입고일 처리 (체크박스)
-        has_inbound_date = True
-        init_inbound_val = datetime.today().date()
-        if mode == "edit":
-            if not container_data['입고일'] or str(container_data['입고일']).strip() == "":
-                has_inbound_date = False
-            else:
-                init_inbound_val = safe_date_parse(container_data['입고일'])
-                
-        is_inbound_checked = st.checkbox("✅ 입고 완료 (입고일 지정)", value=has_inbound_date)
-        inbound_d = st.date_input("입고일", init_inbound_val if is_inbound_checked else None, disabled=not is_inbound_checked)
+        # 🚀 [수정] 체크박스를 없애고 모든 날짜 입력창을 원클릭으로 입력/비우기 가능하도록 변경
+        order_d = st.date_input("발주일", safe_date_parse(container_data.get('발주일', '')) if mode=='edit' else datetime.today(), value=None)
+        dept_d = st.date_input("출항일", safe_date_parse(container_data.get('출항일', '')) if mode=='edit' else None, value=None)
+        arr_d = st.date_input("입항일", safe_date_parse(container_data.get('입항일', '')) if mode=='edit' else None, value=None)
+        inbound_d = st.date_input("입고일", safe_date_parse(container_data.get('입고일', '')) if mode=='edit' else None, value=None)
         
         summary = st.text_input("적요", value=str(container_data.get('적요', '')) if mode=='edit' else "")
         feet = st.selectbox("피트 (FT)", ["20FT", "40FT", "40HQ", "기타"], index=["20FT", "40FT", "40HQ", "기타"].index(str(container_data.get('피트', '20FT'))) if mode=='edit' else 1)
@@ -70,12 +65,17 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
         
         if submit_btn:
             sheet_c = get_worksheet_for_write("Containers")
-            final_inbound_str = str(inbound_d) if is_inbound_checked else ""
+            
+            # None 값은 구글 시트에 빈칸("")으로 저장되도록 치환
+            str_order = str(order_d) if order_d else ""
+            str_dept = str(dept_d) if dept_d else ""
+            str_arr = str(arr_d) if arr_d else ""
+            str_inbound = str(inbound_d) if inbound_d else ""
             
             if mode == "add":
                 new_id = str(int(time.time()))
                 sheet_c.append_row([
-                    new_id, chosen_m_id, cha_su, str(order_d), str(dept_d), str(arr_d), final_inbound_str, summary, feet
+                    new_id, chosen_m_id, cha_su, str_order, str_dept, str_arr, str_inbound, summary, feet
                 ])
                 st.success("🎉 성공적으로 등록되었습니다!")
             
@@ -85,7 +85,7 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
                     row_idx = c_id_list.index(str(container_data['컨테이너ID'])) + 1
                     update_range = f"B{row_idx}:I{row_idx}"
                     sheet_c.update(update_range, [[
-                        chosen_m_id, cha_su, str(order_d), str(dept_d), str(arr_d), final_inbound_str, summary, feet
+                        chosen_m_id, cha_su, str_order, str_dept, str_arr, str_inbound, summary, feet
                     ]])
                     st.success("✅ 성공적으로 수정되었습니다!")
                 except ValueError:
@@ -99,7 +99,6 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
 # 🖥️ [3] 메인 실행 함수 (app.py와 호환)
 # =====================================================================
 def run(load_sheet_data):
-    # 🚀 [1순위] 통합 공통 CSS 강제 로드 및 사이드바 동기화
     try:
         with open('style.css', encoding='utf-8') as f:
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
@@ -113,75 +112,63 @@ def run(load_sheet_data):
     df_c = load_sheet_data("Containers")
 
     if df_m is None or df_c is None:
-        st.error("🚨 구글 시트(Manufacturers 또는 Containers) 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
+        st.error("🚨 구글 시트 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
         return
 
-    # 🚀 [데이터 튜닝] 모든 헤더와 내부 글자들의 앞뒤 공백을 완벽히 제거합니다.
+    # 공백 소독
     if not df_m.empty:
         df_m.columns = df_m.columns.astype(str).str.strip()
-        for col in df_m.columns:
-            df_m[col] = df_m[col].astype(str).str.strip()
-            
+        for col in df_m.columns: df_m[col] = df_m[col].astype(str).str.strip()
     if not df_c.empty:
         df_c.columns = df_c.columns.astype(str).str.strip()
-        for col in df_c.columns:
-            df_c[col] = df_c[col].astype(str).str.strip()
+        for col in df_c.columns: df_c[col] = df_c[col].astype(str).str.strip()
 
     # -----------------------------------------------------------------
-    # ⚙️ 3-1. 사이드바 조회 조건 및 동기화 장치
+    # ⚙️ 3-1. 사이드바 UI
     # -----------------------------------------------------------------
     st.sidebar.markdown("### 🔍 입고 조회 조건")
-    
-    # 🔄 [핵심 치트키] 구글 시트 강제 강제 동기화 버튼 배치
     if st.sidebar.button("🔄 시트 데이터 즉시 새로고침", use_container_width=True):
-        st.cache_data.clear() # app.py의 10분 캐시를 완전히 파괴합니다.
+        st.cache_data.clear()
         st.rerun()
         
     st.sidebar.markdown("<br>", unsafe_allow_html=True)
     
     m_list = ["전체보기"]
-    if not df_m.empty:
-        m_list += list(df_m['제조사명'].unique())
+    if not df_m.empty: m_list += list(df_m['제조사명'].unique())
         
     selected_m = st.sidebar.selectbox("🏭 제조사별 분류", m_list)
     view_all_history = st.sidebar.checkbox("📂 모든 기록 보기", value=False, help="체크 해제 시 입고일이 미지정이거나 아직 지나지 않은 스케줄만 봅니다.")
-    
     st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
     
     if st.sidebar.button("✨ 신규 컨테이너 추가", use_container_width=True):
-        if df_m.empty:
-            st.warning("먼저 구글 시트 'Manufacturers' 탭에 제조사를 등록해 주세요!")
-        else:
-            container_form_dialog(mode="add", df_m=df_m)
+        if df_m.empty: st.warning("먼저 구글 시트 'Manufacturers' 탭에 제조사를 등록해 주세요!")
+        else: container_form_dialog(mode="add", df_m=df_m)
 
-    # 🚀 [상태 진단] 구글 시트에 원본 데이터가 아예 비어있는지 체크
     if df_c.empty or len(df_c) == 0:
-        st.warning("📅 구글 시트 'Containers' 탭에 등록된 원본 데이터가 아예 없습니다. 사이드바의 '신규 컨테이너 추가' 버튼을 눌러 첫 데이터를 넣어주십시오!")
+        st.warning("📅 구글 시트 'Containers' 탭에 등록된 데이터가 없습니다. 신규 추가를 진행해 주세요.")
         return
 
-    # 데이터 타입 캐스팅 및 정렬
+    # 데이터 타입 정돈 및 정렬
     df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
     df_c = df_c.sort_values(by=['제조사ID', '차수'], ascending=[True, False])
     today_str = datetime.today().strftime("%Y-%m-%d")
 
     # -----------------------------------------------------------------
-    # 📝 3-2. 필터링 엔진 작동
+    # 📝 3-2. 필터링 로직
     # -----------------------------------------------------------------
     filtered_df = df_c.copy()
 
-    # 조건 1. 제조사 분류
     if selected_m != "전체보기":
         target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
         filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
 
-    # 조건 2. 진행중인 일정만 보기 (체크 해제 시)
+    # 🚀 [수정] 모든 기록보기 미체크 시 확정여부 상관없이 오늘 날짜 지난 것만 필터링해서 차단
     if not view_all_history:
         filtered_df = filtered_df[
             (filtered_df['입고일'] == "") | 
             (filtered_df['입고일'] >= today_str)
         ]
 
-    # 🚀 [결과 출력 분기] 원본 데이터는 있으나 필터링 때문에 안 보이는 경우 안내
     if filtered_df.empty:
         st.warning("💡 이미 입고가 완료된 지난 기록들만 존재합니다. 과거 내역을 보시려면 사이드바의 [📂 모든 기록 보기]를 체크해 주십시오!")
         return
@@ -196,39 +183,51 @@ def run(load_sheet_data):
         st.markdown(f"## 🏭 {m_name} 입고 스케줄")
         
         for _, row in group.iterrows():
-            if str(row.get('입고일', '')).strip() == "":
-                status_html = "<span style='color:#E67E22; font-weight:bold;'>[⏳ 입고 대기중]</span>"
+            # 날짜 및 상태 찌꺼기 정리
+            ord_dt = str(row.get('발주일', '')).strip()
+            dep_dt = str(row.get('출항일', '')).strip()
+            arr_dt = str(row.get('입항일', '')).strip()
+            inb_dt = str(row.get('입고일', '')).strip()
+
+            # 🚀 [수정] 대표님이 지정해주신 4단계 우선순위 상태 체계 구현
+            if inb_dt:
+                if inb_dt < today_str:
+                    status_html = f"<span style='color:#2ECC71; font-weight:bold;'>[✅ 입고 완료]</span>"
+                else:
+                    status_html = f"<span style='color:#E67E22; font-weight:bold;'>[⏳ 입고 대기중]</span>"
+            elif arr_dt:
+                status_html = f"<span style='color:#3498DB; font-weight:bold;'>[🛬 입항 대기중]</span>"
+            elif dep_dt:
+                status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[🚢 출항 대기중]</span>"
             else:
-                status_html = f"<span style='color:#2ECC71; font-weight:bold;'>[✅ 입고완료: {row['입고일']}]</span>"
+                status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
                 
+            # 카드 디자인 렌더링 시작
             with st.container():
-                col_info, col_btn = st.columns([6, 1])
+                # 🚀 [수정] 수정버튼을 카드 바깥 열에 따로 분리하지 않고, 하나의 카드 컨테이너 내부로 흡수
+                st.markdown(f"""
+                <div style="background-color: #F8F9FA; padding: 18px; border-left: 5px solid #2E86C1; border-radius: 6px; margin-bottom: 5px; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0;">
+                    <table style="width:100%; border:none; font-size:1.05rem; margin-bottom: 5px;">
+                        <tr>
+                            <td style="width:25%;"><b>차수:</b> {row['차수']}차</td>
+                            <td style="width:25%;"><b>사이즈:</b> <span style="background-color:#E2E8F0; padding:2px 6px; border-radius:4px;">{row.get('피트', '20FT')}</span></td>
+                            <td colspan="2" style="text-align:left;">{status_html}</td>
+                        </tr>
+                        <tr style="color:#555555; font-size:0.95rem;">
+                            <td>📦 <b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                            <td>🛬 <b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                            <td>🚢 <b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                            <td>📅 <b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding-top:10px; color:#2C3E50;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
+                        </tr>
+                    </table>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                with col_info:
-                    st.markdown(f"""
-                    <div style="background-color: #F8F9FA; padding: 15px; border-left: 5px solid #2E86C1; border-radius: 4px; margin-bottom: 10px;">
-                        <table style="width:100%; border:none; font-size:1.05rem;">
-                            <tr>
-                                <td style="width:25%;"><b>차수:</b> {row['차수']}차</td>
-                                <td style="width:25%;"><b>사이즈:</b> <span style="background-color:#E2E8F0; padding:2px 6px; border-radius:4px;">{row.get('feet', row.get('피트', '20FT'))}</span></td>
-                                <td colspan="2">{status_html}</td>
-                            </tr>
-                            <tr style="color:#555555; font-size:0.95rem;">
-                                <td>📅 <b>발주:</b> {row.get('발주일','')}</td>
-                                <td>🚢 <b>출항:</b> {row.get('출항일','')}</td>
-                                <td>🛬 <b>입항:</b> {row.get('입항일','')}</td>
-                                <td>📦 <b>입고예정:</b> {row['입고일'] if str(row.get('입고일','')).strip() != "" else "미지정"}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="4" style="padding-top:8px; color:#2C3E50;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "없음"}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col_btn:
-                    st.markdown("<div style='padding-top:25px;'></div>", unsafe_allow_html=True)
-                    if st.button("⚙️ 수정", key=f"edit_{row['컨테이너ID']}", use_container_width=True):
-                        container_form_dialog(mode="edit", container_data=row, df_m=df_m)
-        
+                # 🚀 [수정] 카드 회색 박스 바로 내부 하단에 정렬되는 수정 버튼 배치
+                if st.button("⚙️ 이 컨테이너 정보 수정", key=f"edit_{row['컨테이너ID']}", use_container_width=True):
+                    container_form_dialog(mode="edit", container_data=row, df_m=df_m)
+                    
         st.markdown("<div style='margin-bottom:30px;'></div>", unsafe_allow_html=True)
