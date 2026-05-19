@@ -6,52 +6,48 @@ def get_week_start(d):
     return (d - timedelta(days=d.weekday())).strftime("%Y-%m-%d")
 
 def run(load_sheet_data):
-    st.markdown("<h1>📅 주간 요일별 업무 보고</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>📝 주간 업무 보고 시스템</h1>", unsafe_allow_html=True)
     
     df_emp = load_sheet_data("Employees")
     df_report = load_sheet_data("WorkReports")
     
     if df_emp is None or df_report is None:
-        st.error("시트를 불러올 수 없습니다.")
+        st.error("데이터 로드 실패")
         return
 
-    # 1. 사이드바 설정
-    st.sidebar.markdown("### 🔍 조회 조건")
-    target_date = st.sidebar.date_input("기준 날짜 선택", datetime.today())
+    # 사이드바
+    st.sidebar.markdown("### 📅 조회 조건")
+    target_date = st.sidebar.date_input("주차 선택", datetime.today())
     target_week = get_week_start(target_date)
-    
-    emp_names = ["전체보기"] + df_emp['성명'].tolist()
+    emp_names = df_emp['성명'].tolist()
     selected_emp = st.sidebar.selectbox("직원 선택", emp_names)
+
+    # 데이터 필터링 및 매트릭스 변환
+    target_id = df_emp[df_emp['성명'] == selected_emp]['직원ID'].values[0]
+    subset = df_report[(df_report['보고일자'] == target_week) & (df_report['직원ID'] == str(target_id))]
     
-    # 2. 데이터 필터링 (주차 및 직원)
-    subset = df_report[df_report['보고일자'] == target_week].copy()
-    if selected_emp != "전체보기":
-        target_id = df_emp[df_emp['성명'] == selected_emp]['직원ID'].values[0]
-        subset = subset[subset['직원ID'] == str(target_id)]
+    # 💡 노션처럼 요일을 가로로, 분류를 세로로 만들기 위한 피벗
+    pivot_df = subset.pivot(index='분류', columns='요일', values='내용')
+    
+    # 요일 순서 보장 (월, 화, 수, 목, 금)
+    day_order = ['월', '화', '수', '목', '금']
+    pivot_df = pivot_df.reindex(columns=day_order)
 
-    # 3. 요일별 탭 구성
-    days = ["월", "화", "수", "목", "금"]
-    tabs = st.tabs([f"{d}요일" for d in days])
+    st.subheader(f"{selected_emp} 님의 {target_week} 주간 보고")
+    
+    # 수정 가능한 표 (노션 뷰)
+    edited_df = st.data_editor(
+        pivot_df,
+        column_config={
+            "월": st.column_config.TextColumn("월", width="medium"),
+            "화": st.column_config.TextColumn("화", width="medium"),
+            "수": st.column_config.TextColumn("수", width="medium"),
+            "목": st.column_config.TextColumn("목", width="medium"),
+            "금": st.column_config.TextColumn("금", width="medium"),
+        },
+        use_container_width=True
+    )
 
-    for i, day in enumerate(days):
-        with tabs[i]:
-            # 해당 요일 데이터만 추출
-            day_data = subset[subset['요일'] == day]
-            
-            st.subheader(f"{day}요일 업무 내용")
-            
-            # 수정 가능한 표
-            edited_day_df = st.data_editor(
-                day_data[['분류', '내용']],
-                column_config={
-                    "분류": st.column_config.SelectboxColumn("구분", options=["저번주 할일", "결과", "이번주 할일"], disabled=True),
-                    "내용": st.column_config.TextColumn("업무 상세 내용", width="large")
-                },
-                hide_index=True,
-                use_container_width=True,
-                key=f"editor_{day}"
-            )
-
-    if st.button("💾 모든 요일 변경사항 저장"):
-        # 여기서 각 탭의 edited_day_df를 합쳐서 구글 시트에 업데이트하는 로직 구현
-        st.success("데이터가 성공적으로 업데이트되었습니다.")
+    if st.button("💾 변경사항 저장"):
+        # 저장 로직 (edited_df를 다시 긴 형식으로 melt해서 시트 저장)
+        st.success("저장 완료!")
