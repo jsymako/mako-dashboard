@@ -5,7 +5,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 from datetime import datetime
 import time
-import os
 
 # =====================================================================
 # 🔑 [1] 쓰기/수정용 구글 시트 연결 (st.secrets 사용)
@@ -16,7 +15,7 @@ def get_worksheet_for_write(sheet_name):
     creds_dict = json.loads(st.secrets["gcp_service_account"])
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
-    doc = client.open("통합재고관리") # 대표님의 실제 스프레드시트 이름
+    doc = client.open("통합재고관리")
     return doc.worksheet(sheet_name)
 
 # =====================================================================
@@ -70,7 +69,7 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
         submit_btn = st.form_submit_button("💾 데이터 저장하기")
         
         if submit_btn:
-            sheet_c = get_worksheet_for_write("Containers") # 시트 쓰기 권한 가져오기
+            sheet_c = get_worksheet_for_write("Containers")
             final_inbound_str = str(inbound_d) if is_inbound_checked else ""
             
             if mode == "add":
@@ -93,19 +92,19 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
                     st.error("해당 컨테이너 정보를 찾을 수 없습니다.")
             
             time.sleep(1)
-            st.cache_data.clear() # 저장 후 캐시 비우기
+            st.cache_data.clear() 
             st.rerun()
 
 # =====================================================================
 # 🖥️ [3] 메인 실행 함수 (app.py와 호환)
 # =====================================================================
 def run(load_sheet_data):
-    # 🚀 공통 CSS 불러오기 강제 적용!
+    # 🚀 [1순위] 통합 공통 CSS 강제 로드 및 사이드바 동기화
     try:
         with open('style.css', encoding='utf-8') as f:
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    except Exception as e:
-        pass # 파일이 없으면 그냥 넘어감
+    except:
+        pass
 
     st.markdown("<h1>📦 입고 현황 (컨테이너 스케줄 관리)</h1>", unsafe_allow_html=True)
     st.info("💡 컨테이너별 발주, 출항, 입항 및 최종 입고 일정을 실시간으로 관리하고 수정하는 마스터 보드입니다.")
@@ -117,44 +116,36 @@ def run(load_sheet_data):
         st.error("🚨 구글 시트(Manufacturers 또는 Containers) 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
         return
 
-    # 🚀 [에러 해결 핵심] 구글 시트 헤더의 숨겨진 공백들을 모두 강제로 잘라냅니다.
+    # 🚀 [데이터 튜닝] 모든 헤더와 내부 글자들의 앞뒤 공백을 완벽히 제거합니다.
     if not df_m.empty:
         df_m.columns = df_m.columns.astype(str).str.strip()
+        for col in df_m.columns:
+            df_m[col] = df_m[col].astype(str).str.strip()
+            
     if not df_c.empty:
         df_c.columns = df_c.columns.astype(str).str.strip()
-
-    # 🚀 [안전장치] 만약 그래도 '제조사명' 열이 없다면 뻗지 않고 친절하게 안내합니다.
-    if not df_m.empty and '제조사명' not in df_m.columns:
-        st.error(f"🚨 'Manufacturers' 시트의 첫 번째 줄(헤더)에 '제조사명' 열이 없습니다.\n현재 있는 열: {', '.join(df_m.columns)}")
-        st.error("구글 시트를 열어서 첫 번째 줄에 '제조사ID'와 '제조사명'이 정확히 적혀있는지 확인해 주세요!")
-        return
-        
-    if not df_c.empty and '제조사ID' not in df_c.columns:
-        st.error(f"🚨 'Containers' 시트의 첫 번째 줄(헤더)에 '제조사ID' 열이 없습니다.\n현재 있는 열: {', '.join(df_c.columns)}")
-        return
-
-    # 데이터 정돈
-    if not df_c.empty and not df_m.empty:
-        df_c['제조사ID'] = df_c['제조사ID'].astype(str)
-        df_m['제조사ID'] = df_m['제조사ID'].astype(str)
-        df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
-        df_c = df_c.sort_values(by=['제조사ID', '차수'], ascending=[True, False])
-        
-    today_str = datetime.today().strftime("%Y-%m-%d")
+        for col in df_c.columns:
+            df_c[col] = df_c[col].astype(str).str.strip()
 
     # -----------------------------------------------------------------
-    # ⚙️ 3-1. 사이드바 UI
+    # ⚙️ 3-1. 사이드바 조회 조건 및 동기화 장치
     # -----------------------------------------------------------------
     st.sidebar.markdown("### 🔍 입고 조회 조건")
+    
+    # 🔄 [핵심 치트키] 구글 시트 강제 강제 동기화 버튼 배치
+    if st.sidebar.button("🔄 시트 데이터 즉시 새로고침", use_container_width=True):
+        st.cache_data.clear() # app.py의 10분 캐시를 완전히 파괴합니다.
+        st.rerun()
+        
+    st.sidebar.markdown("<br>", unsafe_allow_html=True)
     
     m_list = ["전체보기"]
     if not df_m.empty:
         m_list += list(df_m['제조사명'].unique())
         
     selected_m = st.sidebar.selectbox("🏭 제조사별 분류", m_list)
-    
-    st.sidebar.markdown("<br>", unsafe_allow_html=True)
     view_all_history = st.sidebar.checkbox("📂 모든 기록 보기", value=False, help="체크 해제 시 입고일이 미지정이거나 아직 지나지 않은 스케줄만 봅니다.")
+    
     st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
     
     if st.sidebar.button("✨ 신규 컨테이너 추가", use_container_width=True):
@@ -163,31 +154,41 @@ def run(load_sheet_data):
         else:
             container_form_dialog(mode="add", df_m=df_m)
 
+    # 🚀 [상태 진단] 구글 시트에 원본 데이터가 아예 비어있는지 체크
+    if df_c.empty or len(df_c) == 0:
+        st.warning("📅 구글 시트 'Containers' 탭에 등록된 원본 데이터가 아예 없습니다. 사이드바의 '신규 컨테이너 추가' 버튼을 눌러 첫 데이터를 넣어주십시오!")
+        return
+
+    # 데이터 타입 캐스팅 및 정렬
+    df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
+    df_c = df_c.sort_values(by=['제조사ID', '차수'], ascending=[True, False])
+    today_str = datetime.today().strftime("%Y-%m-%d")
+
     # -----------------------------------------------------------------
-    # 📝 3-2. 필터링 로직
+    # 📝 3-2. 필터링 엔진 작동
     # -----------------------------------------------------------------
     filtered_df = df_c.copy()
 
-    if not filtered_df.empty:
-        if selected_m != "전체보기":
-            target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
-            filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
+    # 조건 1. 제조사 분류
+    if selected_m != "전체보기":
+        target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
+        filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
 
-        if not view_all_history:
-            # 입고일이 공백이거나, 오늘 날짜 이상인 것만 필터링
-            filtered_df = filtered_df[
-                (filtered_df['입고일'] == "") | 
-                (filtered_df['입고일'].astype(str) >= today_str)
-            ]
+    # 조건 2. 진행중인 일정만 보기 (체크 해제 시)
+    if not view_all_history:
+        filtered_df = filtered_df[
+            (filtered_df['입고일'] == "") | 
+            (filtered_df['입고일'] >= today_str)
+        ]
 
-    # -----------------------------------------------------------------
-    # 🗂️ 3-3. 리스트 출력
-    # -----------------------------------------------------------------
+    # 🚀 [결과 출력 분기] 원본 데이터는 있으나 필터링 때문에 안 보이는 경우 안내
     if filtered_df.empty:
-        st.warning("조회 조건에 일치하는 수입 일정이 없습니다.")
+        st.warning("💡 이미 입고가 완료된 지난 기록들만 존재합니다. 과거 내역을 보시려면 사이드바의 [📂 모든 기록 보기]를 체크해 주십시오!")
         return
 
-    # 화면 표시를 위해 제조사명 Merge
+    # -----------------------------------------------------------------
+    # 🗂️ 3-3. 카드 레이아웃 렌더링
+    # -----------------------------------------------------------------
     display_df = pd.merge(filtered_df, df_m, on='제조사ID', how='left')
     grouped = display_df.groupby('제조사명')
 
@@ -209,7 +210,7 @@ def run(load_sheet_data):
                         <table style="width:100%; border:none; font-size:1.05rem;">
                             <tr>
                                 <td style="width:25%;"><b>차수:</b> {row['차수']}차</td>
-                                <td style="width:25%;"><b>사이즈:</b> <span style="background-color:#E2E8F0; padding:2px 6px; border-radius:4px;">{row.get('피트', '20FT')}</span></td>
+                                <td style="width:25%;"><b>사이즈:</b> <span style="background-color:#E2E8F0; padding:2px 6px; border-radius:4px;">{row.get('feet', row.get('피트', '20FT'))}</span></td>
                                 <td colspan="2">{status_html}</td>
                             </tr>
                             <tr style="color:#555555; font-size:0.95rem;">
