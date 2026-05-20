@@ -8,6 +8,12 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 def run(load_data_func):
+    try:
+        with open("style.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+        
     st.title("영업 실적")
 
     st.markdown("""
