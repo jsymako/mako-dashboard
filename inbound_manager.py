@@ -36,7 +36,7 @@ def safe_date_parse(date_str):
 # =====================================================================
 # 🚀 [2] 다이얼로그 팝업창 모음
 # =====================================================================
-@st.dialog("📦 컨테이너 정보 관리")
+# @st.dialog("📦 컨테이너 정보 관리")
 def container_form_dialog(mode="add", container_data=None, df_m=None):
     st.write(f"### {'신규 컨테이너 등록' if mode=='add' else '컨테이너 정보 수정'}")
     m_options = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
