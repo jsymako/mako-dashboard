@@ -144,23 +144,31 @@ def run(load_data_func):
                         # 🚀 display: inline-block;을 제거하여 좌우로 꽉 차는 시원한 헤더로 복구했습니다.
                         title_style = f"background-color: {status_color}; color: {text_color};"
                     
+                    # 🚀 [수정] 1. 예상소진주의 숫자와 단위를 HTML 태그로 완벽 분리
                     if row['예상소진주'] >= 96:
-                        combined_val = "2년이상"
+                        combined_html = '<span class="info-num">2</span><span class="info-unit">년이상</span>'
                     else:
                         weeks = row['예상소진주']
                         months = round(weeks / 4, 1)
                         
-                        # 10 이상이면 반올림하여 소수점 없는 정수로 변환, 미만이면 그대로(소수점 1자리)
                         str_weeks = f"{int(round(weeks))}" if weeks >= 10 else f"{weeks}"
                         str_months = f"{int(round(months))}" if months >= 10 else f"{months}"
                         
-                        combined_val = f"{str_weeks}주 · {str_months}달"
+                        combined_html = f'<span class="info-num">{str_weeks}</span><span class="info-unit">주</span> <span style="color:#ccc; font-size:0.9rem;">·</span> <span class="info-num">{str_months}</span><span class="info-unit">달</span>'
                     
+                    # 현재고 분리
                     stock_text = row['환산재고']
                     stock_parts = stock_text.split(' ')
                     stock_num = stock_parts[0]
                     stock_unit = stock_parts[1] if len(stock_parts) > 1 else ""
 
+                    # 🚀 [수정] 2. 주평균도 현재고처럼 숫자와 단위를 쪼갬
+                    avg_text = row['환산주평균']
+                    avg_parts = avg_text.split(' ')
+                    avg_num = avg_parts[0]
+                    avg_unit = avg_parts[1] if len(avg_parts) > 1 else ""
+
+                    # 🚀 [수정] 3. HTML 구조에 info-num과 info-unit 클래스 적용
                     card_html = f"""
                     <div class="item-card" style="{border_style}">
                         <div class="card-header">
@@ -177,11 +185,13 @@ def run(load_data_func):
                         <div class="card-body">
                             <div class="info-row">
                                 <span class="info-label">주평균</span>
-                                <span class="info-val">{row['환산주평균']}</span>
+                                <div>
+                                    <span class="info-num">{avg_num}</span><span class="info-unit">{avg_unit}</span>
+                                </div>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">예상</span>
-                                <span class="info-val">{combined_val}</span>
+                                <div>{combined_html}</div>
                             </div>
                         </div>
                     </div>
