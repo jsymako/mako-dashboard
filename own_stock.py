@@ -27,7 +27,7 @@ def run(load_data_func):
         update_time = df_own['업데이트 시간'].iloc[0] if '업데이트 시간' in df_own.columns and not df_own.empty else '정보 없음'
 
         # 2. 데이터 전처리
-        df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0).clip(lower=0)
+        df_own['현재재고'] = pd.to_numeric(df_own['현재재고'], errors='coerce').fillna(0)
         df_sales['수량'] = df_sales['수량'].astype(str).str.replace(',', '')
         df_sales['수량'] = pd.to_numeric(df_sales['수량'], errors='coerce').fillna(0)
         df_sales['일자'] = pd.to_datetime(df_sales['일자'], errors='coerce', yearfirst=True)
@@ -144,31 +144,42 @@ def run(load_data_func):
                         # 🚀 display: inline-block;을 제거하여 좌우로 꽉 차는 시원한 헤더로 복구했습니다.
                         title_style = f"background-color: {status_color}; color: {text_color};"
                     
-                    # 🚀 [수정] 1. 예상소진주의 숫자와 단위를 HTML 태그로 완벽 분리
+                    # 🚀 [수정] 1. 예상소진주: 불필요한 .0 소수점 제거 로직 적용
                     if row['예상소진주'] >= 96:
                         combined_html = '<span class="info-num">2</span><span class="info-unit">년이상</span>'
                     else:
                         weeks = row['예상소진주']
                         months = round(weeks / 4, 1)
                         
-                        str_weeks = f"{int(round(weeks))}" if weeks >= 10 else f"{weeks}"
-                        str_months = f"{int(round(months))}" if months >= 10 else f"{months}"
+                        # 10주 미만일 때, 딱 떨어지는 정수면(예: 7.0) 소수점 제거, 아니면 소수점 1자리(예: 7.5) 유지
+                        if weeks >= 10:
+                            str_weeks = f"{int(round(weeks))}"
+                        else:
+                            str_weeks = f"{int(weeks)}" if weeks == int(weeks) else f"{round(weeks, 1)}"
+                            
+                        if months >= 10:
+                            str_months = f"{int(round(months))}"
+                        else:
+                            str_months = f"{int(months)}" if months == int(months) else f"{round(months, 1)}"
                         
-                        combined_html = f'<span class="info-num">{str_weeks}</span><span class="info-unit">주</span> <span style="color:#5b5959; font-size:1.5rem;">·</span> <span class="info-num">{str_months}</span><span class="info-unit">달</span>'
+                        combined_html = f'<span class="info-num">{str_weeks}</span><span class="info-unit">주</span> <span style="color:#ccc; font-size:0.9rem;">·</span> <span class="info-num">{str_months}</span><span class="info-unit">달</span>'
                     
-                    # 현재고 분리
-                    stock_text = row['환산재고']
+                    # 🚀 [수정] 2. 현재고: ".0" 꼬리표 강제 절삭
+                    stock_text = str(row['환산재고'])
                     stock_parts = stock_text.split(' ')
                     stock_num = stock_parts[0]
+                    if stock_num.endswith('.0'): 
+                        stock_num = stock_num[:-2] # '.0' 지우기
                     stock_unit = stock_parts[1] if len(stock_parts) > 1 else ""
 
-                    # 🚀 [수정] 2. 주평균도 현재고처럼 숫자와 단위를 쪼갬
-                    avg_text = row['환산주평균']
+                    # 🚀 [수정] 3. 주평균: ".0" 꼬리표 강제 절삭
+                    avg_text = str(row['환산주평균'])
                     avg_parts = avg_text.split(' ')
                     avg_num = avg_parts[0]
+                    if avg_num.endswith('.0'): 
+                        avg_num = avg_num[:-2] # '.0' 지우기
                     avg_unit = avg_parts[1] if len(avg_parts) > 1 else ""
 
-                    # 🚀 [수정] 3. HTML 구조에 info-num과 info-unit 클래스 적용
                     card_html = f"""
                     <div class="item-card" style="{border_style}">
                         <div class="card-header">
