@@ -82,10 +82,10 @@ def run(load_sheet_data):
         curr_range = f"({curr_mon.strftime('%m/%d')}~{(curr_mon+timedelta(days=4)).strftime('%m/%d')})"
         
         if i > 1:
-            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'{i}주전 할일<br><span style="font-size:0.8em; color:gray;">{last_range}</span>'})
+            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'{i}주전 한일<br><span style="font-size:0.8em; color:gray;">{last_range}</span>'})
             rows_map.append({'db_week': curr_week_str, 'db_cat': '결과', 'display_cat': f'{i}주전 결과'})
         else:
-            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'저번주 할일<br><span style="font-size:0.8em; color:gray;">{last_range}</span>'})
+            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'저번주 한일<br><span style="font-size:0.8em; color:gray;">{last_range}</span>'})
             rows_map.append({'db_week': curr_week_str, 'db_cat': '결과', 'display_cat': '결과'})
             rows_map.append({'db_week': curr_week_str, 'db_cat': '이번주 할일', 'display_cat': f'이번주 할일<br><span style="font-size:0.8em; color:gray;">{curr_range}</span>'})
 
