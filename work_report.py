@@ -102,7 +102,7 @@ def run(load_sheet_data):
         
         all_edited_data[emp_name] = {}
         
-        header_cols = st.columns([1.5, 2, 2, 2, 2, 2])
+        header_cols = st.columns([1.2, 2, 2, 2, 2, 2])
         header_cols[0].markdown("<div style='text-align:center; font-size: 1.2rem; color: #2E86C1; padding:10px 0;'>구분</div>", unsafe_allow_html=True)
         for idx, day in enumerate(['월', '화', '수', '목', '금']):
             header_cols[idx+1].markdown(f"<div style='text-align:center; font-size: 1.2rem; color: #2E86C1; padding:10px 0;'>{day}</div>", unsafe_allow_html=True)
