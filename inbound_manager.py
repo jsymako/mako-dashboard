@@ -173,11 +173,11 @@ def run(load_sheet_data):
 
 
         
-    st.sidebar.markdown("<br>", unsafe_allow_html=True)
+    #st.sidebar.markdown("<br>", unsafe_allow_html=True)
     m_list = ["전체보기"] + m_order
     selected_m = st.sidebar.selectbox("제조사별 분류", m_list)
     view_all_history = st.sidebar.checkbox("모든 기록 보기", value=False)
-    st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
+    #st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
     
     if st.sidebar.button("신규 컨테이너 추가", use_container_width=True):
         container_form_dialog(mode="add", df_m=df_m)
