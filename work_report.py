@@ -98,7 +98,7 @@ def run(load_sheet_data):
             emp_data_dict[(str(row['보고일자']).strip(), str(row['분류']).strip(), str(row['요일']).strip())] = row['내용']
 
         st.markdown(f"---")
-        st.subheader(f"👤 {emp_name} 님 - {selected_week_label}")
+        st.subheader(f"👤 {emp_name} | {selected_week_label}")
         
         all_edited_data[emp_name] = {}
         
