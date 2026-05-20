@@ -154,7 +154,7 @@ def run(load_data_func):
                         str_weeks = f"{int(round(weeks))}" if weeks >= 10 else f"{weeks}"
                         str_months = f"{int(round(months))}" if months >= 10 else f"{months}"
                         
-                        combined_html = f'<span class="info-num">{str_weeks}</span><span class="info-unit">주</span> <span style="color:#ddd; font-size:1.5rem;">·</span> <span class="info-num">{str_months}</span><span class="info-unit">달</span>'
+                        combined_html = f'<span class="info-num">{str_weeks}</span><span class="info-unit">주</span> <span style="color:#5b5959; font-size:1.5rem;">·</span> <span class="info-num">{str_months}</span><span class="info-unit">달</span>'
                     
                     # 현재고 분리
                     stock_text = row['환산재고']
