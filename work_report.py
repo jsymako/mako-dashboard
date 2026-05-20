@@ -64,8 +64,8 @@ def run(load_sheet_data):
     target_week = week_options[selected_week_label]
     monday = datetime.strptime(target_week, "%Y-%m-%d")
 
-    st.sidebar.markdown("### 🔍 조회 범위")
-    history_weeks = st.sidebar.slider("과거 기록 함께 보기 (주)", min_value=1, max_value=5, value=1)
+    #st.sidebar.markdown("### 🔍 조회 범위")
+    history_weeks = st.sidebar.slider("조회 범위", min_value=1, max_value=5, value=1)
 
     emp_names = ["전체"] + df_emp['성명'].tolist()
     selected_emp = st.sidebar.selectbox("직원 선택", emp_names)
