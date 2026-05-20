@@ -38,7 +38,7 @@ def safe_date_parse(date_str):
 # =====================================================================
 @st.dialog("📦 컨테이너 정보 관리")
 def container_form_dialog(mode="add", container_data=None, df_m=None):
-    st.write(f"### {'✨ 신규 컨테이너 등록' if mode=='add' else '📝 컨테이너 정보 수정'}")
+    st.write(f"### {'신규 컨테이너 등록' if mode=='add' else '📝 컨테이너 정보 수정'}")
     m_options = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
     
     with st.form("container_form", clear_on_submit=True):
@@ -171,15 +171,15 @@ def run(load_sheet_data):
         for m in df_m['제조사명'].tolist():
             if m not in m_order: m_order.append(m)
 
-    st.sidebar.markdown("### 🔍 입고 조회 조건")
-    if st.sidebar.button("🔄 시트 데이터 즉시 새로고침", use_container_width=True):
+    # st.sidebar.markdown("### 🔍 입고 조회 조건")
+    if st.sidebar.button("시트 데이터 새로고침", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
         
     st.sidebar.markdown("<br>", unsafe_allow_html=True)
     m_list = ["전체보기"] + m_order
-    selected_m = st.sidebar.selectbox("🏭 제조사별 분류", m_list)
-    view_all_history = st.sidebar.checkbox("📂 모든 기록 보기", value=False)
+    selected_m = st.sidebar.selectbox("제조사별 분류", m_list)
+    view_all_history = st.sidebar.checkbox("모든 기록 보기", value=False)
     st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
     
     if st.sidebar.button("✨ 신규 컨테이너 추가", use_container_width=True):
