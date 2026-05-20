@@ -150,11 +150,13 @@ def run(load_sheet_data):
             p_lines += 1 + (len(line) // 80) # 펜딩은 폭이 넓으므로 80자 기준
         p_height = max(120, p_lines * 28 + 20)
         
-        #st.markdown("<br>펜딩 사항", unsafe_allow_html=True)
-        pending_input = st.text_area("펜딩 업무", value=pending_text, key=f"pending_{emp_name}", height=p_height)
-        all_pending_inputs[emp_name] = pending_input
+        # 🚀 [수정] 1. 스트림릿 기본 라벨을 숨기고, 폰트 크기를 키운 커스텀 라벨(마크다운) 적용
+        st.markdown("<div style='font-size: 1.1rem; font-weight: bold; color: #333333; margin-top: 15px; margin-bottom: 5px;'>📌 펜딩 업무</div>", unsafe_allow_html=True)
         
-        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+        # 🚀 [수정] 2. label_visibility="collapsed"로 기본 라벨 영역을 삭제하여 위아래 여백 압축
+        pending_input = st.text_area("hidden_pending", value=pending_text, key=f"pending_{emp_name}", label_visibility="collapsed", height=p_height)
+        
+        # (기존에 있던 margin-bottom 10px 띄어쓰기 코드는 삭제했습니다)
 
         # -----------------------------------------------------------------
         # 💾 일괄 통합 저장 로직 (직원 섹션별 버튼 배치)
