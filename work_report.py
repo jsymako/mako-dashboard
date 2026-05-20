@@ -38,7 +38,7 @@ def run(load_sheet_data):
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except: pass
         
-    st.markdown("<h1>📝 주간 업무 보고 시스템</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>업무 보고</h1>", unsafe_allow_html=True)
     
     df_emp = load_sheet_data("Employees")
     df_report = load_sheet_data("WorkReports")
