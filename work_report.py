@@ -40,6 +40,9 @@ def run(load_sheet_data):
     
     target_employees = df_emp['성명'].tolist() if selected_emp == "전체" else [selected_emp]
 
+    # 🚀 [핵심 추가] 각 직원의 '완성된 표'를 임시 저장할 저장소 생성
+    all_edited_dfs = {}
+
     # 직원별 순회
     for emp_name in target_employees:
         target_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
@@ -63,40 +66,37 @@ def run(load_sheet_data):
 
         st.markdown(f"---")
         st.subheader(f"👤 {emp_name} 님 ({target_week} 주차)")
-        st.data_editor(pivot_df, use_container_width=True, key=f"editor_{emp_name}_{target_week}")
+        
+        # 🚀 [핵심 수정] 에디터의 리턴값(완벽한 DataFrame)을 변수에 직접 저장!
+        edited_df = st.data_editor(pivot_df, use_container_width=True, key=f"editor_{emp_name}_{target_week}")
+        all_edited_dfs[emp_name] = edited_df
 
-    # 기존 if st.button("💾 모든 변경사항 저장"): 부분을 아래로 교체하세요
-    if st.button("💾 모든 변경사항 저장"):
+    # -----------------------------------------------------------------
+    # 저장 버튼 로직
+    # -----------------------------------------------------------------
+    if st.button("💾 모든 변경사항 저장", use_container_width=True):
         with st.spinner("구글 시트에 저장 중..."):
             try:
                 sheet_r = get_worksheet_for_write("WorkReports")
+                new_rows = [] # 데이터를 한 번에 모아서 쏘기 위한 리스트
                 
                 for emp_name in target_employees:
-                    # 1. 🚀 [핵심] st.data_editor에서 나온 raw 데이터를 가져옴
-                    raw_data = st.session_state.get(f"editor_{emp_name}_{target_week}")
-                    if raw_data is None: continue
-                    
-                    # 2. 💡 dict 형태를 명확히 데이터프레임으로 재구성 (에러 원천 차단)
-                    edited_df = pd.DataFrame(raw_data)
-                    
+                    # 🚀 [핵심 수정] 저장해둔 완벽한 DataFrame을 그대로 가져옴 (에러 원천 차단)
+                    final_df = all_edited_dfs.get(emp_name)
                     target_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
 
-                    # 3. 데이터 저장 (List of Lists 형태로 수동 구성)
-                    new_rows = []
-                    # cat_order는 위에서 정의한 ['저번주 할일', '결과', '이번주 할일']
                     for i, cat in enumerate(cat_order):
                         for day in day_order:
-                            # 괄호와 날짜 제거하여 깨끗한 분류값 추출
                             clean_cat = cat.split(' (')[0]
                             
-                            # 🚀 [수정] 데이터프레임의 위치(iloc) 기반으로 안전하게 값 추출
-                            content = str(edited_df.iloc[i][day])
+                            # DataFrame에서 행(i), 열(day) 데이터를 안전하게 추출
+                            content = str(final_df.iloc[i][day])
                             
                             new_row = [f"{emp_name}_{target_week}_{clean_cat}_{day}", target_id, target_week, day, clean_cat, content]
                             new_rows.append(new_row)
-                    
-                    # 4. 시트에 추가
-                    sheet_r.append_rows(new_rows)
+                
+                # 시트에 한 번에 추가 (속도 최적화)
+                sheet_r.append_rows(new_rows)
                 
                 st.success("✅ 저장 완료!")
                 time.sleep(1)
