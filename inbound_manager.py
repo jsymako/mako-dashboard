@@ -208,7 +208,7 @@ def run(load_sheet_data):
             for m_name in m_order:
                 group = display_df[display_df['제조사명'] == m_name]
                 if not group.empty:
-                    st.markdown(f"## 🚢 {m_name} 스케줄")
+                    st.markdown(f"##{m_name} 스케줄")
                     for _, row in group.iterrows():
                         ord_dt = str(row.get('발주일', '')).strip()
                         dep_dt = str(row.get('출항일', '')).strip()
