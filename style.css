@@ -177,3 +177,30 @@ div[data-baseweb="popover"] ::-webkit-scrollbar-thumb:hover { background-color: 
 .traffic-light { font-size: 1.4rem !important; margin-right: 5px !important; vertical-align: middle !important; }
 .data-column b { font-size: 1.4rem !important; font-weight: 600 !important; color: #333333 !important; vertical-align: middle !important; }
 .graph-title { font-size: 1.1rem !important; color: #000000 !important; text-align: center !important; font-weight: 600 !important; margin-bottom: 10px !important; }
+
+/* =====================================================================
+   [7] 🚀 전체 화면 상단 여백 및 투명 공백 완벽 제거
+===================================================================== */
+/* 1. 스트림릿 기본 상단 헤더(투명한 빈 영역) 축소 */
+header[data-testid="stHeader"] {
+    height: 0px !important;
+    min-height: 0px !important;
+    padding: 0px !important;
+}
+
+/* 2. 메인 화면(블록 컨테이너)의 무식한 기본 상단 패딩 제거 */
+.block-container {
+    padding-top: 1.5rem !important; /* 기존 약 6rem(96px) -> 1.5rem(24px)로 대폭 축소 */
+    padding-bottom: 1rem !important;
+    margin-top: 0px !important;
+}
+
+/* 3. CSS나 HTML을 주입할 때 생기는 '투명한 유령 여백' 강제 삭제 */
+div[data-testid="stVerticalBlock"] > div.element-container:has(style),
+div[data-testid="stVerticalBlock"] > div.element-container:has(script),
+div[data-testid="stMarkdownContainer"] > p:empty {
+    display: none !important;
+    height: 0px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
