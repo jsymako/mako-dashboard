@@ -57,7 +57,7 @@ st.markdown("""
         background-color: #1E212B !important;
         min-width: 200px !important;
         max-width: 200px !important;
-        padding-top: 0px !important; /* 🚀 최상단 여백 0으로 완전 제거 */
+        padding-top: 50px !important; /* 🚀 최상단 여백 0으로 완전 제거 */
     }
     
     /* 🚀 [범인 검거] 캡처해주신 160x60 사이즈의 투명한 사이드바 헤더 영역 완전히 박살내기 */
