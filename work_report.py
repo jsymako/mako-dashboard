@@ -33,6 +33,11 @@ def get_week_info(date_obj):
 
 # 2. 메인 실행 함수
 def run(load_sheet_data):
+    try:
+        with open('style.css', encoding='utf-8') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except: pass
+        
     st.markdown("<h1>📝 주간 업무 보고 시스템</h1>", unsafe_allow_html=True)
     
     df_emp = load_sheet_data("Employees")
