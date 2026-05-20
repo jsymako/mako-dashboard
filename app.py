@@ -8,7 +8,6 @@ import datetime
 import holidays 
 
 
-
 import own_stock
 import coupang_stock
 import sales_trend
