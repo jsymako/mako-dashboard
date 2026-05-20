@@ -146,7 +146,7 @@ def run(load_sheet_data):
     # -----------------------------------------------------------------
     # 파트 A: 컨테이너 입고 현황 
     # -----------------------------------------------------------------
-    st.markdown("<h1>📦 입고 현황 (컨테이너 스케줄 관리)</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>입고 현황</h1>", unsafe_allow_html=True)
     
     df_m = load_sheet_data("Manufacturers")
     df_c = load_sheet_data("Containers")
