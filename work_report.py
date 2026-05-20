@@ -66,7 +66,6 @@ def run(load_sheet_data):
     selected_emp = st.sidebar.selectbox("직원 선택", emp_names)
     target_employees = df_emp['성명'].tolist() if selected_emp == "전체" else [selected_emp]
 
-    # 🚀 [변경] 에디터 객체 대신 각 칸의 텍스트를 저장할 딕셔너리
     all_edited_data = {}
     all_pending_inputs = {}
 
@@ -100,40 +99,56 @@ def run(load_sheet_data):
         
         all_edited_data[emp_name] = {}
         
-        # 🚀 [핵심 개선] st.columns를 이용한 커스텀 텍스트 매트릭스 UI 생성
-        # 헤더(요일) 출력
         header_cols = st.columns([1.5, 2, 2, 2, 2, 2])
         header_cols[0].markdown("<div style='text-align:center; font-weight:bold; padding:10px 0;'>구분</div>", unsafe_allow_html=True)
         for idx, day in enumerate(['월', '화', '수', '목', '금']):
             header_cols[idx+1].markdown(f"<div style='text-align:center; font-weight:bold; padding:10px 0;'>{day}</div>", unsafe_allow_html=True)
 
-        # 각 데이터 행(Row) 출력
         for r in rows_map:
             cols = st.columns([1.5, 2, 2, 2, 2, 2])
             
-            # 1. 구분(카테고리) 라벨 표시
-            cols[0].markdown(f"<div style='padding-top:20px; font-weight:bold;'>{r['display_cat']}</div>", unsafe_allow_html=True)
-            
-            # 2. 월~금 텍스트 입력칸 (st.text_area)
-            for idx, day in enumerate(['월', '화', '수', '목', '금']):
+            # 🚀 [동적 높이 계산 1단계] 해당 행(Row)의 데이터들을 먼저 가져옴
+            row_vals = []
+            for day in ['월', '화', '수', '목', '금']:
                 val = emp_data_dict.get((r['db_week'], r['db_cat'], day), "")
-                
-                # 자동 이월 로직
                 if val == "" and r['db_cat'] == '저번주 할일':
                     prev_w = (datetime.strptime(r['db_week'], "%Y-%m-%d") - timedelta(weeks=1)).strftime("%Y-%m-%d")
                     val = emp_data_dict.get((prev_w, '이번주 할일', day), "")
+                row_vals.append(val)
                 
-                # 🚀 높이가 넉넉한 text_area로 구현 (Shift 없이 그냥 Enter로 줄바꿈!)
+            # 🚀 [동적 높이 계산 2단계] 가장 내용이 많은 칸을 기준으로 줄 수(Lines) 계산
+            max_lines = 3  # 최소 높이(3줄) 보장
+            for v in row_vals:
+                lines = 0
+                for line in v.split('\n'):
+                    # 약 15글자마다 줄바꿈이 발생한다고 추정
+                    lines += 1 + (len(line) // 15)
+                if lines > max_lines: 
+                    max_lines = lines
+                    
+            row_height = max_lines * 28 + 20 # 1줄당 28픽셀 기준
+            
+            # 카테고리 이름 수직 중앙 정렬 처리
+            pad_top = max(10, row_height // 2 - 20)
+            cols[0].markdown(f"<div style='padding-top:{pad_top}px; font-weight:bold;'>{r['display_cat']}</div>", unsafe_allow_html=True)
+            
+            # 계산된 최대 높이(row_height)를 5개의 요일에 동일하게 적용
+            for idx, day in enumerate(['월', '화', '수', '목', '금']):
+                val = row_vals[idx]
                 ta_key = f"ta_{emp_name}_{r['db_week']}_{r['db_cat']}_{day}"
-                new_val = cols[idx+1].text_area("hidden", value=val, key=ta_key, label_visibility="collapsed", height=100)
-                
-                # 입력된 값을 저장용 딕셔너리에 보관
+                new_val = cols[idx+1].text_area("hidden", value=val, key=ta_key, label_visibility="collapsed", height=row_height)
                 all_edited_data[emp_name][(r['db_week'], r['db_cat'], day)] = new_val
 
-        # 펜딩 업무 영역
+        # 🚀 펜딩 업무 영역 (동적 높이 계산 독립 적용)
         pending_text = emp_data_dict.get(('PENDING', '펜딩 업무', '공통'), "")
+        
+        p_lines = 0
+        for line in pending_text.split('\n'):
+            p_lines += 1 + (len(line) // 80) # 펜딩은 폭이 넓으므로 80자 기준
+        p_height = max(120, p_lines * 28 + 20)
+        
         st.markdown("<br>##### 📌 펜딩 업무 (상시)", unsafe_allow_html=True)
-        pending_input = st.text_area("앞으로 해야 할 일 (자유롭게 엔터 사용 가능)", value=pending_text, key=f"pending_{emp_name}", height=120)
+        pending_input = st.text_area("앞으로 해야 할 일 (자유롭게 엔터 사용 가능)", value=pending_text, key=f"pending_{emp_name}", height=p_height)
         all_pending_inputs[emp_name] = pending_input
 
     # -----------------------------------------------------------------
@@ -162,12 +177,10 @@ def run(load_sheet_data):
                     emp_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
                     emp_edited_data = all_edited_data[emp_name]
 
-                    # 🚀 커스텀 그리드 데이터 수집
                     for (db_w, db_c, day), content in emp_edited_data.items():
                         if content.strip() != "":
                             new_rows.append([f"{emp_id}_{db_w}_{db_c}_{day}", emp_id, db_w, day, db_c, content])
                     
-                    # 펜딩 데이터 수집
                     p_text = all_pending_inputs[emp_name]
                     if p_text.strip() != "":
                         new_rows.append([f"{emp_id}_PENDING_공통", emp_id, 'PENDING', '공통', '펜딩 업무', p_text])
