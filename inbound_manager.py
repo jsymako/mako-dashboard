@@ -171,10 +171,7 @@ def run(load_sheet_data):
         for m in df_m['제조사명'].tolist():
             if m not in m_order: m_order.append(m)
 
-    # st.sidebar.markdown("### 🔍 입고 조회 조건")
-    if st.sidebar.button("시트 데이터 새로고침", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
+
         
     st.sidebar.markdown("<br>", unsafe_allow_html=True)
     m_list = ["전체보기"] + m_order
@@ -184,6 +181,11 @@ def run(load_sheet_data):
     
     if st.sidebar.button("신규 컨테이너 추가", use_container_width=True):
         container_form_dialog(mode="add", df_m=df_m)
+
+    # st.sidebar.markdown("### 🔍 입고 조회 조건")
+    if st.sidebar.button("시트 데이터 새로고침", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
 
     if not df_c.empty:
         df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
