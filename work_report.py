@@ -161,8 +161,8 @@ def run(load_sheet_data):
         # -----------------------------------------------------------------
         # 💾 일괄 통합 저장 로직 (직원 섹션별 버튼 배치)
         # -----------------------------------------------------------------
-        if st.button("💾 모든 변경사항 저장", key=f"save_btn_{emp_name}", use_container_width=True):
-            with st.spinner("구글 시트에 동기화 중..."):
+        if st.button("💾 변경사항 저장", key=f"save_btn_{emp_name}", use_container_width=True):
+            with st.spinner("데이터베이스에 저장 중..."):
                 try:
                     sheet_r = get_worksheet_for_write("WorkReports")
                     all_values = sheet_r.get_all_values()
@@ -200,7 +200,7 @@ def run(load_sheet_data):
                     sheet_r.clear()
                     sheet_r.append_rows(rows_to_keep + new_rows)
                     
-                    st.success("✅ 저장되었습니다!")
+                    st.success("저장되었습니다!")
                     time.sleep(1)
                     st.cache_data.clear()
                     st.rerun()
