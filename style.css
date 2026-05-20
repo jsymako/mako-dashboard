@@ -159,9 +159,25 @@ div[data-baseweb="popover"] ::-webkit-scrollbar-thumb:hover { background-color: 
 .stock-unit { font-size: 1.1rem; font-weight: 400; color: #000000; margin-left: 4px; }
 .card-divider { display: none; }
 .card-body { flex-grow: 1; }
-.info-row { display: flex; justify-content: space-between; margin-top: 5px; font-size: 1.1rem; }
+/* align-items: baseline; 을 추가해 글자가 커져도 바닥선이 예쁘게 정렬되도록 세팅 */
+.info-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-size: 1.1rem; }
 .info-label { font-size: 1rem; color: #777; }
-.info-val { font-weight: 700 !important; }
+
+/* 🚀 [추가] 주평균/예상 숫자 전용 강조 스타일 (크고 굵게, 숫자 전용 폰트) */
+.stApp .item-card span.info-num { 
+    font-family: 'Abel', sans-serif !important; 
+    font-size: 1.45rem !important; 
+    font-weight: 800 !important; 
+    color: #111111; 
+    letter-spacing: -0.5px; 
+}
+/* 🚀 [추가] 주평균/예상 단위 전용 스타일 (작고 얇게) */
+.stApp .item-card span.info-unit { 
+    font-size: 1.0rem; 
+    font-weight: 400; 
+    color: #333333; 
+    margin-left: 3px; 
+}
 
 
 /* =====================================================================
