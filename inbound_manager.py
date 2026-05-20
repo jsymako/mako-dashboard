@@ -36,7 +36,7 @@ def safe_date_parse(date_str):
 # =====================================================================
 # 🚀 [2] 다이얼로그 팝업창 모음
 # =====================================================================
-@st.dialog("📦 컨테이너 정보 관리")
+@st.dialog("컨테이너 정보 관리")
 def container_form_dialog(mode="add", container_data=None, df_m=None):
     st.write(f"### {'신규 컨테이너 등록' if mode=='add' else '컨테이너 정보 수정'}")
     m_options = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
@@ -259,7 +259,7 @@ def run(load_sheet_data):
     
     col_title, col_add_btn = st.columns([5, 1])
     with col_title:
-        st.markdown("<h2>사료 현물검정 예정일 현황</h2>", unsafe_allow_html=True)
+        st.markdown("<h2>현물검정 현황</h2>", unsafe_allow_html=True)
     with col_add_btn:
         st.markdown("<div style='padding-top:10px;'></div>", unsafe_allow_html=True)
         if st.button("신규 검정 등록", key="add_new_inspection", use_container_width=True):
