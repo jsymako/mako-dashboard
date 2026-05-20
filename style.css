@@ -204,3 +204,23 @@ div[data-testid="stMarkdownContainer"] > p:empty {
     margin: 0px !important;
     padding: 0px !important;
 }
+
+/* =====================================================================
+   [8] 📅 팝업(Dialog) 및 메인 화면 날짜 입력창 글자색(흰색 현상) 수정
+===================================================================== */
+/* 팝업창 및 메인 화면 내부의 달력 입력칸 글씨를 진한 색상으로 강제 지정 */
+div[role="dialog"] .stDateInput input,
+div[data-testid="stDialog"] .stDateInput input,
+.block-container .stDateInput input {
+    color: #111111 !important;
+    -webkit-text-fill-color: #111111 !important;
+    font-weight: 600 !important;
+}
+
+/* YYYY/MM/DD 처럼 비어있을 때 나오는 안내 문구(Placeholder) 색상도 보기 좋게 조정 */
+div[role="dialog"] .stDateInput input::placeholder,
+div[data-testid="stDialog"] .stDateInput input::placeholder {
+    color: #95A5A6 !important;
+    -webkit-text-fill-color: #95A5A6 !important;
+    font-weight: 400 !important;
+}
