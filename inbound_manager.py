@@ -183,7 +183,7 @@ def run(load_sheet_data):
         container_form_dialog(mode="add", df_m=df_m)
 
     # st.sidebar.markdown("### 🔍 입고 조회 조건")
-    if st.sidebar.button("시트 데이터 새로고침", use_container_width=True):
+    if st.sidebar.button("데이터 새로고침", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
