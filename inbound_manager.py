@@ -38,7 +38,7 @@ def safe_date_parse(date_str):
 # =====================================================================
 @st.dialog("📦 컨테이너 정보 관리")
 def container_form_dialog(mode="add", container_data=None, df_m=None):
-    st.write(f"### {'신규 컨테이너 등록' if mode=='add' else '📝 컨테이너 정보 수정'}")
+    st.write(f"### {'신규 컨테이너 등록' if mode=='add' else '컨테이너 정보 수정'}")
     m_options = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
     
     with st.form("container_form", clear_on_submit=True):
@@ -98,7 +98,7 @@ def container_form_dialog(mode="add", container_data=None, df_m=None):
 
 @st.dialog("🔍 현물검정 정보 관리")
 def inspection_form_dialog(mode="add", insp_data=None):
-    st.write(f"### {'✨ 신규 현물검정 제품 등록' if mode=='add' else '📝 현물검정 정보 수정'}")
+    st.write(f"### {'신규 현물검정 제품 등록' if mode=='add' else '현물검정 정보 수정'}")
     
     with st.form("inspection_form", clear_on_submit=True):
         feed_name = st.text_input("사료의 명칭", value=str(insp_data.get('사료명칭', '')) if mode=='edit' else "")
@@ -182,7 +182,7 @@ def run(load_sheet_data):
     view_all_history = st.sidebar.checkbox("모든 기록 보기", value=False)
     st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
     
-    if st.sidebar.button("✨ 신규 컨테이너 추가", use_container_width=True):
+    if st.sidebar.button("신규 컨테이너 추가", use_container_width=True):
         container_form_dialog(mode="add", df_m=df_m)
 
     if not df_c.empty:
@@ -215,10 +215,10 @@ def run(load_sheet_data):
 
                         if inb_dt:
                             if inb_dt < today_str: status_html = f"<span style='color:#2ECC71; font-weight:bold;'>[✅ 입고 완료]</span>"
-                            else: status_html = f"<span style='color:#E67E22; font-weight:bold;'>[⏳ 입고 대기중]</span>"
-                        elif arr_dt: status_html = f"<span style='color:#3498DB; font-weight:bold;'>[🛬 입항 대기중]</span>"
-                        elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[🚢 출항 대기중]</span>"
-                        else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[🛠️ 준비 중]</span>"
+                            else: status_html = f"<span style='color:#E67E22; font-weight:bold;'>[입고 대기중]</span>"
+                        elif arr_dt: status_html = f"<span style='color:#3498DB; font-weight:bold;'>[입항 대기중]</span>"
+                        elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[출항 대기중]</span>"
+                        else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[준비 중]</span>"
                         
                         # 🚀 [수정] 표 하단 여백 박멸은 유지하되, 버튼이 표 아래에 풀사이즈로 매끄럽게 붙도록 재구성했습니다.
                         container_html = f"""
@@ -230,10 +230,10 @@ def run(load_sheet_data):
                                     <td colspan="2" style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0;">{status_html}</td>
                                 </tr>
                                 <tr style="color:#555555; font-size: 0.95rem;">
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">📦 <b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">🛬 <b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">🚢 <b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
-                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;">📅 <b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;"><b>입고일:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;"><b>입항일:</b> {arr_dt if arr_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;"><b>출항일:</b> {dep_dt if dep_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
+                                    <td style="padding: 10px 15px; border-bottom: 1px solid #E2E8F0;"><b>발주일:</b> {ord_dt if ord_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
                                 </tr>
                                 <tr style="font-size: 1.05rem;">
                                     <td colspan="4" style="padding: 12px 15px; color:#2C3E50; border-bottom: none;">📝 <b>적요:</b> {row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
@@ -246,7 +246,7 @@ def run(load_sheet_data):
                             st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
                             
                             # 🚀 [수정] 우측으로 빠졌던 버튼을 다시 원래대로 시원한 가로형으로 되돌렸습니다.
-                            if st.button("⚙️ 이 컨테이너 정보 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
+                            if st.button("이 컨테이너 정보 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
                                 container_form_dialog(mode="edit", container_data=row, df_m=df_m)
                             
                             # 🚀 [수정] 버튼 바로 아래에 35px 넉넉한 띄어쓰기를 주어 카드끼리 엉겨붙지 않게 차단했습니다.
@@ -259,10 +259,10 @@ def run(load_sheet_data):
     
     col_title, col_add_btn = st.columns([5, 1])
     with col_title:
-        st.markdown("<h2>🔍 사료 현물검정 예정일 현황</h2>", unsafe_allow_html=True)
+        st.markdown("<h2>사료 현물검정 예정일 현황</h2>", unsafe_allow_html=True)
     with col_add_btn:
         st.markdown("<div style='padding-top:10px;'></div>", unsafe_allow_html=True)
-        if st.button("✨ 신규 검정 등록", key="add_new_inspection", use_container_width=True):
+        if st.button("신규 검정 등록", key="add_new_inspection", use_container_width=True):
             inspection_form_dialog(mode="add")
 
     if df_i is None or df_i.empty:
