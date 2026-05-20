@@ -307,7 +307,7 @@ def run(load_sheet_data):
 
     df_calc = pd.DataFrame(calc_rows).sort_values(by='sort_key', ascending=True)
 
-    col_ratios = [1.5, 1.2, 1.4, 1.1, 1.1, 1.1, 0.8, 0.8, 0.8]
+    col_ratios = [1.4, 1.7, 1.7, 1.0, 1.1, 1.1, 0.6, 0.6, 0.6]
 
     st.markdown("<div style='border-top: 3px solid #2E86C1; background-color: #F8F9FA; border-radius: 4px 4px 0 0;'>", unsafe_allow_html=True)
     hcols = st.columns(col_ratios)
