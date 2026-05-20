@@ -59,7 +59,6 @@ def run(load_sheet_data):
     target_week = week_options[selected_week_label]
     monday = datetime.strptime(target_week, "%Y-%m-%d")
 
-    # 🚀 [추가] 과거 기록 조회 슬라이더
     st.sidebar.markdown("### 🔍 조회 범위")
     history_weeks = st.sidebar.slider("과거 기록 함께 보기 (주)", min_value=1, max_value=5, value=1)
 
@@ -67,10 +66,10 @@ def run(load_sheet_data):
     selected_emp = st.sidebar.selectbox("직원 선택", emp_names)
     target_employees = df_emp['성명'].tolist() if selected_emp == "전체" else [selected_emp]
 
-    all_edited_dfs = {}
+    # 🚀 [변경] 에디터 객체 대신 각 칸의 텍스트를 저장할 딕셔너리
+    all_edited_data = {}
     all_pending_inputs = {}
 
-    # --- 테이블 행(Row) 맵핑 동적 생성 ---
     rows_map = []
     for i in range(history_weeks, 0, -1):
         curr_mon = monday - timedelta(weeks=i-1)
@@ -81,73 +80,64 @@ def run(load_sheet_data):
         curr_range = f"({curr_mon.strftime('%m/%d')}~{(curr_mon+timedelta(days=4)).strftime('%m/%d')})"
         
         if i > 1:
-            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'{i}주전 할일 {last_range}'})
+            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'{i}주전 할일<br><span style="font-size:0.8em; color:gray;">{last_range}</span>'})
             rows_map.append({'db_week': curr_week_str, 'db_cat': '결과', 'display_cat': f'{i}주전 결과'})
         else:
-            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'저번주 할일 {last_range}'})
+            rows_map.append({'db_week': curr_week_str, 'db_cat': '저번주 할일', 'display_cat': f'저번주 할일<br><span style="font-size:0.8em; color:gray;">{last_range}</span>'})
             rows_map.append({'db_week': curr_week_str, 'db_cat': '결과', 'display_cat': '결과'})
-            rows_map.append({'db_week': curr_week_str, 'db_cat': '이번주 할일', 'display_cat': f'이번주 할일 {curr_range}'})
+            rows_map.append({'db_week': curr_week_str, 'db_cat': '이번주 할일', 'display_cat': f'이번주 할일<br><span style="font-size:0.8em; color:gray;">{curr_range}</span>'})
 
-    # 직원별 데이터 렌더링
     for emp_name in target_employees:
         target_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
         
-        # 해당 직원의 모든 데이터(과거+현재+펜딩) 딕셔너리로 변환하여 속도 최적화
         subset_all = df_report[df_report['직원ID'].astype(str).str.strip() == target_id]
         emp_data_dict = {}
         for _, row in subset_all.iterrows():
             emp_data_dict[(str(row['보고일자']).strip(), str(row['분류']).strip(), str(row['요일']).strip())] = row['내용']
 
-        # 🚀 [핵심] 다중 주차 그리드 데이터 조립 및 이월 자동화
-        grid_data = []
-        for r in rows_map:
-            row_dict = {'구분': r['display_cat']}
-            for day in ['월', '화', '수', '목', '금']:
-                val = emp_data_dict.get((r['db_week'], r['db_cat'], day), "")
-                
-                # 자동 이월: '저번주 할일'이 비어있으면 이전 주의 '이번주 할일'을 가져옴
-                if val == "" and r['db_cat'] == '저번주 할일':
-                    prev_w = (datetime.strptime(r['db_week'], "%Y-%m-%d") - timedelta(weeks=1)).strftime("%Y-%m-%d")
-                    val = emp_data_dict.get((prev_w, '이번주 할일', day), "")
-                    
-                row_dict[day] = val
-            grid_data.append(row_dict)
-
-        pivot_df = pd.DataFrame(grid_data)
-
-        # 펜딩 업무 텍스트 로드
-        pending_text = emp_data_dict.get(('PENDING', '펜딩 업무', '공통'), "")
-
-        # --- UI 출력부 ---
         st.markdown(f"---")
         st.subheader(f"👤 {emp_name} 님 - {selected_week_label}")
         
-        # 🚀 정렬 화살표 제거를 위한 컬럼 설정 (인덱스 숨김 + 첫 열 읽기전용)
-        col_config = {
-            "구분": st.column_config.TextColumn("구분", disabled=True, width="medium"),
-            "월": st.column_config.TextColumn("월", width="large"),
-            "화": st.column_config.TextColumn("화", width="large"),
-            "수": st.column_config.TextColumn("수", width="large"),
-            "목": st.column_config.TextColumn("목", width="large"),
-            "금": st.column_config.TextColumn("금", width="large"),
-        }
+        all_edited_data[emp_name] = {}
         
-        edited_df = st.data_editor(
-            pivot_df, 
-            use_container_width=True, 
-            hide_index=True, 
-            column_config=col_config,
-            key=f"editor_{emp_name}_{target_week}"
-        )
-        all_edited_dfs[emp_name] = edited_df
+        # 🚀 [핵심 개선] st.columns를 이용한 커스텀 텍스트 매트릭스 UI 생성
+        # 헤더(요일) 출력
+        header_cols = st.columns([1.5, 2, 2, 2, 2, 2])
+        header_cols[0].markdown("<div style='text-align:center; font-weight:bold; padding:10px 0;'>구분</div>", unsafe_allow_html=True)
+        for idx, day in enumerate(['월', '화', '수', '목', '금']):
+            header_cols[idx+1].markdown(f"<div style='text-align:center; font-weight:bold; padding:10px 0;'>{day}</div>", unsafe_allow_html=True)
 
-        # 🚀 펜딩 업무를 자유로운 텍스트 박스로 분리
-        st.markdown("##### 📌 펜딩 업무 (상시)")
+        # 각 데이터 행(Row) 출력
+        for r in rows_map:
+            cols = st.columns([1.5, 2, 2, 2, 2, 2])
+            
+            # 1. 구분(카테고리) 라벨 표시
+            cols[0].markdown(f"<div style='padding-top:20px; font-weight:bold;'>{r['display_cat']}</div>", unsafe_allow_html=True)
+            
+            # 2. 월~금 텍스트 입력칸 (st.text_area)
+            for idx, day in enumerate(['월', '화', '수', '목', '금']):
+                val = emp_data_dict.get((r['db_week'], r['db_cat'], day), "")
+                
+                # 자동 이월 로직
+                if val == "" and r['db_cat'] == '저번주 할일':
+                    prev_w = (datetime.strptime(r['db_week'], "%Y-%m-%d") - timedelta(weeks=1)).strftime("%Y-%m-%d")
+                    val = emp_data_dict.get((prev_w, '이번주 할일', day), "")
+                
+                # 🚀 높이가 넉넉한 text_area로 구현 (Shift 없이 그냥 Enter로 줄바꿈!)
+                ta_key = f"ta_{emp_name}_{r['db_week']}_{r['db_cat']}_{day}"
+                new_val = cols[idx+1].text_area("hidden", value=val, key=ta_key, label_visibility="collapsed", height=100)
+                
+                # 입력된 값을 저장용 딕셔너리에 보관
+                all_edited_data[emp_name][(r['db_week'], r['db_cat'], day)] = new_val
+
+        # 펜딩 업무 영역
+        pending_text = emp_data_dict.get(('PENDING', '펜딩 업무', '공통'), "")
+        st.markdown("<br>##### 📌 펜딩 업무 (상시)", unsafe_allow_html=True)
         pending_input = st.text_area("앞으로 해야 할 일 (자유롭게 엔터 사용 가능)", value=pending_text, key=f"pending_{emp_name}", height=120)
         all_pending_inputs[emp_name] = pending_input
 
     # -----------------------------------------------------------------
-    # 💾 일괄 통합 저장
+    # 💾 일괄 통합 저장 로직
     # -----------------------------------------------------------------
     if st.button("💾 모든 변경사항 저장", use_container_width=True):
         with st.spinner("구글 시트에 동기화 중..."):
@@ -159,7 +149,6 @@ def run(load_sheet_data):
                 target_ids = [str(df_emp[df_emp['성명'] == name]['직원ID'].values[0]) for name in target_employees]
                 loaded_weeks = list(set([r['db_week'] for r in rows_map]))
                 
-                # 중복 방지 로직 (화면에 뜬 주차 + 펜딩 데이터만 필터링)
                 rows_to_keep = [headers]
                 if len(all_values) > 1:
                     for row in all_values[1:]:
@@ -168,21 +157,17 @@ def run(load_sheet_data):
                             continue
                         rows_to_keep.append(row)
 
-                # 그리드 + 펜딩 입력값 병합
                 new_rows = []
                 for emp_name in target_employees:
-                    final_df = all_edited_dfs[emp_name]
                     emp_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
+                    emp_edited_data = all_edited_data[emp_name]
 
-                    # 그리드 데이터
-                    for i, r in enumerate(rows_map):
-                        db_w, db_c = r['db_week'], r['db_cat']
-                        for day in ['월', '화', '수', '목', '금']:
-                            content = str(final_df.iloc[i][day])
-                            if content.strip() != "":
-                                new_rows.append([f"{emp_id}_{db_w}_{db_c}_{day}", emp_id, db_w, day, db_c, content])
+                    # 🚀 커스텀 그리드 데이터 수집
+                    for (db_w, db_c, day), content in emp_edited_data.items():
+                        if content.strip() != "":
+                            new_rows.append([f"{emp_id}_{db_w}_{db_c}_{day}", emp_id, db_w, day, db_c, content])
                     
-                    # 펜딩 데이터
+                    # 펜딩 데이터 수집
                     p_text = all_pending_inputs[emp_name]
                     if p_text.strip() != "":
                         new_rows.append([f"{emp_id}_PENDING_공통", emp_id, 'PENDING', '공통', '펜딩 업무', p_text])
