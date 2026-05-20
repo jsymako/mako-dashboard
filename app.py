@@ -57,6 +57,7 @@ st.markdown("""
         background-color: #1E212B !important;
         min-width: 200px !important;   /* 🚀 안쪽 레이어도 똑같이 200px로 맞춰서 삐져나옴 방지 */
         max-width: 200px !important;
+        padding-top: 2rem !important;
     }
     
     /* 열기/닫기 화살표 색상을 흰색으로 */
