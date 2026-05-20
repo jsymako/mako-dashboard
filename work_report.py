@@ -16,19 +16,17 @@ def get_worksheet_for_write(sheet_name):
     return doc.worksheet(sheet_name)
 
 def get_week_info(date_obj):
+    # 월요일과 금요일 날짜 계산
     monday = date_obj - timedelta(days=date_obj.weekday())
-    thursday = monday + timedelta(days=3)
-    month = thursday.month
+    friday = monday + timedelta(days=4)
     
-    first_of_month = datetime(thursday.year, month, 1)
-    first_thursday = first_of_month + timedelta(days=(3 - first_of_month.weekday() + 7) % 7)
-    week_num = (thursday - first_thursday).days // 7 + 1
+    # "5월 10일 ~ 5월 14일" 형태로 직관적인 텍스트 생성
+    mon_str = f"{monday.month}월 {monday.day}일"
+    fri_str = f"{friday.month}월 {friday.day}일"
     
-    mon_str = monday.strftime('%m/%d')
-    fri_str = (monday + timedelta(days=4)).strftime('%m/%d')
-    
-    label = f"{month}월 {week_num}주차 ({mon_str}~{fri_str})"
+    label = f"{mon_str} ~ {fri_str}"
     value = monday.strftime('%Y-%m-%d')
+    
     return label, value
 
 # 2. 메인 실행 함수
