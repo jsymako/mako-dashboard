@@ -55,11 +55,33 @@ st.markdown("""
     /* 스트림릿 내부의 숨겨진 하얀색 레이어도 다크 네이비로 덮어쓰기 */
     [data-testid="stSidebar"] > div:first-child {
         background-color: #1E212B !important;
-        min-width: 200px !important;   /* 🚀 안쪽 레이어도 똑같이 200px로 맞춰서 삐져나옴 방지 */
+        min-width: 200px !important;
         max-width: 200px !important;
-        padding-top: 0rem !important;
+        padding-top: 0px !important; /* 🚀 최상단 여백 0으로 완전 제거 */
     }
     
+    /* 🚀 [범인 검거] 캡처해주신 160x60 사이즈의 투명한 사이드바 헤더 영역 완전히 박살내기 */
+    [data-testid="stSidebarHeader"] {
+        padding: 0px !important;
+        height: 0px !important;
+        min-height: 0px !important;
+        margin: 0px !important;
+        display: none !important; /* 공간만 차지하던 유령 헤더 아예 삭제 */
+    }
+    
+    /* 🚀 사이드바 안쪽 내용물(메뉴) 상단 여백 제거 */
+    [data-testid="stSidebarUserContent"] {
+        padding-top: 0px !important;
+    }
+    
+    /* 빈 마크다운(style) 찌꺼기들이 차지하는 16px 마진 제거 */
+    [data-testid="stSidebar"] div.element-container:has(style),
+    [data-testid="stSidebar"] div.element-container:has(script) {
+        display: none !important;
+        height: 0px !important;
+        margin: 0px !important;
+    }
+
     /* 열기/닫기 화살표 색상을 흰색으로 */
     [data-testid="collapsedControl"] * { display: none !important; }
     [data-testid="collapsedControl"]::after {
