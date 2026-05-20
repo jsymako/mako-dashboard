@@ -152,9 +152,9 @@ def run(load_sheet_data):
             p_lines += 1 + (len(line) // 80) # 펜딩은 폭이 넓으므로 80자 기준
         p_height = max(120, p_lines * 28 + 20)
         
-        st.markdown("<br>펜딩 사항", unsafe_allow_html=True)
-        #pending_input = st.text_area("앞으로 해야 할 일 (자유롭게 엔터 사용 가능)", value=pending_text, key=f"pending_{emp_name}", height=p_height)
-        #all_pending_inputs[emp_name] = pending_input
+        #st.markdown("<br>펜딩 사항", unsafe_allow_html=True)
+        pending_input = st.text_area("펜딩 업무", value=pending_text, key=f"pending_{emp_name}", height=p_height)
+        all_pending_inputs[emp_name] = pending_input
 
     # -----------------------------------------------------------------
     # 💾 일괄 통합 저장 로직
