@@ -211,9 +211,10 @@ header[data-testid="stHeader"] {
     margin-top: 0px !important;
 }
 
-/* 3. CSS나 HTML을 주입할 때 생기는 '투명한 유령 여백' 강제 삭제 */
-div[data-testid="stVerticalBlock"] > div.element-container:has(style),
-div[data-testid="stVerticalBlock"] > div.element-container:has(script),
+/* 3. CSS나 HTML을 주입할 때 생기는 '투명한 유령 여백' 강제 삭제 (테이블 보호 적용) */
+/* 🚀 [수정] style이 있더라도 표(table)가 같이 있으면 지우지 않도록 :not(:has(table)) 예외 처리 추가 */
+div[data-testid="stVerticalBlock"] > div.element-container:has(style):not(:has(table)),
+div[data-testid="stVerticalBlock"] > div.element-container:has(script):not(:has(table)),
 div[data-testid="stMarkdownContainer"] > p:empty {
     display: none !important;
     height: 0px !important;
