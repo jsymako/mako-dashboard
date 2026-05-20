@@ -227,7 +227,7 @@ def run(load_sheet_data):
                         <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 2px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
                                 <tr style="font-size: 1.5rem; color:#444;">
-                                    <td rowspan="2" style="padding: 15px; text-align: center; width: 12%; font-size: 3.0rem; color:#111; background-color: #F8F9FA; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
+                                    <td rowspan="2" style="padding: 15px; text-align: center; width: 12%; font-size: 3.0rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
                                     
                                     <td style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0; width: 16%;"><b></b> {row.get('피트', '40FT')}</td>
                                     <td style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0; width: 18%;"><b>입고:</b> {inb_dt if inb_dt else "<span style='color:#A0AEC0;'>미정</span>"}</td>
