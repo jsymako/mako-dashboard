@@ -48,7 +48,7 @@ def run(load_sheet_data):
         return
 
     # --- 사이드바 설정 ---
-    st.sidebar.markdown("### 📅 기준 주차 선택")
+    # st.sidebar.markdown("### 📅 기준 주차 선택")
     today = datetime.today()
     week_options = {}
     weeks_list = []
@@ -60,7 +60,7 @@ def run(load_sheet_data):
         weeks_list.append(lbl)
         if i == 0: default_index = len(weeks_list) - 1
 
-    selected_week_label = st.sidebar.selectbox("주차를 선택하세요", weeks_list, index=default_index)
+    selected_week_label = st.sidebar.selectbox("기준 주차 선택", weeks_list, index=default_index)
     target_week = week_options[selected_week_label]
     monday = datetime.strptime(target_week, "%Y-%m-%d")
 
