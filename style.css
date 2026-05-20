@@ -107,6 +107,43 @@ div[data-baseweb="popover"] ::-webkit-scrollbar-track { background: #2D3342 !imp
 div[data-baseweb="popover"] ::-webkit-scrollbar-thumb { background-color: #718096 !important; border-radius: 10px !important; border: 1px solid #2D3342 !important; }
 div[data-baseweb="popover"] ::-webkit-scrollbar-thumb:hover { background-color: #A0AEC0 !important; }
 
+/* =====================================================================
+   [6] 🖲️ 사이드바 버튼 (새로고침, 추가 등) 다크 테마 패치
+===================================================================== */
+/* 사이드바 기본 버튼 겉면 */
+[data-testid="stSidebar"] .stButton > button {
+    background-color: #2D3342 !important; /* 사이드바 입력창과 동일한 배경색 */
+    color: #FFFFFF !important; 
+    border: 1px solid #4A5568 !important; /* 테두리 톤 다운 */
+    border-radius: 8px !important; 
+    padding: 10px 15px !important;
+    width: 100% !important; /* 좌우 여백 없이 꽉 차게 정렬 */
+    transition: all 0.2s ease-in-out !important; /* 부드러운 애니메이션 */
+    box-shadow: none !important;
+}
+
+/* 버튼 글자 및 아이콘 스타일 */
+[data-testid="stSidebar"] .stButton > button p {
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    color: #FFFFFF !important;
+}
+
+/* 마우스 오버(Hover) 시 효과 */
+[data-testid="stSidebar"] .stButton > button:hover {
+    background-color: #374151 !important; /* 살짝 밝아지는 효과 */
+    border-color: #A0AEC0 !important; /* 테두리 하이라이트 */
+    color: #FFFFFF !important;
+}
+
+/* 버튼 클릭(Active) 시 효과 */
+[data-testid="stSidebar"] .stButton > button:active {
+    background-color: #4A5568 !important;
+    color: #FFFFFF !important;
+    transform: translateY(1px) !important; /* 눌리는 물리적 느낌 */
+}
+
 
 /* =====================================================================
    [4] 📦 자사 재고 전용 특수 스타일 (카드 UI)
