@@ -87,7 +87,16 @@ with st.sidebar:
     main_menu = option_menu(
         menu_title=None, 
         options=["대시 보드", "자사 재고", "쿠팡 재고", "판매 현황", "입고 현황", "업무 보고", "영업 실적", "채권 분석"],
-        icons=["grid", "box", "box-seam", "graph-up", "briefcase", "credit-card"], 
+        icons=[
+            "grid",             # 대시 보드 (바둑판 모양)
+            "boxes",            # 자사 재고 (쌓여있는 상자)
+            "box-seam",         # 쿠팡 재고 (테이핑 된 택배 상자)
+            "graph-up-arrow",   # 판매 현황 (상승하는 그래프)
+            "truck",            # 입고 현황 (배송 트럭)
+            "pencil-square",    # 업무 보고 (펜과 종이)
+            "award",            # 영업 실적 (트로피/뱃지)
+            "cash-stack"        # 채권 분석 (쌓여있는 돈/현금)
+        ],
         default_index=0, 
         styles={
             "container": {
