@@ -141,10 +141,10 @@ with st.sidebar:
                 "color": "#FFFFFF",               
                 "font-weight": "400",
                 "border": "none",
-                "--hover-color": "#874151"        
+                "--hover-color": "#485068"        
             },
             "nav-link-selected": {
-                "background-color": "#874151",    
+                "background-color": "#485068",    
                 "color": "#FFFFFF",               
                 "font-weight": "600",             
                 "border": "none"
