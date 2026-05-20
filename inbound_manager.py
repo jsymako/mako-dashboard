@@ -227,7 +227,7 @@ def run(load_sheet_data):
                         <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 2px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
                                 <tr style="font-size: 1.15rem;">
-                                    <td style="padding: 12px 15px; width:25%; border-bottom: 1px solid #E2E8F0;"><b>차수:</b> {row['차수']}차</td>
+                                    <td style="padding: 12px 15px; width:25%; border-bottom: 1px solid #E2E8F0; font-size: 2.15rem;"><b>차수:</b> {row['차수']}차</td>
                                     <td style="padding: 12px 15px; width:25%; border-bottom: 1px solid #E2E8F0;"><b>사이즈:</b> {row.get('피트', '40FT')}</td>
                                     <td colspan="2" style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0;">{status_html}</td>
                                 </tr>
