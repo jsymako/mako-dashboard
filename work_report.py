@@ -153,48 +153,55 @@ def run(load_sheet_data):
         #st.markdown("<br>펜딩 사항", unsafe_allow_html=True)
         pending_input = st.text_area("펜딩 업무", value=pending_text, key=f"pending_{emp_name}", height=p_height)
         all_pending_inputs[emp_name] = pending_input
+        
+        st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
-    # -----------------------------------------------------------------
-    # 💾 일괄 통합 저장 로직
-    # -----------------------------------------------------------------
-    if st.button("💾 모든 변경사항 저장", use_container_width=True):
-        with st.spinner("구글 시트에 동기화 중..."):
-            try:
-                sheet_r = get_worksheet_for_write("WorkReports")
-                all_values = sheet_r.get_all_values()
-                headers = all_values[0] if all_values else ['보고ID', '직원ID', '보고일자', '요일', '분류', '내용']
-                
-                target_ids = [str(df_emp[df_emp['성명'] == name]['직원ID'].values[0]) for name in target_employees]
-                loaded_weeks = list(set([r['db_week'] for r in rows_map]))
-                
-                rows_to_keep = [headers]
-                if len(all_values) > 1:
-                    for row in all_values[1:]:
-                        if len(row) < 6: continue
-                        if row[1] in target_ids and (row[2] in loaded_weeks or row[2] == 'PENDING'):
-                            continue
-                        rows_to_keep.append(row)
-
-                new_rows = []
-                for emp_name in target_employees:
-                    emp_id = str(df_emp[df_emp['성명'] == emp_name]['직원ID'].values[0])
-                    emp_edited_data = all_edited_data[emp_name]
-
-                    for (db_w, db_c, day), content in emp_edited_data.items():
-                        if content.strip() != "":
-                            new_rows.append([f"{emp_id}_{db_w}_{db_c}_{day}", emp_id, db_w, day, db_c, content])
+        # -----------------------------------------------------------------
+        # 💾 일괄 통합 저장 로직 (직원 섹션별 버튼 배치)
+        # -----------------------------------------------------------------
+        if st.button("💾 모든 변경사항 저장", key=f"save_btn_{emp_name}", use_container_width=True):
+            with st.spinner("구글 시트에 동기화 중..."):
+                try:
+                    sheet_r = get_worksheet_for_write("WorkReports")
+                    all_values = sheet_r.get_all_values()
+                    headers = all_values[0] if all_values else ['보고ID', '직원ID', '보고일자', '요일', '분류', '내용']
                     
-                    p_text = all_pending_inputs[emp_name]
-                    if p_text.strip() != "":
-                        new_rows.append([f"{emp_id}_PENDING_공통", emp_id, 'PENDING', '공통', '펜딩 업무', p_text])
-                
-                sheet_r.clear()
-                sheet_r.append_rows(rows_to_keep + new_rows)
-                
-                st.success("✅ 저장되었습니다!")
-                time.sleep(1)
-                st.cache_data.clear()
-                st.rerun()
-                
-            except Exception as e:
-                st.error(f"저장 중 오류 발생: {e}")
+                    target_ids = [str(df_emp[df_emp['성명'] == name]['직원ID'].values[0]) for name in target_employees]
+                    loaded_weeks = list(set([r_map['db_week'] for r_map in rows_map]))
+                    
+                    rows_to_keep = [headers]
+                    if len(all_values) > 1:
+                        for row in all_values[1:]:
+                            if len(row) < 6: continue
+                            if row[1] in target_ids and (row[2] in loaded_weeks or row[2] == 'PENDING'):
+                                continue
+                            rows_to_keep.append(row)
+
+                    new_rows = []
+                    # 💡 세션 상태에서 다이렉트로 전체 값을 추출하므로 어느 버튼을 눌러도 전체 직원이 안전하게 저장됩니다.
+                    for name in target_employees:
+                        emp_id = str(df_emp[df_emp['성명'] == name]['직원ID'].values[0])
+
+                        for r_map in rows_map:
+                            db_w, db_c = r_map['db_week'], r_map['db_cat']
+                            for day in ['월', '화', '수', '목', '금']:
+                                ta_key = f"ta_{name}_{db_w}_{db_c}_{day}"
+                                content = str(st.session_state.get(ta_key, ""))
+                                if content.strip() != "":
+                                    new_rows.append([f"{emp_id}_{db_w}_{db_c}_{day}", emp_id, db_w, day, db_c, content])
+                        
+                        p_key = f"pending_{name}"
+                        p_text = str(st.session_state.get(p_key, ""))
+                        if p_text.strip() != "":
+                            new_rows.append([f"{emp_id}_PENDING_공통", emp_id, 'PENDING', '공통', '펜딩 업무', p_text])
+                    
+                    sheet_r.clear()
+                    sheet_r.append_rows(rows_to_keep + new_rows)
+                    
+                    st.success("✅ 저장되었습니다!")
+                    time.sleep(1)
+                    st.cache_data.clear()
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"저장 중 오류 발생: {e}")
