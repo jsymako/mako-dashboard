@@ -43,8 +43,10 @@ def run(load_data_func):
         df_trade['월'] = df_trade['일자'].dt.strftime('%Y년 %m월')
 
         # ==========================================
-        # 2. 사이드바 필터 (거래처 -> 브랜드 -> 품목 순차적 다중 선택)
+        # 2. 사이드바 필터 (거래처와 브랜드는 독립, 품목만 브랜드에 종속)
         # ==========================================
+        
+        # 1) 거래처 목록 (다른 필터에 영향받지 않는 완전 독립 목록)
         trader_list = sorted(list(df_trade['거래처명'].dropna().unique()))
         selected_traders = st.sidebar.multiselect(
             "거래처 선택", 
@@ -53,9 +55,8 @@ def run(load_data_func):
             placeholder="전체 보기"
         )
         
-        temp_df = df_trade if not selected_traders else df_trade[df_trade['거래처명'].isin(selected_traders)]
-        
-        brand_list = sorted(list(temp_df['브랜드'].dropna().unique()))
+        # 2) 브랜드 목록 (거래처에 종속되지 않는 완전 독립 목록)
+        brand_list = sorted(list(df_trade['브랜드'].dropna().unique()))
         selected_brands = st.sidebar.multiselect(
             "브랜드 선택", 
             options=brand_list,
@@ -63,8 +64,15 @@ def run(load_data_func):
             placeholder="전체 보기"
         )
 
-        temp_prod_df = temp_df if not selected_brands else temp_df[temp_df['브랜드'].isin(selected_brands)]
-        prod_list = sorted(list(temp_prod_df['공식품목명'].dropna().unique()))
+        # 3) 품목 목록 (오직 '브랜드 선택'에만 종속)
+        if not selected_brands:
+            # 브랜드를 선택하지 않았으면 전체 품목 표시
+            prod_list = sorted(list(df_trade['공식품목명'].dropna().unique()))
+        else:
+            # 브랜드를 선택했으면 해당 브랜드의 품목만 표시
+            temp_prod_df = df_trade[df_trade['브랜드'].isin(selected_brands)]
+            prod_list = sorted(list(temp_prod_df['공식품목명'].dropna().unique()))
+            
         selected_products = st.sidebar.multiselect(
             "품목 선택", 
             options=prod_list,
@@ -74,7 +82,7 @@ def run(load_data_func):
 
         view_mode = st.sidebar.radio("분석 모드", ["월별 현황", "일별 현황", "수요 예측"], index=0)
 
-        # 공통 필터 적용
+        # 공통 데이터 필터 적용 (화면에 그릴 데이터를 걸러내는 곳)
         filtered_df = df_trade.copy()
         if selected_traders:
             filtered_df = filtered_df[filtered_df['거래처명'].isin(selected_traders)]
