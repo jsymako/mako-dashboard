@@ -15,8 +15,6 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    
-
     try:
         # 1. 데이터 로드
         df_own = load_data_func("ecount_stock")
@@ -47,11 +45,13 @@ def run(load_data_func):
         brand_list = ["전체보기"] + sorted(list(df_own['브랜드'].unique()))
         selected_brand = st.sidebar.selectbox("브랜드 필터", brand_list, key="own_brand_filter")
         
-        # 🚀 [수정] 순서 및 단어 변경: 부족, 품절, 과다, 적정
         status_list = ["전체보기", "부족", "품절", "과다", "적정"]
         selected_status = st.sidebar.selectbox("상태 필터", status_list, key="own_status_filter")
 
         months_to_look_back = st.sidebar.slider("판매 산출 기준 (개월)", 1, 12, 3, key="own_month_slider_v2")
+        
+        # 🚀 [추가] 한번에보기 체크박스 추가 (기본값: False)
+        view_all_toggle = st.sidebar.checkbox("한번에보기 (브랜드 통합)", value=False, key="own_view_all_toggle")
 
         # 4. 날짜 계산 및 판매량 합산
         today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -77,7 +77,6 @@ def run(load_data_func):
                                        999.0)
         df_merged['예상소진주'] = pd.to_numeric(df_merged['예상소진주'], errors='coerce').fillna(0).clip(lower=0)
 
-        # 🚀 [수정] 상태 판별 함수: 2글자로 간소화 및 잔재 제거
         def check_status(row):
             if row['현재재고'] <= 0: return "품절"
             if row['예상소진주'] < 2.0: return "부족"
@@ -109,10 +108,20 @@ def run(load_data_func):
         if df_merged.empty:
             st.warning("조건에 맞는 품목이 없습니다.")
         else:
-            for br in sorted(df_merged['브랜드'].unique()):
-                br_df = df_merged[df_merged['브랜드'] == br]
+            # 🚀 [핵심 변경] '한번에보기' 여부에 따라 그룹핑 방식을 결정합니다.
+            if view_all_toggle:
+                # 브랜드 무시하고 전체 데이터를 하나의 그룹("전체 품목")으로 묶음
+                groups = [("전체 품목", df_merged)]
+            else:
+                # 기존처럼 브랜드를 기준으로 데이터를 쪼개어 그룹 생성
+                groups = [(br, df_merged[df_merged['브랜드'] == br]) for br in sorted(df_merged['브랜드'].unique())]
+
+            # 결정된 그룹 단위로 반복 출력
+            for group_name, br_df in groups:
                 
-                html_content = f'<div class="brand-section"><div class="brand-title">🏢 {br} ({len(br_df)}개 품목)</div><div class="grid-container">'
+                # 아이콘 동적 변경 (통합일 땐 📦, 브랜드별일 땐 🏢)
+                icon = "📦" if view_all_toggle else "🏢"
+                html_content = f'<div class="brand-section"><div class="brand-title">{icon} {group_name} ({len(br_df)}개 품목)</div><div class="grid-container">'
                 
                 for _, row in br_df.iterrows():
 
@@ -137,21 +146,25 @@ def run(load_data_func):
                     # 2. 테두리 및 타이틀 스타일 적용
                     border_style = f"border: {border_thick} solid {status_color};"
                     
-                    # '적정'일 때는 타이틀 배경을 투명하게 유지합니다.
                     if row['재고상태'] == "적정":
                         title_style = ""
                     else:
-                        # 🚀 display: inline-block;을 제거하여 좌우로 꽉 차는 시원한 헤더로 복구했습니다.
                         title_style = f"background-color: {status_color}; color: {text_color};"
                     
-                    # 🚀 [수정] 1. 예상소진주: 불필요한 .0 소수점 제거 로직 적용
+                    # 🚀 [추가] 한번에보기 일 경우 품목명 위에 '브랜드명'을 연하게 추가
+                    if view_all_toggle:
+                        # 0.8rem 크기로 연하게(opacity: 0.8) 브랜드명을 넣고 <br>로 줄바꿈
+                        display_title = f"<span style='font-size: 0.8rem; font-weight: normal; opacity: 0.8;'>{row['브랜드']}</span><br>{row['품목명']}"
+                    else:
+                        display_title = row['품목명']
+
+                    # 3. 예상소진주: 불필요한 .0 소수점 제거 로직 적용
                     if row['예상소진주'] >= 96:
                         combined_html = '<span class="info-num">2</span><span class="info-unit">년이상</span>'
                     else:
                         weeks = row['예상소진주']
                         months = round(weeks / 4, 1)
                         
-                        # 10주 미만일 때, 딱 떨어지는 정수면(예: 7.0) 소수점 제거, 아니면 소수점 1자리(예: 7.5) 유지
                         if weeks >= 10:
                             str_weeks = f"{int(round(weeks))}"
                         else:
@@ -164,26 +177,27 @@ def run(load_data_func):
                         
                         combined_html = f'<span class="info-num">{str_weeks}</span><span class="info-unit">주</span> <span style="color:#ccc; font-size:0.9rem;">·</span> <span class="info-num">{str_months}</span><span class="info-unit">달</span>'
                     
-                    # 🚀 [수정] 2. 현재고: ".0" 꼬리표 강제 절삭
+                    # 4. 현재고: ".0" 꼬리표 강제 절삭
                     stock_text = str(row['환산재고'])
                     stock_parts = stock_text.split(' ')
                     stock_num = stock_parts[0]
                     if stock_num.endswith('.0'): 
-                        stock_num = stock_num[:-2] # '.0' 지우기
+                        stock_num = stock_num[:-2]
                     stock_unit = stock_parts[1] if len(stock_parts) > 1 else ""
 
-                    # 🚀 [수정] 3. 주평균: ".0" 꼬리표 강제 절삭
+                    # 5. 주평균: ".0" 꼬리표 강제 절삭
                     avg_text = str(row['환산주평균'])
                     avg_parts = avg_text.split(' ')
                     avg_num = avg_parts[0]
                     if avg_num.endswith('.0'): 
-                        avg_num = avg_num[:-2] # '.0' 지우기
+                        avg_num = avg_num[:-2]
                     avg_unit = avg_parts[1] if len(avg_parts) > 1 else ""
 
+                    # 🚀 [적용] 완성된 display_title 변수를 아이템 타이틀 부분에 삽입
                     card_html = f"""
                     <div class="item-card" style="{border_style}">
                         <div class="card-header">
-                            <div class="item-title" style="{title_style}">{row['품목명']}</div>
+                            <div class="item-title" style="{title_style}">{display_title}</div>
                             <div class="stock-main">
                                 <span class="stock-label">현재고</span>
                                 <div>
