@@ -197,13 +197,13 @@ def run(load_data_func):
     # ==========================================
     # 🚀 4. 전사 KPI 상단 바
     # ==========================================
-    st.subheader(f"🎯 실적 현황 요약")
+    st.subheader(f"전체 현황")
     kpi_cols = st.columns(3)
     
     def make_kpi_html(title, target, actual, rate):
         return f"""
         <div>
-            <h5 style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;">{title}</h5>
+            <h5 style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">{title}</h5>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 0.95rem; color: #777; font-weight: 500;">목표액</span>
                 <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{int(target/10000):,}만 원</span>
@@ -232,7 +232,7 @@ def run(load_data_func):
     # ==========================================
     # 🚀 4.5 전사 월별 추이 (접을 수 있는 패널)
     # ==========================================
-    st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom: 10px; margin-top: 0px;'></div>", unsafe_allow_html=True)
     with st.expander(f"{view_y_m}년 전체 월별 매출 추이", expanded=False):
         
         # 1월부터 12월까지의 틀을 만들고 실적을 매핑
