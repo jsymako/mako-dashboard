@@ -127,7 +127,7 @@ def run(load_data_func):
         title_prefix = selected_product if selected_product != '전체보기' else (selected_brand if selected_brand != '전체보기' else '전체')
 
         if view_target in ["재고량 추이", "모두 보기"]:
-            st.subheader(f"📦 {title_prefix} 재고량 변동 흐름")
+            st.subheader(f"{title_prefix} 재고량 변동 흐름")
             
             stock_line = alt.Chart(display_df).mark_line(point=True).encode(
                 x=common_x,
@@ -148,7 +148,7 @@ def run(load_data_func):
         st.markdown("<br>", unsafe_allow_html=True)
 
         if view_target in ["판매가 변동", "모두 보기"]:
-            st.subheader(f"💰 {title_prefix} 판매가 변동 흐름")
+            st.subheader(f"{title_prefix} 판매가 변동 흐름")
             
             price_line = alt.Chart(display_df).mark_line(point=True).encode(
                 x=common_x,
