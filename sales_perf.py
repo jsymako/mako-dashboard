@@ -58,13 +58,11 @@ def run(load_data_func):
         
         with c1:
             st.markdown("#### 🎯 연간 목표 설정/수정")
-            # 🚀 [개선] 신규 추가 또는 기존 직원 선택 모드
             existing_emps = df_target['직원명'].tolist()
             mode = st.radio("작업 선택", ["기존 직원 수정", "신규 직원 추가"], horizontal=True)
 
             if mode == "기존 직원 수정" and existing_emps:
                 t_emp = st.selectbox("수정할 직원 선택", existing_emps)
-                # 선택된 직원의 현재 목표액을 기본값으로 가져옴
                 current_target = df_target.loc[df_target['직원명'] == t_emp, '연간목표액'].values[0]
             else:
                 t_emp = st.text_input("새 직원 직원명")
@@ -80,7 +78,6 @@ def run(load_data_func):
                         new_row = pd.DataFrame([{"직원명": t_emp, "연간목표액": t_amt}])
                         df_target = pd.concat([df_target, new_row], ignore_index=True)
                     
-                    # 구글 시트 업데이트 로직 (기존 동일)
                     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
                     creds_dict = json.loads(st.secrets["gcp_service_account"])
                     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -119,13 +116,11 @@ def run(load_data_func):
                         new_row = pd.DataFrame([{"입력월": r_month, "직원명": r_emp, "실적금액": r_amt}])
                         df_record = pd.concat([df_record, new_row], ignore_index=True)
                     
-                    # 🚀 [수정] 누락되었던 구글 시트 로그인(client 인증) 코드를 추가했습니다.
                     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
                     creds_dict = json.loads(st.secrets["gcp_service_account"])
                     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
                     client = gspread.authorize(creds)
                     
-                    # 이제 정상적으로 시트를 열 수 있습니다.
                     doc = client.open("통합재고관리")
                     try: sheet = doc.worksheet("sales_record_emp")
                     except: sheet = doc.add_worksheet(title="sales_record_emp", rows="1000", cols="5")
@@ -145,7 +140,6 @@ def run(load_data_func):
     # ==========================================
     today = datetime.date.today()
     
-    # 1️⃣ 현재 보고 있는 '월'과 '분기'를 메모리에 저장 (최초 접속 시 오늘 날짜)
     if "v_year_m" not in st.session_state:
         st.session_state.v_year_m = today.year
         st.session_state.v_month = today.month
@@ -153,7 +147,6 @@ def run(load_data_func):
         st.session_state.v_year_q = today.year
         st.session_state.v_quarter = (today.month - 1) // 3 + 1
 
-    # 2️⃣ 날짜 이동 함수 (화살표 클릭 시 실행)
     def go_prev_m():
         if st.session_state.v_month == 1:
             st.session_state.v_month = 12
@@ -178,16 +171,14 @@ def run(load_data_func):
             st.session_state.v_year_q += 1
         else: st.session_state.v_quarter += 1
 
-    # 데이터 날짜 파싱
     df_record['연도'] = df_record['입력월'].str[:4]
     df_record['월'] = pd.to_numeric(df_record['입력월'].str[5:7], errors='coerce').fillna(0).astype(int)
     df_record['분기'] = (df_record['월'] - 1) // 3 + 1
 
-    # 3️⃣ 선택된 시점의 데이터를 추출
     view_y_m = str(st.session_state.v_year_m)
     view_y_q = str(st.session_state.v_year_q)
     
-    df_y = df_record[df_record['연도'] == view_y_m] # 선택된 월의 해당 연도 기준
+    df_y = df_record[df_record['연도'] == view_y_m] 
     df_q = df_record[(df_record['연도'] == view_y_q) & (df_record['분기'] == st.session_state.v_quarter)]
     df_m = df_record[(df_record['연도'] == view_y_m) & (df_record['월'] == st.session_state.v_month)]
 
@@ -239,7 +230,41 @@ def run(load_data_func):
             st.markdown(make_kpi_html(f"{view_y_m}년 {st.session_state.v_month}월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
 
     # ==========================================
-    # 🚀 5. 직원별 실적 가공
+    # 🚀 4.5 전사 월별 추이 (접을 수 있는 패널)
+    # ==========================================
+    st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+    with st.expander(f"📊 {view_y_m}년 전사 월별 매출 추이 보기 (연간 목표 대비)", expanded=False):
+        
+        # 1월부터 12월까지의 틀을 만들고 실적을 매핑
+        all_months = pd.DataFrame({'월': range(1, 13)})
+        monthly_sales = pd.merge(all_months, df_y.groupby('월')['실적금액'].sum().reset_index(), on='월', how='left').fillna(0)
+        monthly_sales['월_라벨'] = monthly_sales['월'].astype(str) + "월"
+        
+        # 보기 좋게 만원 단위로 변환
+        monthly_sales['실적금액(만)'] = monthly_sales['실적금액'] / 10000
+        monthly_sales['목표액(만)'] = m_target_total / 10000
+        
+        # 알타이어(Altair) 차트 렌더링
+        base_chart = alt.Chart(monthly_sales).encode(
+            x=alt.X('월_라벨:N', sort=list(monthly_sales['월_라벨']), title='해당 월', axis=alt.Axis(labelAngle=0, labelFontSize=12))
+        )
+        bar = base_chart.mark_bar(color='#5DADE2', size=35, cornerRadiusEnd=4).encode(
+            y=alt.Y('실적금액(만):Q', title='전사 실적 (만원)'),
+            tooltip=['월_라벨', alt.Tooltip('실적금액:Q', format=',', title='실적 (원)')]
+        )
+        rule = base_chart.mark_line(color='#E74C3C', strokeDash=[5, 5], size=2).encode(
+            y='목표액(만):Q',
+            tooltip=['월_라벨', alt.Tooltip('목표액(만):Q', format=',.0f', title='월평균 목표 (만원)')]
+        )
+        text = bar.mark_text(align='center', baseline='bottom', dy=-5, fontSize=13, fontWeight='bold', color='#444').encode(
+            text=alt.Text('실적금액(만):Q', format=',.0f')
+        )
+        
+        company_chart = (bar + rule + text).properties(height=350)
+        st.altair_chart(company_chart, use_container_width=True)
+
+    # ==========================================
+    # 🚀 5. 직원별 실적 가공 (부족액 로직 추가)
     # ==========================================
     emp_df = df_target[['직원명', '연간목표액']].copy()
     emp_df['분기목표액'] = emp_df['연간목표액'] / 4
@@ -253,6 +278,10 @@ def run(load_data_func):
     
     emp_df['월간달성률'] = np.where(emp_df['월간목표액'] > 0, (emp_df['월간실적액'] / emp_df['월간목표액'] * 100), 0)
     emp_df['분기달성률'] = np.where(emp_df['분기목표액'] > 0, (emp_df['분기실적액'] / emp_df['분기목표액'] * 100), 0)
+    
+    # 부족액 계산 (목표액 > 실적액 인 경우만 차액 계산, 초과달성은 0)
+    emp_df['월간부족액'] = np.where(emp_df['월간목표액'] > emp_df['월간실적액'], emp_df['월간목표액'] - emp_df['월간실적액'], 0)
+    emp_df['분기부족액'] = np.where(emp_df['분기목표액'] > emp_df['분기실적액'], emp_df['분기목표액'] - emp_df['분기실적액'], 0)
 
     # ==========================================
     # 🚀 6. 시각화 및 상세 데이터 표
@@ -271,7 +300,6 @@ def run(load_data_func):
     col_chart1, col_chart2 = st.columns(2)
     
     with col_chart1:
-        # 🚀 [이동 버튼] 월간 차트 상단
         hm1, hm2, hm3 = st.columns([1, 5, 1])
         hm1.button("◀", on_click=go_prev_m, key="btn_pm", use_container_width=True)
         hm2.markdown(f"<h4 style='text-align:center; margin-top:5px;'>{st.session_state.v_year_m}년 {st.session_state.v_month}월</h4>", unsafe_allow_html=True)
@@ -279,19 +307,17 @@ def run(load_data_func):
         
         st.altair_chart(make_rate_chart(emp_df, '월간달성률', '#3498DB'), use_container_width=True)
         
-        # 상세 데이터 표 (HTML 렌더링 기존 로직 유지)
         st.markdown(f"##### 📋 {st.session_state.v_month}월 실적 상세")
-        m_data = emp_df[['직원명', '월간목표액', '월간실적액', '월간달성률']].copy()
+        # 부족액 항목 추가 렌더링
+        m_data = emp_df[['직원명', '월간목표액', '월간실적액', '월간부족액', '월간달성률']].copy()
         m_data['월간목표액'] = m_data['월간목표액'].apply(lambda x: f"{int(x):,}")
         m_data['월간실적액'] = m_data['월간실적액'].apply(lambda x: f"{int(x):,}")
+        m_data['월간부족액'] = m_data['월간부족액'].apply(lambda x: f"{int(x):,}")
         m_data['월간달성률'] = m_data['월간달성률'].apply(lambda x: f"{x:.1f}%")
         m_t = m_data.set_index('직원명').T
         
-        # 🚀 [수정 포인트 1] 화면에 보일 '행 이름'을 여기서 자유롭게 수정하세요.
-        # (리스트의 순서는 ['목표액', '실적액', '달성률'] 순서를 유지해야 데이터가 꼬이지 않습니다.)
-        m_t.index = ['목표', '실적', '달성'] 
-        
-        # 🚀 [수정 포인트 2] 왼쪽 상단에 표시되는 '직원명'이라는 타이틀을 변경하고 싶을 때 사용하세요.
+        # 행 이름(Index)에 부족액 추가
+        m_t.index = ['목표', '실적', '부족액', '달성'] 
         m_t.rename_axis("담당", axis=1, inplace=True)
         
         html_m = m_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
@@ -301,7 +327,6 @@ def run(load_data_func):
         st.markdown(html_m, unsafe_allow_html=True)
 
     with col_chart2:
-        # 🚀 [이동 버튼] 분기 차트 상단
         hq1, hq2, hq3 = st.columns([1, 5, 1])
         hq1.button("◀", on_click=go_prev_q, key="btn_pq", use_container_width=True)
         hq2.markdown(f"<h4 style='text-align:center; margin-top:5px;'>{st.session_state.v_year_q}년 {st.session_state.v_quarter}분기</h4>", unsafe_allow_html=True)
@@ -310,17 +335,18 @@ def run(load_data_func):
         st.altair_chart(make_rate_chart(emp_df, '분기달성률', '#27AE60'), use_container_width=True)
         
         st.markdown(f"##### 📋 {st.session_state.v_quarter}분기 실적 상세")
-        q_data = emp_df[['직원명', '분기목표액', '분기실적액', '분기달성률']].copy()
+        # 부족액 항목 추가 렌더링
+        q_data = emp_df[['직원명', '분기목표액', '분기실적액', '분기부족액', '분기달성률']].copy()
         q_data['분기목표액'] = q_data['분기목표액'].apply(lambda x: f"{int(x):,}")
         q_data['분기실적액'] = q_data['분기실적액'].apply(lambda x: f"{int(x):,}")
+        q_data['분기부족액'] = q_data['분기부족액'].apply(lambda x: f"{int(x):,}")
         q_data['분기달성률'] = q_data['분기달성률'].apply(lambda x: f"{x:.1f}%")
         q_t = q_data.set_index('직원명').T
         
-        # 🚀 [수정 포인트 3] 분기 표도 동일하게 수정 가능합니다.
-        q_t.index = ['목표', '실적', '달성']
-        
-        # 🚀 [수정 포인트 4] '직원명' 머릿말 변경
+        # 행 이름(Index)에 부족액 추가
+        q_t.index = ['목표', '실적', '부족액', '달성']
         q_t.rename_axis("담당", axis=1, inplace=True)
+        
         html_q = q_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
                                {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
