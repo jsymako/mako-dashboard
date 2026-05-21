@@ -55,7 +55,8 @@ st.markdown("""
         background-color: #1E212B !important;
         min-width: 200px !important;
         max-width: 200px !important;
-        padding-top: 30px !important; /* 🚀 최상단 여백 0으로 완전 제거 */
+        padding-top: 30px !important; 
+        padding-bottom: 0px !important; /* 🚀 껍데기 하단 여백 제거 */
     }
     
     /* 🚀 [범인 검거] 캡처해주신 160x60 사이즈의 투명한 사이드바 헤더 영역 완전히 박살내기 */
@@ -67,9 +68,10 @@ st.markdown("""
         display: none !important; /* 공간만 차지하던 유령 헤더 아예 삭제 */
     }
     
-    /* 🚀 사이드바 안쪽 내용물(메뉴) 상단 여백 제거 */
+    /* 🚀 사이드바 안쪽 내용물(메뉴) 상/하단 여백 완전 제거 */
     [data-testid="stSidebarUserContent"] {
         padding-top: 0px !important;
+        padding-bottom: 0px !important; /* 🚀 [핵심] 캡처에 나온 하단 보라색 여백을 박멸합니다! */
     }
     
     /* 빈 마크다운(style) 찌꺼기들이 차지하는 16px 마진 제거 */
@@ -156,7 +158,7 @@ with st.sidebar:
 # 🚀 3. 메인 대시보드 화면
 # -----------------------------------------------------------------
 def render_dashboard():
-    st.title("마코펫 통합조회시스템")
+    st.title("마코펫 통합조회 시스템")
     
     st.markdown("""
         <style>
