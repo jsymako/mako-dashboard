@@ -43,46 +43,61 @@ def run(load_data_func):
         df_trade['월'] = df_trade['일자'].dt.strftime('%Y년 %m월')
 
         # ==========================================
-        # 2. 사이드바 필터 (거래처와 브랜드는 독립, 품목만 브랜드에 종속)
+        # 2. 사이드바 필터 (연쇄 필터링 + 초기화 방어)
         # ==========================================
         
-        # 1) 거래처 목록 (다른 필터에 영향받지 않는 완전 독립 목록)
+        # --- 세션 상태 초기화 (값 보존용) ---
+        if 'trade_traders' not in st.session_state: st.session_state.trade_traders = []
+        if 'trade_brands' not in st.session_state: st.session_state.trade_brands = []
+        if 'trade_prods' not in st.session_state: st.session_state.trade_prods = []
+
+        # 1) 거래처 필터 (가장 최상위 필터)
         trader_list = sorted(list(df_trade['거래처명'].dropna().unique()))
+        
+        # 이전에 선택했던 값이 현재 목록에 없으면(삭제되었으면) 안전하게 빼고 로드
+        safe_traders = [t for t in st.session_state.trade_traders if t in trader_list]
+        
         selected_traders = st.sidebar.multiselect(
             "거래처 선택", 
             options=trader_list,
-            default=[],
-            placeholder="전체 보기"
+            default=safe_traders,
+            key="trader_multi"
         )
+        st.session_state.trade_traders = selected_traders
+
+        # 2) 브랜드 필터 (거래처에 종속됨)
+        temp_brand_df = df_trade if not selected_traders else df_trade[df_trade['거래처명'].isin(selected_traders)]
+        brand_list = sorted(list(temp_brand_df['브랜드'].dropna().unique()))
         
-        # 2) 브랜드 목록 (거래처에 종속되지 않는 완전 독립 목록)
-        brand_list = sorted(list(df_trade['브랜드'].dropna().unique()))
+        # 거래처를 바꿔서 브랜드 목록이 좁혀졌을 때, 기존에 선택한 브랜드가 살아있다면 유지
+        safe_brands = [b for b in st.session_state.trade_brands if b in brand_list]
+        
         selected_brands = st.sidebar.multiselect(
             "브랜드 선택", 
             options=brand_list,
-            default=[],
-            placeholder="전체 보기"
+            default=safe_brands,
+            key="brand_multi"
         )
+        st.session_state.trade_brands = selected_brands
 
-        # 3) 품목 목록 (오직 '브랜드 선택'에만 종속)
-        if not selected_brands:
-            # 브랜드를 선택하지 않았으면 전체 품목 표시
-            prod_list = sorted(list(df_trade['공식품목명'].dropna().unique()))
-        else:
-            # 브랜드를 선택했으면 해당 브랜드의 품목만 표시
-            temp_prod_df = df_trade[df_trade['브랜드'].isin(selected_brands)]
-            prod_list = sorted(list(temp_prod_df['공식품목명'].dropna().unique()))
-            
+        # 3) 품목 필터 (브랜드에 종속됨)
+        temp_prod_df = temp_brand_df if not selected_brands else temp_brand_df[temp_brand_df['브랜드'].isin(selected_brands)]
+        prod_list = sorted(list(temp_prod_df['공식품목명'].dropna().unique()))
+        
+        # 브랜드를 바꿔서 품목 목록이 좁혀졌을 때, 기존에 선택한 품목이 살아있다면 유지
+        safe_prods = [p for p in st.session_state.trade_prods if p in prod_list]
+
         selected_products = st.sidebar.multiselect(
             "품목 선택", 
             options=prod_list,
-            default=[],
-            placeholder="전체 보기"
+            default=safe_prods,
+            key="prod_multi"
         )
+        st.session_state.trade_prods = selected_products
 
         view_mode = st.sidebar.radio("분석 모드", ["월별 현황", "일별 현황", "수요 예측"], index=0)
 
-        # 공통 데이터 필터 적용 (화면에 그릴 데이터를 걸러내는 곳)
+        # 4) 공통 데이터 필터 적용 (최종 화면용)
         filtered_df = df_trade.copy()
         if selected_traders:
             filtered_df = filtered_df[filtered_df['거래처명'].isin(selected_traders)]
