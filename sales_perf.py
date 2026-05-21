@@ -233,7 +233,7 @@ def run(load_data_func):
     # 🚀 4.5 전사 월별 추이 (접을 수 있는 패널)
     # ==========================================
     st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-    with st.expander(f"📊 {view_y_m}년 전사 월별 매출 추이 보기 (연간 목표 대비)", expanded=False):
+    with st.expander(f"{view_y_m}년 전체 월별 매출 추이", expanded=False):
         
         # 1월부터 12월까지의 틀을 만들고 실적을 매핑
         all_months = pd.DataFrame({'월': range(1, 13)})
