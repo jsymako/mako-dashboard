@@ -238,8 +238,6 @@ def run(load_data_func):
         with st.container(border=True):
             st.markdown(make_kpi_html(f"{view_y_m}년 {st.session_state.v_month}월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
 
-    st.markdown("---")
-
     # ==========================================
     # 🚀 5. 직원별 실적 가공
     # ==========================================
