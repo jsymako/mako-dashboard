@@ -241,3 +241,21 @@ div[data-testid="stDialog"] .stDateInput input::placeholder {
     -webkit-text-fill-color: #95A5A6 !important;
     font-weight: 400 !important;
 }
+
+/* =====================================================================
+   [10] 🔘 메인 화면 라디오 버튼(st.radio) 폰트 크기 조정
+===================================================================== */
+/* 1. 라디오 버튼의 메인 타이틀 글자 크기 (예: "그래프 기준") */
+.block-container .stRadio [data-testid="stWidgetLabel"] p {
+    font-size: 1.15rem !important; /* 기존보다 더 크고 시원하게 조절 */
+    font-weight: 700 !important;   /* 자사재고 라벨들처럼 단단하게 강조 */
+    color: #111111 !important;
+    margin-bottom: 8px !important;
+}
+
+/* 2. 라디오 버튼의 개별 선택지 글자 크기 (예: "품목", "거래처") */
+.block-container .stRadio div[role="radiogroup"] label p {
+    font-size: 1.05rem !important; /* 선택 글자 크기 업 */
+    font-weight: 500 !important;   /* 가독성을 위해 살짝 두껍게 */
+    color: #2C3E50 !important;     /* 세련된 다크 그레이 톤 */
+}
