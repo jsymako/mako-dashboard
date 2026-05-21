@@ -154,7 +154,7 @@ def run(load_data_func):
                     # 🚀 [추가] 한번에보기 일 경우 품목명 위에 '브랜드명'을 연하게 추가
                     if view_all_toggle:
                         # 0.8rem 크기로 연하게(opacity: 0.8) 브랜드명을 넣고 <br>로 줄바꿈
-                        display_title = f"<span style='font-size: 0.8rem; font-weight: normal; opacity: 0.8;'>{row['브랜드']}</span><br>{row['품목명']}"
+                        display_title = f"<span style='font-size: 1.2rem; font-weight: normal; opacity: 0.9;'>{row['브랜드']}</span><br>{row['품목명']}"
                     else:
                         display_title = row['품목명']
 
