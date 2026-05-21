@@ -236,17 +236,17 @@ def run(load_data_func):
                 elif selected_brands: display_name = ", ".join(selected_brands)
                 else: display_name = "전체 브랜드"
                     
-                st.subheader(f"{trader_title} 내 [{display_name}] 매출 순위 (TOP 20)")
+                st.subheader(f"{trader_title} 내 [{display_name}] 매출 순위 (TOP 30)")
             else:
                 rank_field = '거래처명'
                 if selected_products: brand_title = f"선택 품목({len(selected_products)}개)"
                 elif selected_brands: brand_title = ", ".join(selected_brands)
                 else: brand_title = "전체 품목"
                     
-                st.subheader(f"[{brand_title}] 매출 거래처 순위 (TOP 20)")
+                st.subheader(f"[{brand_title}] 매출 거래처 순위 (TOP 30)")
                 
             sum_df = display_df.groupby([rank_field])[['공급가액', '환산수량']].sum().reset_index()
-            sum_df = sum_df.sort_values(by='공급가액', ascending=False).head(20) 
+            sum_df = sum_df.sort_values(by='공급가액', ascending=False).head(30) 
             
             y_ax = alt.Axis(labelLimit=500, labelFontSize=14, title='', labelPadding=10)
             chart_h = max(300, len(sum_df) * 45)
