@@ -7,7 +7,6 @@ from streamlit_option_menu import option_menu
 import datetime
 import holidays 
 
-
 import own_stock
 import coupang_stock
 import sales_trend
