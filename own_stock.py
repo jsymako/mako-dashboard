@@ -51,7 +51,7 @@ def run(load_data_func):
         months_to_look_back = st.sidebar.slider("판매 산출 기준 (개월)", 1, 12, 3, key="own_month_slider_v2")
         
         # 🚀 [추가] 한번에보기 체크박스 추가 (기본값: False)
-        view_all_toggle = st.sidebar.checkbox("브랜드 구분해제", value=False, key="own_view_all_toggle")
+        view_all_toggle = st.sidebar.checkbox("브랜드 구분 해제", value=False, key="own_view_all_toggle")
 
         # 4. 날짜 계산 및 판매량 합산
         today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
