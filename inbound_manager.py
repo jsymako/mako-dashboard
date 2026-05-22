@@ -226,14 +226,14 @@ def run(load_sheet_data):
                         container_html = f"""
                         <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 2px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
-                                <tr style="font-size: 1.5rem; color:#444;">
-                                    <td rowspan="2" style="padding: 15px; text-align: center; width: 12%; font-size: 2.6rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
+                                <tr style="font-size: 1.6rem; color:#444;">
+                                    <td rowspan="2" style="padding: 15px; text-align: center; width: 12%; font-size: 2.0rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
                                     
-                                    <td style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0; width: 8%;"><b></b> {row.get('피트', '40FT')}</td>
-                                    <td style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입고:</b> {inb_dt if inb_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입항:</b> {arr_dt if arr_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>출항:</b> {dep_dt if dep_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 12px 15px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 12px 12px; border-bottom: 1px solid #E2E8F0; width: 8%;"><b></b> {row.get('피트', '40FT')}</td>
+                                    <td style="padding: 12px 12px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입고:</b> {inb_dt if inb_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 12px 12px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입항:</b> {arr_dt if arr_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 12px 12px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>출항:</b> {dep_dt if dep_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 12px 12px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
                                 </tr>
                                 <tr style="font-size: 1.5rem;">
                                     <td colspan="5" style="padding: 12px 15px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
