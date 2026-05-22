@@ -323,7 +323,7 @@ def run(load_sheet_data):
 
         with st.container():
             bcols = st.columns(col_ratios)
-            cell_style = f"font-size: {TABLE_BODY_SIZE}; color: #333; padding-top: 10px;"
+            cell_style = f"font-size: {TABLE_BODY_SIZE}; color: #333; padding-top: 5px;"
 
             bcols[0].markdown(f"<div style='{cell_style}'><b>{row.get('사료명칭', '')}</b></div>", unsafe_allow_html=True)
             bcols[1].markdown(f"<div style='{cell_style}'>{row.get('제품종류', '')}</div>", unsafe_allow_html=True)
