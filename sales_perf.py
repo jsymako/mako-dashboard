@@ -205,16 +205,16 @@ def run(load_data_func):
         <div>
             <h5 style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">{title}</h5>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 0.95rem; color: #777; font-weight: 500;">목표액</span>
-                <span style="font-size: 1.6rem; font-weight: 400; color: #222;">{int(target/10000):,}만 원</span>
+                <span style="font-size: 1.1rem; color: #777; font-weight: 500;">목표액</span>
+                <span style="font-size: 1.7rem; font-weight: 400; color: #222;">{int(target/10000):,}만 원</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <span style="font-size: 0.95rem; color: #777; font-weight: 500;">실적액</span>
-                <span style="font-size: 1.6rem; font-weight: 400; color: #222;">{int(actual/10000):,}만 원</span>
+                <span style="font-size: 1.1rem; color: #777; font-weight: 500;">실적액</span>
+                <span style="font-size: 1.7rem; font-weight: 400; color: #222;">{int(actual/10000):,}만 원</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <span style="font-size: 0.95rem; color: #777; font-weight: 500;">달성률</span>
-                <span style="font-size: 1.6rem; font-weight: 400; color: #222;">{rate:.1f}%</span>
+                <span style="font-size: 1.1rem; color: #777; font-weight: 500;">달성률</span>
+                <span style="font-size: 1.7rem; font-weight: 400; color: #222;">{rate:.1f}%</span>
             </div>
         </div>
         """
