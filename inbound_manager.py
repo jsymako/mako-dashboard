@@ -314,7 +314,7 @@ def run(load_sheet_data):
     headers = ["사료의 명칭", "제품 종류", "현물검정제품", "관련제품", "현물검정완료일", "검정예정일", "잔존일", "상태", "관리"]
     for i, h in enumerate(headers):
         align = "center" if h in ["상태", "관리"] else "left"
-        hcols[i].markdown(f"<div style='font-size: {TABLE_HEADER_SIZE}; font-weight: bold; color: #2C3E50; padding: 12px 5px; border-bottom: 2px solid #E2E8F0; text-align: {align};'>{h}</div>", unsafe_allow_html=True)
+        hcols[i].markdown(f"<div style='font-size: {TABLE_HEADER_SIZE}; font-weight: bold; color: #2C3E50; padding: 5px 5px; border-bottom: 2px solid #E2E8F0; text-align: {align};'>{h}</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     for _, row in df_calc.iterrows():
