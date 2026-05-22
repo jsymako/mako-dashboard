@@ -347,7 +347,7 @@ def run(load_data_func):
         q_t.index = ['목표', '실적', '부족액', '달성']
         q_t.rename_axis("담당", axis=1, inplace=True)
         
-        html_q = q_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
+        html_q = q_t.style.set_properties(**{'font-size': '16px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
                                {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
             .to_html()
