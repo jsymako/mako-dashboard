@@ -128,7 +128,7 @@ def run(load_data_func):
             
             date_range_str = f"{start_date.strftime('%Y년 %m월 %d일')} ~ {end_date.strftime('%Y년 %m월 %d일')}"
             diff_val = (end_date - start_date).days + 1
-            avg_label = "💸 일평균 거래액"
+            avg_label = "일평균 거래액"
 
         elif view_mode == "월별 현황":
             month_list = sorted(list(df_trade['월'].unique()))
@@ -144,7 +144,7 @@ def run(load_data_func):
             date_range_str = f"{start_month} ~ {end_month}"
             d1, d2 = pd.to_datetime(start_month, format='%Y년 %m월'), pd.to_datetime(end_month, format='%Y년 %m월')
             diff_val = (d2.year - d1.year) * 12 + (d2.month - d1.month) + 1
-            avg_label = "💸 월평균 거래액"
+            avg_label = "월평균 거래액"
             
         else: # 수요 예측 모드 
             display_df = filtered_df.copy()
@@ -165,24 +165,24 @@ def run(load_data_func):
         c1, c2, c3, c4 = st.columns(4)
         
         if view_mode == "수요 예측":
-            c1.metric("📊 기준", "최근 12개월")
-            c2.metric("💰 총 거래액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
+            c1.metric("기준", "최근 12개월")
+            c2.metric("총 거래액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
             
             disp_tag = "전체 항목"
             if selected_products: disp_tag = f"{len(selected_products)}개 품목"
             elif selected_brands: disp_tag = f"{len(selected_brands)}개 브랜드"
             elif selected_traders: disp_tag = f"{len(selected_traders)}개 거래처"
             
-            c3.metric("🏷️ 기준 대상", disp_tag)
-            c4.metric("📦 총 출고수량", f"{int(total_qty):,} 개")
+            c3.metric("기준 대상", disp_tag)
+            c4.metric("총 출고수량", f"{int(total_qty):,} 개")
         else:
             avg_amt = total_amt / diff_val if diff_val > 0 else 0
             avg_amt_man = avg_amt / 10000
             
-            c1.metric("📅 분석 기간", f"{diff_val}{'일' if view_mode=='일별 현황' else '개월'}", date_range_str, delta_color="off")
-            c2.metric("💰 총 거래액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
+            c1.metric("분석 기간", f"{diff_val}{'일' if view_mode=='일별 현황' else '개월'}", date_range_str, delta_color="off")
+            c2.metric("총 거래액", f"{int(total_amt_man):,}만 원", f"실제: {int(total_amt):,} 원", delta_color="off")
             c3.metric(avg_label, f"{int(avg_amt_man):,}만 원", f"실제: {int(avg_amt):,} 원", delta_color="off")
-            c4.metric("📦 총 출고수량", f"{int(total_qty):,} 개")
+            c4.metric("총 출고수량", f"{int(total_qty):,} 개")
             
         st.markdown("---")
 
