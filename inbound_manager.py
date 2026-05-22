@@ -224,7 +224,7 @@ def run(load_sheet_data):
                         
                         # 🚀 [수정] 표 하단 여백 박멸은 유지하되, 버튼이 표 아래에 풀사이즈로 매끄럽게 붙도록 재구성했습니다.
                         container_html = f"""
-                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 2px;">
+                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 0px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
                                 <tr style="font-size: 1.6rem; color:#444;">
                                     <td rowspan="2" style="padding: 15px; text-align: center; width: 12%; font-size: 2.0rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
@@ -236,7 +236,7 @@ def run(load_sheet_data):
                                     <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
                                 </tr>
                                 <tr style="font-size: 1.6rem;">
-                                    <td colspan="5" style="padding: 6px 10px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
+                                    <td colspan="5" style="padding: 3px 10px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
                                 </tr>
                             </table>
                         </div>
