@@ -60,7 +60,7 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
    [3] 🚀 사이드바 (다크 모드 완벽 패치 - 최신 버전)
 ========================================= */
 /* 위젯 메인 타이틀 & 라디오 버튼 */
-[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { font-size: 1rem !important; font-weight: 400 !important; color: #FFFFFF !important; margin-bottom: 1px !important; }
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { font-size: 1rem !important; font-weight: 400 !important; color: #FFFFFF !important; margin-bottom: 0px !important; margin-top: 2px !important; }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p { font-size: 1rem !important; font-weight: 400 !important; color: #A0AEC0 !important; }
 
 /* 사이드바 내부 H1 ~ H4 제목 */
@@ -72,7 +72,7 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
 /* 셀렉트박스 겉면 및 아이콘 */
 [data-testid="stSidebar"] div[data-baseweb="select"] > div { background-color: #2D3342 !important; border: 1px solid #4A5568 !important; border-radius: 8px !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] * { color: #FFFFFF !important; }
-[data-testid="stSidebar"] div[data-baseweb="select"] { font-size: 1.0rem !important; font-weight: 400 !important; }
+[data-testid="stSidebar"] div[data-baseweb="select"] { font-size: 0.8rem !important; font-weight: 400 !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] svg { fill: #A0AEC0 !important; }
 
 /* 셀렉트박스 드롭다운 팝업창 (잔상 방지) */
