@@ -335,7 +335,7 @@ def run(load_sheet_data):
             bcols[7].markdown(f"<div style='{cell_style} text-align:center;'><span style='{row['상태스타일']}'>{row['상태']}</span></div>", unsafe_allow_html=True)
 
             with bcols[8]:
-                if st.button("✏️ 수정", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
+                if st.button("✏️", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
                     inspection_form_dialog(mode="edit", insp_data=row)
 
             st.markdown("<hr style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
