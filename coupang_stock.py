@@ -80,9 +80,9 @@ def run(load_data_func):
         item_count = len(latest_df['품목명'].unique())
         
         c1, c2, c3 = st.columns(3)
-        c1.metric("🛒 운영 품목", f"{item_count} 종")
-        c2.metric("📦 현재 총 재고", f"{int(total_stock):,} 개")
-        c3.metric("💸 평균 판매가", f"{int(avg_price):,} 원")
+        c1.metric("운영 품목", f"{item_count} 종")
+        c2.metric("현재 총 재고", f"{int(total_stock):,} 개")
+        c3.metric("평균 판매가", f"{int(avg_price):,} 원")
         st.markdown("---")
 
         # ==========================================
