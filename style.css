@@ -69,54 +69,64 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
 [data-testid="stSidebar"] h3 { font-size: 1.3rem !important; font-weight: 400 !important; color: #A0AEC0 !important; margin-bottom: 10px !important; }
 [data-testid="stSidebar"] h4 { font-size: 1.0rem !important; font-weight: 500 !important; color: #A0AEC0 !important; margin-bottom: 8px !important; margin-top: 10px !important; }
 
-/* =========================================
-   🚀 셀렉트박스 & 멀티셀렉트 (높이 축소 및 중앙 정렬 패치)
-========================================= */
-/* 1. 박스 겉면 전체 높이 축소 (기본 40px -> 34px로 슬림하게) */
+/* =====================================================================
+   🚀 셀렉트박스 & 멀티셀렉트 (높이 34px 고정 및 수직 중앙 정렬)
+===================================================================== */
+/* 1. 박스 겉면 전체 높이 강제 축소 */
 [data-testid="stSidebar"] div[data-baseweb="select"] > div { 
     background-color: #2D3342 !important; 
     border: 1px solid #4A5568 !important; 
     border-radius: 8px !important; 
-    min-height: 34px !important;   /* 🚀 박스 높이 강제 압축 */
+    min-height: 34px !important; 
+    height: 34px !important; 
     padding-top: 0px !important;
     padding-bottom: 0px !important;
 }
 
-/* 2. 내부 글자 수직 중앙 정렬 (위로 붕 뜨는 현상 해결) */
+/* 2. 내부 뼈대 수직 중앙 정렬 (단일/다중 공통) */
 [data-testid="stSidebar"] div[data-baseweb="select"] > div > div {
     display: flex !important;
-    align-items: center !important; /* 🚀 글자를 상자 정중앙으로 끌어내림 */
+    align-items: center !important; 
+    height: 34px !important;
+    min-height: 34px !important;
     padding-top: 0px !important;
     padding-bottom: 0px !important;
-    min-height: 34px !important;
 }
 
-/* 3. 폰트 크기 및 색상 */
+/* 3. 🚀 일반 드롭다운(단일 선택) 글자 위로 붕 뜨는 현상 해결 */
+[data-testid="stSidebar"] div[data-baseweb="select"] > div > div > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important; /* 텍스트 자체의 위아래 잉여 공간 제거 */
+}
+
+/* 4. 폰트 크기 및 색상 */
 [data-testid="stSidebar"] div[data-baseweb="select"] { 
-    font-size: 0.9rem !important;  /* 🚀 폰트를 앙증맞게 축소 */
+    font-size: 0.9rem !important;  /* 폰트 앙증맞게 축소 */
     font-weight: 400 !important; 
 }
 [data-testid="stSidebar"] div[data-baseweb="select"] * { color: #FFFFFF !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] svg { fill: #A0AEC0 !important; }
 
-/* 4. 멀티셀렉트(다중 선택) 전용 내부 여백 및 태그 다이어트 */
+/* 5. 멀티셀렉트(다중 선택) 전용 내부 여백 및 태그 다이어트 */
 [data-testid="stSidebar"] div[data-baseweb="select"] input {
     padding-top: 0px !important;
     padding-bottom: 0px !important;
-    min-height: 20px !important;   /* 🚀 멀티셀렉트 내부 숨겨진 검색창 높이 축소 */
+    height: 24px !important;
+    min-height: 24px !important;
 }
 [data-testid="stSidebar"] span[data-baseweb="tag"] {
-    margin-top: 2px !important;
-    margin-bottom: 2px !important;
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
-    height: 24px !important;       /* 🚀 선택된 항목(버튼) 높이 축소 */
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    height: 22px !important;       /* 선택된 항목(버튼) 높이 대폭 축소 */
     font-size: 0.8rem !important;
     background-color: #4A5568 !important; 
     border-radius: 4px !important;
 }
 
-/* 5. 드롭다운 팝업창 (리스트 항목 높이 축소) */
+/* 6. 드롭다운 팝업창 (리스트 항목 촘촘하게) */
 div[data-baseweb="popover"]:has(ul) > div { 
     background-color: #2D3342 !important; 
     border: 1px solid #4A5568 !important; 
@@ -129,22 +139,48 @@ div[data-baseweb="popover"] ul {
 }
 div[data-baseweb="popover"] li { 
     color: #FFFFFF !important; 
-    font-size: 0.85rem !important;  /* 🚀 팝업창 내부 글자 크기 축소 */
+    font-size: 0.85rem !important; 
     background-color: transparent !important; 
-    padding-top: 6px !important;    /* 🚀 리스트 위아래 여백 축소로 촘촘하게 배치 */
+    padding-top: 6px !important; 
     padding-bottom: 6px !important; 
     line-height: 1.2 !important; 
 }
 div[data-baseweb="popover"] li * { background-color: transparent !important; } 
 div[data-baseweb="popover"] li:hover { background-color: #374151 !important; }
 
-/* 날짜 선택기 (Date Input) 겉면 */
-[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] { background-color: #2D3342 !important; border: 1px solid #4A5568 !important; border-radius: 8px !important; box-shadow: none !important; }
+/* =====================================================================
+   🚀 날짜 선택기 (Date Input) 겉면 (높이 34px 고정 및 폰트 축소)
+===================================================================== */
+[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] { 
+    background-color: #2D3342 !important; 
+    border: 1px solid #4A5568 !important; 
+    border-radius: 8px !important; 
+    box-shadow: none !important; 
+    min-height: 34px !important;   /* 🚀 셀렉트박스와 동일한 높이 34px 적용 */
+    height: 34px !important; 
+}
 [data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] > div,
 [data-testid="stSidebar"] .stDateInput div[data-baseweb="base-input"],
-[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] button { background-color: transparent !important; border: none !important; box-shadow: none !important; }
-[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"]:focus-within { border-color: #4A5568 !important; box-shadow: none !important; }
-.stDateInput input { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; font-size: 1.05rem !important; background-color: transparent !important; }
+[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"] button { 
+    background-color: transparent !important; 
+    border: none !important; 
+    box-shadow: none !important; 
+    height: 34px !important;
+    min-height: 34px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}
+[data-testid="stSidebar"] .stDateInput div[data-baseweb="input"]:focus-within { 
+    border-color: #4A5568 !important; 
+    box-shadow: none !important; 
+}
+.stDateInput input { 
+    color: #FFFFFF !important; 
+    -webkit-text-fill-color: #FFFFFF !important; 
+    font-size: 0.9rem !important;  /* 🚀 폰트 크기도 셀렉트박스와 동일하게 0.9rem으로 축소 */
+    background-color: transparent !important; 
+    line-height: 34px !important; 
+}
 .stDateInput svg { fill: #A0AEC0 !important; }
 
 /* 달력 팝업 내부 */
