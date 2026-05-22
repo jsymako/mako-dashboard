@@ -250,7 +250,7 @@ def run(load_sheet_data):
                                 container_form_dialog(mode="edit", container_data=row, df_m=df_m)
                             
                             # 🚀 [수정] 버튼 바로 아래에 35px 넉넉한 띄어쓰기를 주어 카드끼리 엉겨붙지 않게 차단했습니다.
-                            st.markdown("<div style='margin-bottom: 35px;'></div>", unsafe_allow_html=True)
+                            st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
     # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동
