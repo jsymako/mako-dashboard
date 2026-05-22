@@ -69,16 +69,33 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
 [data-testid="stSidebar"] h3 { font-size: 1.3rem !important; font-weight: 400 !important; color: #A0AEC0 !important; margin-bottom: 10px !important; }
 [data-testid="stSidebar"] h4 { font-size: 1.0rem !important; font-weight: 500 !important; color: #A0AEC0 !important; margin-bottom: 8px !important; margin-top: 10px !important; }
 
-/* 셀렉트박스 겉면 및 아이콘 */
-[data-testid="stSidebar"] div[data-baseweb="select"] > div { background-color: #2D3342 !important; border: 1px solid #4A5568 !important; border-radius: 8px !important; }
+/* 셀렉트박스 겉면 및 아이콘 (높이 및 여백 다이어트) */
+[data-testid="stSidebar"] div[data-baseweb="select"] > div { 
+    background-color: #2D3342 !important; 
+    border: 1px solid #4A5568 !important; 
+    border-radius: 8px !important; 
+    padding-top: 2px !important;    /* 🚀 상단 여백 축소 */
+    padding-bottom: 2px !important; /* 🚀 하단 여백 축소 */
+}
+[data-testid="stSidebar"] div[data-baseweb="select"] > div > div {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+}
 [data-testid="stSidebar"] div[data-baseweb="select"] * { color: #FFFFFF !important; }
-[data-testid="stSidebar"] div[data-baseweb="select"] { font-size: 0.8rem !important; font-weight: 400 !important; }
+[data-testid="stSidebar"] div[data-baseweb="select"] { font-size: 0.85rem !important; font-weight: 400 !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] svg { fill: #A0AEC0 !important; }
 
-/* 셀렉트박스 드롭다운 팝업창 (잔상 방지) */
+/* 셀렉트박스 드롭다운 팝업창 (잔상 방지 및 리스트 칸 높이 축소) */
 div[data-baseweb="popover"]:has(ul) > div { background-color: #2D3342 !important; border: 1px solid #4A5568 !important; border-radius: 8px !important; }
-div[data-baseweb="popover"] ul { background-color: transparent !important; }
-div[data-baseweb="popover"] li { color: #FFFFFF !important; font-size: 0.8rem !important; background-color: transparent !important; }
+div[data-baseweb="popover"] ul { background-color: transparent !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+div[data-baseweb="popover"] li { 
+    color: #FFFFFF !important; 
+    font-size: 0.85rem !important; 
+    background-color: transparent !important; 
+    padding-top: 8px !important;    /* 🚀 드롭다운 리스트 아이템 상단 여백 축소 */
+    padding-bottom: 8px !important; /* 🚀 드롭다운 리스트 아이템 하단 여백 축소 */
+    line-height: 1.2 !important; 
+}
 div[data-baseweb="popover"] li * { background-color: transparent !important; } 
 div[data-baseweb="popover"] li:hover { background-color: #374151 !important; }
 
