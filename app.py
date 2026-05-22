@@ -146,7 +146,7 @@ with st.sidebar:
                 "font-size": "1.05rem",            # 🚀 2. [수정] 글자 크기 (기본 1.05rem -> 더 키우려면 1.1rem, 1.2rem)
                 "text-align": "left", 
                 "margin": "0px 0px 4px 0px",        # 🚀 3. [수정] 버튼과 버튼 사이의 간격 (4px을 8px로 늘리면 메뉴 사이가 벌어집니다)
-                "padding": "6px 15px",            # 🚀 4. [수정] 버튼 자체의 크기 (위아래 10px, 양옆 15px 여백. 15px 20px로 늘리면 버튼이 훨씬 커집니다)
+                "padding": "3px 15px",            # 🚀 4. [수정] 버튼 자체의 크기 (위아래 10px, 양옆 15px 여백. 15px 20px로 늘리면 버튼이 훨씬 커집니다)
                 "border-radius": "0.5rem",          # (개별 메뉴 버튼의 둥근 모서리는 그대로 유지)
                 "color": "#FFFFFF",               
                 "font-weight": "400",
