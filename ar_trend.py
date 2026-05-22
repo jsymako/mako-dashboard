@@ -168,9 +168,9 @@ def run(load_data_func):
                 final_df = final_df.sort_values('name')
 
             c1, c2, c3 = st.columns(3)
-            c1.metric("💰 총 미수잔액", f"{int(final_df['j0'].sum() / 10000):,}만")
-            c2.metric("📈 당월 총 매출", f"{int(final_df['m0'].sum() / 10000):,}만")
-            c3.metric("🚨 대상 업체수", f"{len(final_df)}개")
+            c1.metric("총 미수잔액", f"{int(final_df['j0'].sum() / 10000):,}만")
+            c2.metric("당월 총 매출", f"{int(final_df['m0'].sum() / 10000):,}만")
+            c3.metric("대상 업체수", f"{len(final_df)}개")
             st.markdown("---")
 
             for _, row in final_df.iterrows():
