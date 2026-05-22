@@ -206,15 +206,15 @@ def run(load_data_func):
             <h5 style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">{title}</h5>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 0.95rem; color: #777; font-weight: 500;">목표액</span>
-                <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{int(target/10000):,}만 원</span>
+                <span style="font-size: 1.6rem; font-weight: 400; color: #222;">{int(target/10000):,}만 원</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <span style="font-size: 0.95rem; color: #777; font-weight: 500;">실적액</span>
-                <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{int(actual/10000):,}만 원</span>
+                <span style="font-size: 1.6rem; font-weight: 400; color: #222;">{int(actual/10000):,}만 원</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <span style="font-size: 0.95rem; color: #777; font-weight: 500;">달성률</span>
-                <span style="font-size: 1.35rem; font-weight: 700; color: #222;">{rate:.1f}%</span>
+                <span style="font-size: 1.6rem; font-weight: 400; color: #222;">{rate:.1f}%</span>
             </div>
         </div>
         """
@@ -320,7 +320,7 @@ def run(load_data_func):
         m_t.index = ['목표', '실적', '부족액', '달성'] 
         m_t.rename_axis("담당", axis=1, inplace=True)
         
-        html_m = m_t.style.set_properties(**{'font-size': '20px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
+        html_m = m_t.style.set_properties(**{'font-size': '16px', 'text-align': 'right', 'padding': '12px', 'border': '1px solid #e0e0e0', 'width': '150px'}) \
             .set_table_styles([{'selector': 'th', 'props': [('font-size', '15px'), ('text-align', 'center'), ('background-color', '#f4f6f9'), ('padding', '12px'), ('border', '1px solid #e0e0e0'), ('width', '150px')]}, 
                                {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
             .to_html()
