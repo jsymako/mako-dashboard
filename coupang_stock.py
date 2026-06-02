@@ -13,12 +13,20 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    
-    
     try:
         # 1. 데이터 로드 및 마스터 결합
         df_raw = load_data_func("coupang_stock")
         df_cp_master = load_data_func("coupang_item_data") 
+        
+        # 🚀 [추가] 쿠팡 판매량(실소진량) 산출을 위한 자사 출고 데이터(trade_record) 로드
+        try:
+            df_trade = load_data_func("trade_record")
+            df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액']
+            df_trade['일자'] = pd.to_datetime(df_trade['일자'], errors='coerce')
+            df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+            df_trade_cp = df_trade[df_trade['거래처명'].str.contains('쿠팡', na=False)].copy()
+        except:
+            df_trade_cp = pd.DataFrame(columns=['일자', '품목명', '수량'])
         
         df_raw.columns = ['일자', '옵션ID', '브랜드', '품목명', '쿠팡품목명', '재고', '판매가']
         df_raw['일자'] = pd.to_datetime(df_raw['일자'], errors='coerce')
@@ -40,24 +48,20 @@ def run(load_data_func):
         brand_list = ["전체보기"] + sorted(list(df['브랜드'].dropna().unique()))
         selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
 
-        # 🚀 [추가] 브랜드에 종속되는 품목 선택 기능
         prod_df = df if selected_brand == "전체보기" else df[df['브랜드'] == selected_brand]
         product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
         selected_product = st.sidebar.selectbox("품목 선택", product_list)
 
-
-
-        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "판매가 변동", "모두 보기"], index=2)
+        # 🚀 [추가] 조회 항목에 '판매량 조회' 메뉴 삽입
+        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "판매가 변동", "판매량 조회", "모두 보기"], index=3)
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
-            # 🚀 [수정] 기본값을 14일 전에서 1개월 전으로 변경
             st.session_state.coupang_start_date = today - relativedelta(months=1)
         
         start_date = st.sidebar.date_input("시작 일", key="coupang_start_date", format="YYYY/MM/DD")
         end_date = st.sidebar.date_input("종료 일", value=today, format="YYYY/MM/DD")
         
-        # 🚀 [추가] 품목 선택 필터 적용
         filtered_df = df.copy()
         if selected_brand != "전체보기":
             filtered_df = filtered_df[filtered_df['브랜드'] == selected_brand]
@@ -86,7 +90,7 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 4. 메인 시각화 (🚀 직접 라벨링 방식 적용)
+        # 4. 메인 시각화 세팅
         # ==========================================
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
         
@@ -95,37 +99,25 @@ def run(load_data_func):
         padding_days = max(3, int((x_max - x_min).days * 0.25))
         x_max_padded = x_max + datetime.timedelta(days=padding_days)
         
-        # ==========================================
-        # 4. 메인 시각화 (🚀 직접 라벨링 방식 적용)
-        # ==========================================
-        common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
-        
-        x_min = display_df['일자'].min()
-        x_max = display_df['일자'].max()
-        padding_days = max(3, int((x_max - x_min).days * 0.25))
-        x_max_padded = x_max + datetime.timedelta(days=padding_days)
-        
-        # 🚀 [수정] X축 눈금(Tick) 옵션을 동적으로 생성합니다.
         axis_options = {'format': '%m/%d', 'labelFontSize': 14}
         diff_days = (x_max_padded - x_min).days
         
-        # 날짜 간격이 14일 이하로 짧을 때만 tickCount 옵션을 추가 (하루에 하나씩!)
         if 0 < diff_days <= 14:
             axis_options['tickCount'] = diff_days
             
         common_x = alt.X(
             '일자:T', 
             title='', 
-            axis=alt.Axis(**axis_options), # 🌟 None 에러 없이 딕셔너리 풀기로 안전하게 적용
+            axis=alt.Axis(**axis_options), 
             scale=alt.Scale(domain=[x_min, x_max_padded])
         )
 
         label_idx = display_df.groupby('품목명')['일자'].idxmax()
         label_df = display_df.loc[label_idx]
 
-        # 차트 제목에 품목명도 함께 표시되도록 디테일 추가
         title_prefix = selected_product if selected_product != '전체보기' else (selected_brand if selected_brand != '전체보기' else '전체')
 
+        # === 📈 4-1. 재고량 추이 ===
         if view_target in ["재고량 추이", "모두 보기"]:
             st.subheader(f"{title_prefix} 재고량 변동 흐름")
             
@@ -142,11 +134,10 @@ def run(load_data_func):
                 text='품목명:N',
                 color='품목명:N'
             )
-            
             st.altair_chart((stock_line + stock_label).properties(height=450), use_container_width=True)
+            st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
+        # === 💰 4-2. 판매가 변동 ===
         if view_target in ["판매가 변동", "모두 보기"]:
             st.subheader(f"{title_prefix} 판매가 변동 흐름")
             
@@ -163,16 +154,92 @@ def run(load_data_func):
                 text='품목명:N',
                 color='품목명:N'
             )
-            
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
+            st.markdown("<br>", unsafe_allow_html=True)
 
+        # === 📦 4-3. 판매량(실소진) 추정 차트 (🚀 신규 SCM 로직 적용) ===
+        if view_target in ["판매량 조회", "모두 보기"]:
+            st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
+            
+            # 1) 전체 기간을 기준으로 주차(일요일 마감)를 계산
+            calc_df = filtered_df.copy()
+            calc_df['일자_dt'] = pd.to_datetime(calc_df['일자'])
+            calc_df['주차_일요일'] = calc_df['일자_dt'] + pd.to_timedelta(6 - calc_df['일자_dt'].dt.dayofweek, unit='d')
+            calc_df['주차_일요일'] = calc_df['주차_일요일'].dt.date
+
+            # 기말재고 (주차별 마지막 관측 재고)
+            weekly_stock = calc_df.sort_values('일자_dt').groupby(['품목명', '주차_일요일']).tail(1)[['품목명', '주차_일요일', '재고']]
+            weekly_stock.rename(columns={'재고': '기말재고'}, inplace=True)
+
+            # 기초재고 (이전 주 기말재고를 shift로 가져옴)
+            weekly_stock = weekly_stock.sort_values(['품목명', '주차_일요일'])
+            weekly_stock['기초재고'] = weekly_stock.groupby('품목명')['기말재고'].shift(1)
+
+            # 2) 출고 데이터(trade_record) 주간 묶기
+            if not df_trade_cp.empty:
+                df_trade_cp['일자_dt'] = pd.to_datetime(df_trade_cp['일자'])
+                df_trade_cp['주차_일요일'] = df_trade_cp['일자_dt'] + pd.to_timedelta(6 - df_trade_cp['일자_dt'].dt.dayofweek, unit='d')
+                df_trade_cp['주차_일요일'] = df_trade_cp['주차_일요일'].dt.date
+                
+                valid_items = calc_df['품목명'].unique()
+                t_df = df_trade_cp[df_trade_cp['품목명'].isin(valid_items)]
+                
+                weekly_inbound = t_df.groupby(['품목명', '주차_일요일'])['수량'].sum().reset_index()
+                weekly_inbound.rename(columns={'수량': '주간입고량'}, inplace=True)
+            else:
+                weekly_inbound = pd.DataFrame(columns=['품목명', '주차_일요일', '주간입고량'])
+
+            # 3) 실소진 산출 공식: (기초재고 + 입고량) - 기말재고
+            weekly_sales = pd.merge(weekly_stock, weekly_inbound, on=['품목명', '주차_일요일'], how='left').fillna({'주간입고량': 0})
+            weekly_sales = weekly_sales.dropna(subset=['기초재고']).copy() # 전주 데이터가 없는 첫 주는 계산 제외
+            
+            weekly_sales['추정판매량'] = weekly_sales['기초재고'] + weekly_sales['주간입고량'] - weekly_sales['기말재고']
+            weekly_sales['추정판매량'] = weekly_sales['추정판매량'].clip(lower=0) # 마이너스 튀는 값 방어
+            
+            # 주차 라벨 생성 (예: 11/11~11/17)
+            def make_week_label(d):
+                start_d = d - datetime.timedelta(days=6)
+                return f"{start_d.strftime('%m/%d')}~{d.strftime('%m/%d')}"
+                
+            weekly_sales['주차_라벨'] = pd.to_datetime(weekly_sales['주차_일요일']).dt.date.apply(make_week_label)
+            
+            # 4) 사용자가 선택한 기간에 맞는 주차만 필터링하여 출력
+            mask_sales = (weekly_sales['주차_일요일'] >= start_date) & (weekly_sales['주차_일요일'] <= end_date + datetime.timedelta(days=6))
+            display_sales_df = weekly_sales[mask_sales].copy()
+
+            if display_sales_df.empty:
+                st.info("💡 판매량을 산출하려면 최소 2주 이상의 연속된 데이터가 필요합니다. (조회 기간을 넓혀주세요)")
+            else:
+                sales_bar = alt.Chart(display_sales_df).mark_bar(size=35, cornerRadiusEnd=4).encode(
+                    x=alt.X('주차_라벨:N', sort=list(display_sales_df['주차_라벨'].unique()), title='해당 주차 (월~일)', axis=alt.Axis(labelAngle=0, labelFontSize=12)),
+                    y=alt.Y('추정판매량:Q', title='주간 소진량 (개)'),
+                    color=alt.Color('품목명:N', legend=alt.Legend(title="품목명") if selected_product == "전체보기" else None),
+                    tooltip=[
+                        alt.Tooltip('주차_라벨:N', title='기간'),
+                        alt.Tooltip('품목명:N', title='품목'),
+                        alt.Tooltip('기초재고:Q', format=',.0f', title='시작 재고'),
+                        alt.Tooltip('주간입고량:Q', format=',.0f', title='당주 입고(출고)'),
+                        alt.Tooltip('기말재고:Q', format=',.0f', title='남은 재고'),
+                        alt.Tooltip('추정판매량:Q', format=',.0f', title='★추정 판매량')
+                    ]
+                ).properties(height=400)
+                
+                # 단일 품목 조회 시 막대 위에 정확한 숫자 라벨 추가
+                if selected_product != "전체보기":
+                    sales_text = sales_bar.mark_text(align='center', baseline='bottom', dy=-5, fontSize=14, fontWeight='bold', color='#444').encode(
+                        text=alt.Text('추정판매량:Q', format=',.0f')
+                    )
+                    st.altair_chart((sales_bar + sales_text), use_container_width=True)
+                else:
+                    st.altair_chart(sales_bar, use_container_width=True)
+
+        # ==========================================
         # 5. 일자별 상세 모니터링 표
-        # 5. 일자별 상세 모니터링 표
+        # ==========================================
         st.markdown("---")
-        st.subheader("일자별 안전재고 및 가격 모니터링")
+        st.subheader("일자별 모니터링 상세표")
         st.markdown("※ 🚨재고부족(빨강) | 🔺가격초과(녹색) | 🔻가격미달(파랑) | 🚨+🔺🔻복합(보라)")
 
-        # 🚀 1. 재고/판매가 데이터 안전 변환 및 아이콘 무조건 부착
         def format_stock_status(row):
             try:
                 val = int(float(row['재고']))
@@ -180,10 +247,8 @@ def run(load_data_func):
             except:
                 val, safe_val = 0, 0
                 
-            if val <= 0:
-                return "품절 🚨"
-            if safe_val > 0 and val < safe_val: 
-                return f"{val:,} 🚨"
+            if val <= 0: return "품절 🚨"
+            if safe_val > 0 and val < safe_val: return f"{val:,} 🚨"
             return f"{val:,}"
 
         def format_price_status(row):
@@ -194,20 +259,17 @@ def run(load_data_func):
             except:
                 val, max_val, min_val = 0, 0, 0
                 
-            if max_val > 0 and val > max_val: 
-                return f"{val:,} 🔺"
-            elif min_val > 0 and val < min_val: 
-                return f"{val:,} 🔻"
+            if max_val > 0 and val > max_val: return f"{val:,} 🔺"
+            elif min_val > 0 and val < min_val: return f"{val:,} 🔻"
             return f"{val:,}"
 
         show_df = display_df[['일자', '브랜드', '품목명', '재고', '안전재고량', '판매가', '최소판매가', '최대판매가']].copy()
-        
         show_df['재고 현황'] = show_df.apply(format_stock_status, axis=1)
         show_df['판매가 현황'] = show_df.apply(format_price_status, axis=1)
         show_df['일자'] = show_df['일자'].dt.strftime('%m/%d')
 
-        # 🚀 2. 조회 항목별 데이터 매핑
-        if view_target == "재고량 추이":
+        # 🚀 조회 항목별 데이터 매핑 처리
+        if view_target == "재고량 추이" or view_target == "판매량 조회":
             show_df['표시값'] = show_df['재고 현황']
         elif view_target == "판매가 변동":
             show_df['표시값'] = show_df['판매가 현황']
@@ -230,39 +292,24 @@ def run(load_data_func):
         pivot_df = pivot_df[final_cols].fillna("-")
 
         if view_target == "모두 보기":
-            target_width = 140  # '재고 | 판매가'가 다 보이도록 넉넉하게 설정
+            target_width = 140
         else:
-            target_width = 90   # 단일 항목일 때는 90으로 콤팩트하게 유지
+            target_width = 90
             
         my_column_config = {}
         for col in date_cols:
             my_column_config[col] = st.column_config.Column(width=target_width)
 
-        # 🚀 3. 대표님이 요청하신 직관적인 색상 룰 적용
         def color_danger_cells(val):
-            if not isinstance(val, str):
-                return ""
-                
+            if not isinstance(val, str): return ""
             has_stock_danger = "🚨" in val
             has_high_price = "🔺" in val
             has_low_price = "🔻" in val
             
-            # ① 복합 문제 (재고부족 + 가격이상) -> 보라색
-            if has_stock_danger and (has_high_price or has_low_price):
-                return "color: #9c27b0; font-weight: bold;" 
-                
-            # ② 단일 문제: 가격 미달 -> 파란색
-            if has_low_price:
-                return "color: #007bff; font-weight: bold;"
-                
-            # ③ 단일 문제: 가격 초과 -> 녹색
-            if has_high_price:
-                return "color: #28a745; font-weight: bold;"
-                
-            # ④ 단일 문제: 재고 부족 -> 빨간색
-            if has_stock_danger:
-                return "color: #ff4b4b; font-weight: bold;"
-                
+            if has_stock_danger and (has_high_price or has_low_price): return "color: #9c27b0; font-weight: bold;" 
+            if has_low_price: return "color: #007bff; font-weight: bold;"
+            if has_high_price: return "color: #28a745; font-weight: bold;"
+            if has_stock_danger: return "color: #ff4b4b; font-weight: bold;"
             return ""
 
         st.dataframe(
