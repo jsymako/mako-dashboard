@@ -119,13 +119,13 @@ st.markdown("""
 with st.sidebar:
     main_menu = option_menu(
         menu_title=None, 
-        options=["대시 보드", "자사 재고", "쿠팡 재고", "판매 현황", "입고 현황", "업무 보고", "영업 실적", "채권 분석"],
+        options=["대시 보드", "자사 재고", "판매 현황", "입고 현황", "쿠팡 현황", "업무 보고", "영업 실적", "채권 분석"],
         icons=[
             "grid",             # 대시 보드 (바둑판 모양)
             "boxes",            # 자사 재고 (쌓여있는 상자)
-            "box-seam",         # 쿠팡 재고 (테이핑 된 택배 상자)
             "graph-up-arrow",   # 판매 현황 (상승하는 그래프)
             "truck",            # 입고 현황 (배송 트럭)
+            "box-seam",         # 쿠팡 재고 (테이핑 된 택배 상자)
             "pencil-square",    # 업무 보고 (펜과 종이)
             "award",            # 영업 실적 (트로피/뱃지)
             "cash-stack"        # 채권 분석 (쌓여있는 돈/현금)
@@ -315,7 +315,7 @@ if main_menu == "대시 보드" or main_menu is None:
     render_dashboard()
 elif main_menu == "자사 재고":
     own_stock.run(load_sheet_data) 
-elif main_menu == "쿠팡 재고":
+elif main_menu == "쿠팡 현황":
     coupang_stock.run(load_sheet_data)
 elif main_menu == "입고 현황":
     inbound_manager.run(load_sheet_data)
