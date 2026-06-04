@@ -171,18 +171,13 @@ def run(load_sheet_data):
         for m in df_m['제조사명'].tolist():
             if m not in m_order: m_order.append(m)
 
-
-        
-    #st.sidebar.markdown("<br>", unsafe_allow_html=True)
     m_list = ["전체보기"] + m_order
     selected_m = st.sidebar.selectbox("제조사별 분류", m_list)
     view_all_history = st.sidebar.checkbox("모든 기록 보기", value=False)
-    #st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 20px 0px;">', unsafe_allow_html=True)
     
     if st.sidebar.button("신규 컨테이너 추가", use_container_width=True):
         container_form_dialog(mode="add", df_m=df_m)
 
-    # st.sidebar.markdown("### 🔍 입고 조회 조건")
     if st.sidebar.button("데이터 새로고침", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
@@ -222,7 +217,6 @@ def run(load_sheet_data):
                         elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[출항 대기중]</span>"
                         else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[준비 중]</span>"
                         
-                        # 🚀 [수정] 표 하단 여백 박멸은 유지하되, 버튼이 표 아래에 풀사이즈로 매끄럽게 붙도록 재구성했습니다.
                         container_html = f"""
                         <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 0px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
@@ -244,12 +238,8 @@ def run(load_sheet_data):
                         
                         with st.container():
                             st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
-                            
-                            # 🚀 [수정] 우측으로 빠졌던 버튼을 다시 원래대로 시원한 가로형으로 되돌렸습니다.
                             if st.button("이 컨테이너 정보 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
                                 container_form_dialog(mode="edit", container_data=row, df_m=df_m)
-                            
-                            # 🚀 [수정] 버튼 바로 아래에 35px 넉넉한 띄어쓰기를 주어 카드끼리 엉겨붙지 않게 차단했습니다.
                             st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
@@ -257,6 +247,32 @@ def run(load_sheet_data):
     # -----------------------------------------------------------------
     st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
     
+    # 🚀 [추가] 현물검정 표 잉여 여백 완벽 박멸 CSS 주입
+    st.markdown("""
+        <style>
+        /* 1. 각 칸의 글자를 감싸는 p 태그의 강제 마진(16px) 제거 및 수직 중앙 정렬 */
+        div[data-testid="stHorizontalBlock"] div[data-testid="stMarkdownContainer"] p {
+            margin-bottom: 0px !important;
+            margin-top: 0px !important;
+            line-height: 32px !important; 
+        }
+        
+        /* 2. 관리 버튼(✏️)의 뚱뚱한 패딩을 압축시켜 줄 높이를 다이어트 */
+        div[data-testid="stHorizontalBlock"] button {
+            min-height: 32px !important;
+            height: 32px !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+        }
+
+        /* 3. 줄과 줄 사이 구분선(hr) 위아래로 스트림릿이 넣는 블록 갭(24px) 음수 마진으로 강제 병합 */
+        div.element-container:has(hr.row-divider) {
+            margin-top: -20px !important; 
+            margin-bottom: -15px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     col_title, col_add_btn = st.columns([5, 1])
     with col_title:
         st.markdown("<h2>현물검정 현황</h2>", unsafe_allow_html=True)
@@ -338,4 +354,5 @@ def run(load_sheet_data):
                 if st.button("✏️", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
                     inspection_form_dialog(mode="edit", insp_data=row)
 
-            st.markdown("<hr style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+            # 🚀 [핵심 수정] CSS로 갭을 죽이기 위해 hr 클래스에 'row-divider'를 부여했습니다!
+            st.markdown("<hr class='row-divider' style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
