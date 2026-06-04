@@ -177,7 +177,7 @@ def run(load_data_func):
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
-        # === 📦 6-3. 주간 실소진량 추정 차트 (🚀 출고일 +3일 이월 반영) ===
+        # === 📦 6-3. 주간 실소진량 추정 차트 (🚀 출고일 +2일 이월 반영) ===
         if view_target in ["판매량 조회", "모두 보기"]:
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
             st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ <b>(자사 출고일 + 3일)</b>을 쿠팡 입고일로 가정하여 주차별 판매량을 정산합니다.</span>", unsafe_allow_html=True)
@@ -198,7 +198,7 @@ def run(load_data_func):
             # 🚀 [핵심] 출고 데이터에 +3일 리드타임을 먹여서 주차를 계산
             if not df_trade_cp.empty:
                 df_trade_cp['출고일_dt'] = pd.to_datetime(df_trade_cp['일자'])
-                df_trade_cp['쿠팡입고예정일'] = df_trade_cp['출고일_dt'] + datetime.timedelta(days=3)
+                df_trade_cp['쿠팡입고예정일'] = df_trade_cp['출고일_dt'] + datetime.timedelta(days=2)
                 
                 # 미뤄진 '쿠팡입고예정일'을 기준으로 어느 주차(월~일)에 속하는지 판별
                 df_trade_cp['주차_일요일'] = df_trade_cp['쿠팡입고예정일'] + pd.to_timedelta(6 - df_trade_cp['쿠팡입고예정일'].dt.dayofweek, unit='d')
