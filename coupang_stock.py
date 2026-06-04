@@ -254,7 +254,7 @@ def run(load_data_func):
             if not df_trade_cp.empty:
                 df_trade_daily = df_trade_cp.copy()
                 df_trade_daily['출고일_dt'] = pd.to_datetime(df_trade_daily['일자']).dt.date
-                df_trade_daily['입고예정일'] = df_trade_daily['출고일_dt'] + datetime.timedelta(days=3)
+                df_trade_daily['입고예정일'] = df_trade_daily['출고일_dt'] + datetime.timedelta(days=6)
                 
                 valid_options = daily_calc_df['옵션ID'].unique()
                 t_daily_df = df_trade_daily[df_trade_daily['옵션ID'].isin(valid_options)]
