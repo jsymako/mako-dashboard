@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 import altair as alt
 
 def run(load_data_func):
-    st.title("쿠팡 재고 현황")
+    st.title("쿠팡 현황")
     
     try:
         with open("style.css", "r", encoding="utf-8") as f:
@@ -182,7 +182,7 @@ def run(load_data_func):
         if view_target == "판매량 조회":
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
             # 🚀 [수정] 안내 텍스트를 +2일로 변경
-            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ <b>(자사 출고일 + 2일)</b>을 쿠팡 입고일로 가정하여 주차별 판매량을 정산합니다.</span>", unsafe_allow_html=True)
+            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ <b>(자사 출고일 + 2일)</b>을 쿠팡 입고일로 가정하여 주차별 판매량을 추정</span>", unsafe_allow_html=True)
             
             calc_df = filtered_df.copy()
             calc_df['일자_dt'] = pd.to_datetime(calc_df['일자'])
