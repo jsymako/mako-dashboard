@@ -83,7 +83,8 @@ def run(load_data_func):
         product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
         selected_product = st.sidebar.selectbox("품목 선택", product_list)
 
-        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "판매가 변동", "판매량 조회", "모두 보기"], index=3)
+        # 🚀 [수정] '모두 보기' 옵션 삭제 및 기본값 인덱스 0(재고량 추이)으로 설정
+        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "판매가 변동", "판매량 조회"], index=0)
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
@@ -148,7 +149,7 @@ def run(load_data_func):
         title_prefix = selected_product if selected_product != '전체보기' else (selected_brand if selected_brand != '전체보기' else '전체')
 
         # === 📈 6-1. 재고량 추이 ===
-        if view_target in ["재고량 추이", "모두 보기"]:
+        if view_target == "재고량 추이":
             st.subheader(f"{title_prefix} 재고량 변동 흐름")
             stock_line = alt.Chart(display_df).mark_line(point=True).encode(
                 x=common_x,
@@ -163,7 +164,7 @@ def run(load_data_func):
             st.markdown("<br>", unsafe_allow_html=True)
 
         # === 💰 6-2. 판매가 변동 ===
-        if view_target in ["판매가 변동", "모두 보기"]:
+        if view_target == "판매가 변동":
             st.subheader(f"{title_prefix} 판매가 변동 흐름")
             price_line = alt.Chart(display_df).mark_line(point=True).encode(
                 x=common_x,
@@ -177,9 +178,10 @@ def run(load_data_func):
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
-        # === 📦 6-3. 주간 실소진량 추정 차트 (🚀 출고일 +2일 이월 반영) ===
-        if view_target in ["판매량 조회", "모두 보기"]:
+        # === 📦 6-3. 주간 실소진량 추정 차트 ===
+        if view_target == "판매량 조회":
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
+            # 🚀 [수정] 안내 텍스트를 +2일로 변경
             st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ <b>(자사 출고일 + 2일)</b>을 쿠팡 입고일로 가정하여 주차별 판매량을 정산합니다.</span>", unsafe_allow_html=True)
             
             calc_df = filtered_df.copy()
@@ -187,7 +189,7 @@ def run(load_data_func):
             calc_df['주차_일요일'] = calc_df['일자_dt'] + pd.to_timedelta(6 - calc_df['일자_dt'].dt.dayofweek, unit='d')
             calc_df['주차_일요일'] = calc_df['주차_일요일'].dt.date
 
-            # 기말재고 (고유한 옵션ID 기준으로 정확히 추적)
+            # 기말재고 
             weekly_stock = calc_df.sort_values('일자_dt').groupby(['옵션ID', '품목명', '주차_일요일']).tail(1)[['옵션ID', '품목명', '주차_일요일', '재고']]
             weekly_stock.rename(columns={'재고': '기말재고'}, inplace=True)
 
@@ -195,12 +197,11 @@ def run(load_data_func):
             weekly_stock = weekly_stock.sort_values(['옵션ID', '주차_일요일'])
             weekly_stock['기초재고'] = weekly_stock.groupby('옵션ID')['기말재고'].shift(1)
 
-            # 🚀 [핵심] 출고 데이터에 +3일 리드타임을 먹여서 주차를 계산
+            # 🚀 [수정] 출고 데이터에 +2일 리드타임을 먹여서 주차를 계산
             if not df_trade_cp.empty:
                 df_trade_cp['출고일_dt'] = pd.to_datetime(df_trade_cp['일자'])
-                df_trade_cp['쿠팡입고예정일'] = df_trade_cp['출고일_dt'] + datetime.timedelta(days=2)
+                df_trade_cp['쿠팡입고예정일'] = df_trade_cp['출고일_dt'] + datetime.timedelta(days=2) # 🌟 3일에서 2일로 변경
                 
-                # 미뤄진 '쿠팡입고예정일'을 기준으로 어느 주차(월~일)에 속하는지 판별
                 df_trade_cp['주차_일요일'] = df_trade_cp['쿠팡입고예정일'] + pd.to_timedelta(6 - df_trade_cp['쿠팡입고예정일'].dt.dayofweek, unit='d')
                 df_trade_cp['주차_일요일'] = df_trade_cp['주차_일요일'].dt.date
                 
@@ -219,7 +220,6 @@ def run(load_data_func):
             weekly_sales['추정판매량'] = weekly_sales['기초재고'] + weekly_sales['주간입고량'] - weekly_sales['기말재고']
             weekly_sales['추정판매량'] = weekly_sales['추정판매량'].clip(lower=0)
             
-            # 차트 표시를 위해 '품목명' 단위로 합산
             weekly_sales_grouped = weekly_sales.groupby(['품목명', '주차_일요일'])[['기초재고', '주간입고량', '기말재고', '추정판매량']].sum().reset_index()
             
             def make_week_label(d):
@@ -242,7 +242,7 @@ def run(load_data_func):
                         alt.Tooltip('주차_라벨:N', title='기간'),
                         alt.Tooltip('품목명:N', title='품목'),
                         alt.Tooltip('기초재고:Q', format=',.0f', title='시작 재고'),
-                        alt.Tooltip('주간입고량:Q', format=',.1f', title='당주 입고(출고+3일 반영)'),
+                        alt.Tooltip('주간입고량:Q', format=',.1f', title='당주 입고(출고+2일 반영)'), # 🌟 툴팁도 2일로 변경
                         alt.Tooltip('기말재고:Q', format=',.0f', title='남은 재고'),
                         alt.Tooltip('추정판매량:Q', format=',.0f', title='★추정 판매량')
                     ]
@@ -292,12 +292,11 @@ def run(load_data_func):
             show_df['판매가 현황'] = show_df.apply(format_price_status, axis=1)
             show_df['일자'] = show_df['일자'].dt.strftime('%m/%d')
 
+            # 🚀 [수정] '모두 보기'가 사라졌으므로, 로직을 단순화합니다.
             if view_target == "재고량 추이":
                 show_df['표시값'] = show_df['재고 현황']
             elif view_target == "판매가 변동":
                 show_df['표시값'] = show_df['판매가 현황']
-            else:
-                show_df['표시값'] = show_df['재고 현황'] + " | " + show_df['판매가 현황']
 
             show_df['안전재고'] = show_df['안전재고량'].apply(lambda x: f"{int(float(x)):,}" if pd.notna(x) else "0")
             show_df['최소판매가'] = show_df['최소판매가'].apply(lambda x: f"{int(float(x)):,}" if pd.notna(x) else "0")
@@ -314,10 +313,7 @@ def run(load_data_func):
             final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
             pivot_df = pivot_df[final_cols].fillna("-")
 
-            if view_target == "모두 보기":
-                target_width = 140
-            else:
-                target_width = 90
+            target_width = 90
                 
             my_column_config = {}
             for col in date_cols:
