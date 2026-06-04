@@ -14,18 +14,33 @@ def run(load_data_func):
         pass
 
     try:
-        # 1. 데이터 로드 및 마스터 결합
-        df_raw = load_data_func("coupang_stock")
+        # ==========================================
+        # 1. 마스터 데이터(coupang_item_data) 우선 로드 및 전처리
+        # ==========================================
         df_cp_master = load_data_func("coupang_item_data") 
         
+        # 구글 시트에 컬럼이 유동적일 수 있으므로 유연하게 대처
+        if '카테고리' in df_cp_master.columns:
+            df_cp_master.rename(columns={'카테고리': '브랜드'}, inplace=True)
+        elif '브랜드' not in df_cp_master.columns:
+            df_cp_master['브랜드'] = '미분류'
+            
+        if '품목명' not in df_cp_master.columns: df_cp_master['품목명'] = '이름없음'
         if '이카운트품목코드' not in df_cp_master.columns: df_cp_master['이카운트품목코드'] = ''
         if '쿠팡판매단위' not in df_cp_master.columns: df_cp_master['쿠팡판매단위'] = 1
 
-        df_cp_master = df_cp_master[['옵션ID', '안전재고량', '최대판매가', '최소판매가', '이카운트품목코드', '쿠팡판매단위']].copy()
+        # 마스터에서 우리가 믿고 쓸 진짜 '기준 정보' 컬럼들만 추출
+        df_cp_master = df_cp_master[['옵션ID', '브랜드', '품목명', '안전재고량', '최대판매가', '최소판매가', '이카운트품목코드', '쿠팡판매단위']].copy()
         df_cp_master['옵션ID'] = df_cp_master['옵션ID'].astype(str).str.strip()
         df_cp_master['이카운트품목코드'] = df_cp_master['이카운트품목코드'].astype(str).str.strip()
         df_cp_master['쿠팡판매단위'] = pd.to_numeric(df_cp_master['쿠팡판매단위'], errors='coerce').fillna(1)
         
+        for col in ['안전재고량', '최대판매가', '최소판매가']:
+            df_cp_master[col] = pd.to_numeric(df_cp_master[col], errors='coerce').fillna(0)
+            
+        # ==========================================
+        # 2. 자사 출고 데이터(trade_record) 로드 및 마스터 매핑
+        # ==========================================
         try:
             df_trade = load_data_func("trade_record")
             df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액']
@@ -33,8 +48,8 @@ def run(load_data_func):
             df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
             df_trade['품목코드'] = df_trade['품목코드'].astype(str).str.strip()
             
+            # 쿠팡 출고건 추출 후 마스터 데이터의 이카운트품목코드로 매칭 (쿠팡단위 환산)
             df_trade_cp = df_trade[df_trade['거래처명'].astype(str).str.contains('쿠팡', na=False)].copy()
-            
             df_trade_cp = pd.merge(
                 df_trade_cp, 
                 df_cp_master[['이카운트품목코드', '옵션ID', '쿠팡판매단위']], 
@@ -42,29 +57,33 @@ def run(load_data_func):
                 right_on='이카운트품목코드', 
                 how='inner'
             )
-            
             df_trade_cp['환산수량'] = df_trade_cp['수량'] / df_trade_cp['쿠팡판매단위']
             
         except Exception as e:
             st.warning(f"출고 데이터 맵핑 오류 (이카운트품목코드를 확인하세요): {e}")
             df_trade_cp = pd.DataFrame(columns=['일자', '옵션ID', '환산수량'])
         
-        df_raw.columns = ['일자', '옵션ID', '브랜드', '품목명', '쿠팡품목명', '재고', '판매가']
+        # ==========================================
+        # 3. 크롤링 과거 데이터(coupang_stock) 로드 및 🚀 Inner Join 덮어쓰기
+        # ==========================================
+        df_raw = load_data_func("coupang_stock")
+        # 기존에 저장된 낡은 브랜드, 품목명 정보는 무시하기 위해 변수명을 바꿈
+        df_raw.columns = ['일자', '옵션ID', '구_브랜드', '구_품목명', '구_쿠팡품목명', '재고', '판매가']
         df_raw['일자'] = pd.to_datetime(df_raw['일자'], errors='coerce')
         df_raw['재고'] = pd.to_numeric(df_raw['재고'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_raw['판매가'] = pd.to_numeric(df_raw['판매가'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_raw['옵션ID'] = df_raw['옵션ID'].astype(str).str.strip()
         df_raw = df_raw.dropna(subset=['일자'])
         
-        for col in ['안전재고량', '최대판매가', '최소판매가']:
-            df_cp_master[col] = pd.to_numeric(df_cp_master[col], errors='coerce').fillna(0)
-            
-        df = pd.merge(df_raw, df_cp_master[['옵션ID', '안전재고량', '최대판매가', '최소판매가']], on='옵션ID', how='left')
-        df[['안전재고량', '최대판매가', '최소판매가']] = df[['안전재고량', '최대판매가', '최소판매가']].fillna(0)
+        # 💡 [핵심] 크롤링된 과거 데이터의 날짜, 재고, 판매가 정보만 추출해서 마스터 데이터에 강제 결합(Inner Join)
+        # 이렇게 하면 마스터 시트에 없는(삭제된) 옛날 제품은 화면에서 알아서 사라집니다!
+        df = pd.merge(df_raw[['일자', '옵션ID', '재고', '판매가']], df_cp_master, on='옵션ID', how='inner')
 
-        # 2. 사이드바 필터 설정
+        # ==========================================
+        # 4. 사이드바 필터 설정 (마스터 기준 100% 동기화)
+        # ==========================================
         brand_list = ["전체보기"] + sorted(list(df['브랜드'].dropna().unique()))
-        selected_brand = st.sidebar.selectbox("브랜드 선택", brand_list)
+        selected_brand = st.sidebar.selectbox("브랜드 선택 (카테고리)", brand_list)
 
         prod_df = df if selected_brand == "전체보기" else df[df['브랜드'] == selected_brand]
         product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
@@ -92,7 +111,7 @@ def run(load_data_func):
             st.warning("선택하신 조건에 데이터가 없습니다.")
             return
 
-        # 3. 상단 요약 KPI
+        # 5. 상단 요약 KPI
         latest_date = display_df['일자'].max()
         latest_df = display_df[display_df['일자'] == latest_date]
         
@@ -107,7 +126,7 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 4. 메인 시각화 세팅
+        # 6. 메인 시각화 세팅
         # ==========================================
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
         
@@ -134,7 +153,7 @@ def run(load_data_func):
 
         title_prefix = selected_product if selected_product != '전체보기' else (selected_brand if selected_brand != '전체보기' else '전체')
 
-        # === 📈 4-1. 재고량 추이 ===
+        # === 📈 6-1. 재고량 추이 ===
         if view_target in ["재고량 추이", "모두 보기"]:
             st.subheader(f"{title_prefix} 재고량 변동 흐름")
             stock_line = alt.Chart(display_df).mark_line(point=True).encode(
@@ -149,7 +168,7 @@ def run(load_data_func):
             st.altair_chart((stock_line + stock_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
-        # === 💰 4-2. 판매가 변동 ===
+        # === 💰 6-2. 판매가 변동 ===
         if view_target in ["판매가 변동", "모두 보기"]:
             st.subheader(f"{title_prefix} 판매가 변동 흐름")
             price_line = alt.Chart(display_df).mark_line(point=True).encode(
@@ -164,7 +183,7 @@ def run(load_data_func):
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
-        # === 📦 4-3. 주간 실소진량 추정 차트 ===
+        # === 📦 6-3. 주간 실소진량 추정 차트 ===
         if view_target in ["판매량 조회", "모두 보기"]:
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
             
@@ -234,76 +253,8 @@ def run(load_data_func):
                 else:
                     st.altair_chart(sales_bar, use_container_width=True)
 
-        # === 📊 4-4. 일별 판매량 추정 (🚀 리드타임 +3일 강제 지연 반영) ===
-        if view_target in ["판매량 조회", "모두 보기"]:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.subheader(f"{title_prefix} 일별 판매량 추이 (리드타임 +3일 반영)")
-            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ 자사 출고일 기준 <b>+3일 뒤 쿠팡 입고</b>를 가정한 일별 실소진량 추정치입니다.</span>", unsafe_allow_html=True)
-            
-            daily_calc_df = filtered_df.copy()
-            daily_calc_df['일자_dt'] = pd.to_datetime(daily_calc_df['일자']).dt.date
-            
-            # 일별 기말재고 및 기초재고 생성
-            daily_stock = daily_calc_df.sort_values('일자_dt').groupby(['옵션ID', '품목명', '일자_dt']).tail(1)[['옵션ID', '품목명', '일자_dt', '재고']]
-            daily_stock.rename(columns={'재고': '기말재고'}, inplace=True)
-            
-            daily_stock = daily_stock.sort_values(['옵션ID', '일자_dt'])
-            daily_stock['기초재고'] = daily_stock.groupby('옵션ID')['기말재고'].shift(1)
-            
-            # 출고 데이터 리드타임(+3일) 강제 지연 적용
-            if not df_trade_cp.empty:
-                df_trade_daily = df_trade_cp.copy()
-                df_trade_daily['출고일_dt'] = pd.to_datetime(df_trade_daily['일자']).dt.date
-                df_trade_daily['입고예정일'] = df_trade_daily['출고일_dt'] + datetime.timedelta(days=6)
-                
-                valid_options = daily_calc_df['옵션ID'].unique()
-                t_daily_df = df_trade_daily[df_trade_daily['옵션ID'].isin(valid_options)]
-                
-                daily_inbound = t_daily_df.groupby(['옵션ID', '입고예정일'])['환산수량'].sum().reset_index()
-                daily_inbound.rename(columns={'환산수량': '일별입고량', '입고예정일': '일자_dt'}, inplace=True)
-            else:
-                daily_inbound = pd.DataFrame(columns=['옵션ID', '일자_dt', '일별입고량'])
-                
-            # 일일 실소진 산출 공식
-            daily_sales = pd.merge(daily_stock, daily_inbound, on=['옵션ID', '일자_dt'], how='left').fillna({'일별입고량': 0})
-            daily_sales = daily_sales.dropna(subset=['기초재고']).copy()
-            
-            daily_sales['일일추정판매량'] = daily_sales['기초재고'] + daily_sales['일별입고량'] - daily_sales['기말재고']
-            daily_sales['일일추정판매량'] = daily_sales['일일추정판매량'].clip(lower=0)
-            
-            # 품목별 합산
-            daily_sales_grouped = daily_sales.groupby(['품목명', '일자_dt'])[['기초재고', '일별입고량', '기말재고', '일일추정판매량']].sum().reset_index()
-            
-            mask_daily_sales = (daily_sales_grouped['일자_dt'] >= start_date) & (daily_sales_grouped['일자_dt'] <= end_date)
-            display_daily_sales = daily_sales_grouped[mask_daily_sales].copy()
-            
-            if display_daily_sales.empty:
-                st.info("💡 일별 판매량을 산출할 수 있는 데이터가 부족합니다.")
-            else:
-                daily_sales_bar = alt.Chart(display_daily_sales).mark_bar(size=12, cornerRadiusEnd=2, opacity=0.85).encode(
-                    x=alt.X('일자_dt:T', title='일자', axis=alt.Axis(format='%m/%d', labelAngle=0, labelFontSize=12)),
-                    y=alt.Y('일일추정판매량:Q', title='일일 소진량 (개)'),
-                    color=alt.Color('품목명:N', legend=alt.Legend(title="품목명") if selected_product == "전체보기" else None),
-                    tooltip=[
-                        alt.Tooltip('일자_dt:T', format='%Y-%m-%d', title='일자'),
-                        alt.Tooltip('품목명:N', title='품목'),
-                        alt.Tooltip('기초재고:Q', format=',.0f', title='전일 마감재고'),
-                        alt.Tooltip('일별입고량:Q', format=',.1f', title='금일 입고(출고+3일)'),
-                        alt.Tooltip('기말재고:Q', format=',.0f', title='금일 마감재고'),
-                        alt.Tooltip('일일추정판매량:Q', format=',.0f', title='★일일 판매량')
-                    ]
-                ).properties(height=350)
-                
-                if selected_product != "전체보기":
-                    daily_sales_text = daily_sales_bar.mark_text(align='center', baseline='bottom', dy=-5, fontSize=11, fontWeight='bold', color='#555').encode(
-                        text=alt.Text('일일추정판매량:Q', format=',.0f')
-                    )
-                    st.altair_chart((daily_sales_bar + daily_sales_text), use_container_width=True)
-                else:
-                    st.altair_chart(daily_sales_bar, use_container_width=True)
-
         # ==========================================
-        # 5. 일자별 상세 모니터링 표 (🚀 판매량 조회 시 숨김)
+        # 7. 일자별 상세 모니터링 표 (판매량 조회 시 숨김)
         # ==========================================
         if view_target != "판매량 조회":
             st.markdown("---")
