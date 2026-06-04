@@ -180,7 +180,7 @@ def run(load_data_func):
         # === 📦 6-3. 주간 실소진량 추정 차트 (🚀 출고일 +2일 이월 반영) ===
         if view_target in ["판매량 조회", "모두 보기"]:
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
-            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ <b>(자사 출고일 + 3일)</b>을 쿠팡 입고일로 가정하여 주차별 판매량을 정산합니다.</span>", unsafe_allow_html=True)
+            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ <b>(자사 출고일 + 2일)</b>을 쿠팡 입고일로 가정하여 주차별 판매량을 정산합니다.</span>", unsafe_allow_html=True)
             
             calc_df = filtered_df.copy()
             calc_df['일자_dt'] = pd.to_datetime(calc_df['일자'])
