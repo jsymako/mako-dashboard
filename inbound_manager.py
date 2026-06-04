@@ -247,28 +247,29 @@ def run(load_sheet_data):
     # -----------------------------------------------------------------
     st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
     
-    # 🚀 [추가] 현물검정 표 잉여 여백 완벽 박멸 CSS 주입
+    # 🚀 [수정] 현물검정 표 여백 및 라인 정렬 CSS 업데이트
     st.markdown("""
         <style>
-        /* 1. 각 칸의 글자를 감싸는 p 태그의 강제 마진(16px) 제거 및 수직 중앙 정렬 */
+        /* 1. 각 칸의 글자를 감싸는 p 태그 마진 제거 및 라인하이트 조정 */
         div[data-testid="stHorizontalBlock"] div[data-testid="stMarkdownContainer"] p {
             margin-bottom: 0px !important;
             margin-top: 0px !important;
-            line-height: 32px !important; 
+            line-height: 36px !important; /* 🚀 글자 위아래 숨 쉴 공간 살짝 추가 */
         }
         
-        /* 2. 관리 버튼(✏️)의 뚱뚱한 패딩을 압축시켜 줄 높이를 다이어트 */
+        /* 2. 관리 버튼(✏️) 크기 및 위치 미세 조정 */
         div[data-testid="stHorizontalBlock"] button {
-            min-height: 32px !important;
-            height: 32px !important;
+            min-height: 34px !important;
+            height: 34px !important;
             padding-top: 0px !important;
             padding-bottom: 0px !important;
+            margin-top: 2px !important; /* 🚀 버튼이 위로 쏠리지 않게 중앙으로 살짝 내림 */
         }
 
-        /* 3. 줄과 줄 사이 구분선(hr) 위아래로 스트림릿이 넣는 블록 갭(24px) 음수 마진으로 강제 병합 */
+        /* 3. 구분선(hr) 겹침 현상 해결 (너무 강했던 음수 마진 완화) */
         div.element-container:has(hr.row-divider) {
-            margin-top: -20px !important; 
-            margin-bottom: -15px !important;
+            margin-top: -10px !important;  /* 🚀 -20px -> -10px 로 여유 확보 */
+            margin-bottom: -5px !important; /* 🚀 -15px -> -5px 로 여유 확보 */
         }
         </style>
     """, unsafe_allow_html=True)
