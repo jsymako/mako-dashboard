@@ -120,7 +120,7 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 6. 메인 시각화 세팅 (🚀 툴팁 파라미터 에러 완전 수정)
+        # 6. 메인 시각화 세팅
         # ==========================================
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
         
@@ -160,7 +160,7 @@ def run(load_data_func):
                 x=common_x, y='재고:Q', text='품목명:N', color='품목명:N'
             )
             
-            # 💡 [수정] 정확한 alt.TooltipConfig 속성명을 사용해 글자 확대 주입
+            # 💡 단일/단순 합성 차트는 바로 조절 가능
             final_chart = (stock_line + stock_label).properties(height=450).configure_tooltip(
                 fontSize=14, titleFontSize=14
             )
@@ -287,8 +287,11 @@ def run(load_data_func):
                 else:
                     base_chart = (sales_bar + trend_line)
                     
-                # 💡 [수정] 올바른 툴팁 폰트 전역 옵션 주입 (.configure_tooltip)
-                st.altair_chart(base_chart.properties(height=400).configure_tooltip(fontSize=14, titleFontSize=14), use_container_width=True)
+                # 💡 [핵심 수정] .configure_view()를 먼저 연결한 뒤 .configure_tooltip()을 연결하여 복합 레이어 차트의 폰트 에러 해결
+                final_sales_chart = base_chart.properties(height=400).configure_view().configure_tooltip(
+                    fontSize=14, titleFontSize=14
+                )
+                st.altair_chart(final_sales_chart, use_container_width=True)
             
             # 물류 데이터 오류 리스트
             error_scan = weekly_sales[(weekly_sales['입고오류플래그'] == True) & (weekly_sales['주차_일요일'] >= start_date) & (weekly_sales['주차_일요일'] <= end_date)].copy()
@@ -371,7 +374,7 @@ def run(load_data_func):
                 
                 if has_low_price: return "color: #007bff; font-weight: bold;"
                 if has_high_price: return "color: #28a745; font-weight: bold;"
-                if has_stock_danger: return "color: #ff4b4b; font-weight: bold;"
+                if Side: return "color: #ff4b4b; font-weight: bold;"
                 return ""
 
             st.dataframe(
