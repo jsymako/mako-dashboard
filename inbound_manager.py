@@ -229,8 +229,8 @@ def run(load_sheet_data):
                                     <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>출항:</b> {dep_dt if dep_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
                                     <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
                                 </tr>
-                                <tr style="font-size: 1.6rem;">
-                                    <td colspan="5" style="padding: 3px 10px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
+                                <tr style="font-size: 1.4rem;">
+                                    <td colspan="5" style="padding: 3px 6px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
                                 </tr>
                             </table>
                         </div>
