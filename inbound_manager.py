@@ -13,7 +13,7 @@ TABLE_HEADER_SIZE = "1.00rem"
 TABLE_BODY_SIZE = "1.00rem"    
 
 # =====================================================================
-# 🔑 [1] 쓰기/수정용 구글 시트 연결
+# 🔑 [1] 쓰기/수정용 구글 시트 연결 (기존과 동일)
 # =====================================================================
 def get_worksheet_for_write(sheet_name):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -34,7 +34,7 @@ def safe_date_parse(date_str):
     except: return None
 
 # =====================================================================
-# 🚀 [2] 다이얼로그 팝업창 모음
+# 🚀 [2] 다이얼로그 팝업창 모음 (기존과 동일)
 # =====================================================================
 @st.dialog("컨테이너 정보 관리")
 def container_form_dialog(mode="add", container_data=None, df_m=None):
@@ -143,6 +143,41 @@ def run(load_sheet_data):
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except: pass
 
+    # 🚀 [수정 1] 컨테이너 표와 버튼 사이의 간격을 밀착시키는 CSS 추가
+    st.markdown("""
+        <style>
+        /* 1. 각 칸의 글자를 감싸는 p 태그 마진 제거 및 라인하이트 조정 */
+        div[data-testid="stHorizontalBlock"] div[data-testid="stMarkdownContainer"] p {
+            margin-bottom: 0px !important;
+            margin-top: 0px !important;
+            line-height: 36px !important; 
+        }
+        
+        /* 2. 관리 버튼(✏️) 크기 및 위치 미세 조정 */
+        div[data-testid="stHorizontalBlock"] button {
+            min-height: 34px !important;
+            height: 34px !important;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            margin-top: 2px !important; 
+        }
+
+        /* 3. 구분선(hr) 겹침 현상 해결 */
+        div.element-container:has(hr.row-divider) {
+            margin-top: -10px !important;  
+            margin-bottom: -5px !important; 
+        }
+        
+        /* 🚀 4. 컨테이너 표 하단 여백 제거 및 수정 버튼 밀착 */
+        div.element-container:has(.container-card) {
+            margin-bottom: -15px !important;
+        }
+        .container-card p {
+            margin-bottom: 0px !important; /* 파이썬 마크다운 변환 시 생기는 빈 줄 방지 */
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     # -----------------------------------------------------------------
     # 파트 A: 컨테이너 입고 현황 
     # -----------------------------------------------------------------
@@ -217,20 +252,21 @@ def run(load_sheet_data):
                         elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[출항 대기중]</span>"
                         else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[준비 중]</span>"
                         
+                        # 🚀 [수정 2] 적요 하단의 불필요한 패딩(여백) 제거 및 클래스 추가
                         container_html = f"""
-                        <div style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 0px;">
+                        <div class="container-card" style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 0px;">
                             <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
                                 <tr style="font-size: 1.6rem; color:#444;">
-                                    <td rowspan="2" style="padding: 12px; text-align: center; width: 12%; font-size: 2.0rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
+                                    <td rowspan="2" style="padding: 0px 10px; text-align: center; vertical-align: middle; width: 12%; font-size: 2.0rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
                                     
-                                    <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 8%;"><b></b> {row.get('피트', '40FT')}</td>
-                                    <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입고:</b> {inb_dt if inb_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입항:</b> {arr_dt if arr_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>출항:</b> {dep_dt if dep_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 6px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 8%;"><b></b> {row.get('피트', '40FT')}</td>
+                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입고:</b> {inb_dt if inb_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입항:</b> {arr_dt if arr_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>출항:</b> {dep_dt if dep_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
                                 </tr>
                                 <tr style="font-size: 1.4rem;">
-                                    <td colspan="5" style="padding: 0px 10px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
+                                    <td colspan="5" style="padding: 6px 10px 8px 10px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
                                 </tr>
                             </table>
                         </div>
@@ -243,37 +279,10 @@ def run(load_sheet_data):
                             st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
-    # 🚀 파트 B: 현물검정 예정일 현황 표 기능 가동
+    # 파트 B: 현물검정 예정일 현황 표 (기존과 동일)
     # -----------------------------------------------------------------
     st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
     
-    # 🚀 [수정] 현물검정 표 여백 및 라인 정렬 CSS 업데이트
-    st.markdown("""
-        <style>
-        /* 1. 각 칸의 글자를 감싸는 p 태그 마진 제거 및 라인하이트 조정 */
-        div[data-testid="stHorizontalBlock"] div[data-testid="stMarkdownContainer"] p {
-            margin-bottom: 0px !important;
-            margin-top: 0px !important;
-            line-height: 36px !important; /* 🚀 글자 위아래 숨 쉴 공간 살짝 추가 */
-        }
-        
-        /* 2. 관리 버튼(✏️) 크기 및 위치 미세 조정 */
-        div[data-testid="stHorizontalBlock"] button {
-            min-height: 34px !important;
-            height: 34px !important;
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
-            margin-top: 2px !important; /* 🚀 버튼이 위로 쏠리지 않게 중앙으로 살짝 내림 */
-        }
-
-        /* 3. 구분선(hr) 겹침 현상 해결 (너무 강했던 음수 마진 완화) */
-        div.element-container:has(hr.row-divider) {
-            margin-top: -10px !important;  /* 🚀 -20px -> -10px 로 여유 확보 */
-            margin-bottom: -5px !important; /* 🚀 -15px -> -5px 로 여유 확보 */
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
     col_title, col_add_btn = st.columns([5, 1])
     with col_title:
         st.markdown("<h2>현물검정 현황</h2>", unsafe_allow_html=True)
@@ -355,5 +364,4 @@ def run(load_sheet_data):
                 if st.button("✏️", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
                     inspection_form_dialog(mode="edit", insp_data=row)
 
-            # 🚀 [핵심 수정] CSS로 갭을 죽이기 위해 hr 클래스에 'row-divider'를 부여했습니다!
             st.markdown("<hr class='row-divider' style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
