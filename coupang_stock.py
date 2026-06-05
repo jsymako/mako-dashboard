@@ -7,6 +7,31 @@ import altair as alt
 def run(load_data_func):
     st.title("쿠팡 현황")
     
+    # 🚀 [확실한 해결책] 파이썬 Altair 명령어를 쓰지 않고, CSS로 툴팁 글자 크기를 강제로 키웁니다!
+    st.markdown("""
+        <style>
+        /* Altair (Vega-Lite) 툴팁 창 전체 디자인 및 글자 크기 강제 확대 */
+        #vg-tooltip-element {
+            font-size: 14px !important;
+            font-family: 'Malgun Gothic', sans-serif !important;
+            padding: 10px !important;
+        }
+        /* 툴팁 상단 제목(날짜 등) 크기 */
+        #vg-tooltip-element h2 {
+            font-size: 15px !important;
+            font-weight: bold !important;
+            margin-bottom: 6px !important;
+            color: #111 !important;
+        }
+        /* 툴팁 내부 본문 글자 크기 */
+        #vg-tooltip-element table tr td {
+            font-size: 14px !important;
+            padding: 3px 5px !important;
+            color: #333 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     try:
         with open("style.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -160,11 +185,8 @@ def run(load_data_func):
                 x=common_x, y='재고:Q', text='품목명:N', color='품목명:N'
             )
             
-            # 💡 단일/단순 합성 차트는 바로 조절 가능
-            final_chart = (stock_line + stock_label).properties(height=450).configure_tooltip(
-                fontSize=14, titleFontSize=14
-            )
-            st.altair_chart(final_chart, use_container_width=True)
+            # 💡 [수정] configure_tooltip 삭제. 에러 방지
+            st.altair_chart((stock_line + stock_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
         # === 💰 6-2. 판매가 변동 ===
@@ -180,10 +202,8 @@ def run(load_data_func):
                 x=common_x, y='판매가:Q', text='품목명:N', color='품목명:N'
             )
             
-            final_chart = (price_line + price_label).properties(height=450).configure_tooltip(
-                fontSize=14, titleFontSize=14
-            )
-            st.altair_chart(final_chart, use_container_width=True)
+            # 💡 [수정] configure_tooltip 삭제. 에러 방지
+            st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
         # === 📦 6-3. 주간 실소진량 추정 차트 ===
@@ -287,11 +307,8 @@ def run(load_data_func):
                 else:
                     base_chart = (sales_bar + trend_line)
                     
-                # 💡 [핵심 수정] .configure_view()를 먼저 연결한 뒤 .configure_tooltip()을 연결하여 복합 레이어 차트의 폰트 에러 해결
-                final_sales_chart = base_chart.properties(height=400).configure_view().configure_tooltip(
-                    fontSize=14, titleFontSize=14
-                )
-                st.altair_chart(final_sales_chart, use_container_width=True)
+                # 💡 [수정] configure_tooltip 삭제. 에러 방지
+                st.altair_chart(base_chart.properties(height=400), use_container_width=True)
             
             # 물류 데이터 오류 리스트
             error_scan = weekly_sales[(weekly_sales['입고오류플래그'] == True) & (weekly_sales['주차_일요일'] >= start_date) & (weekly_sales['주차_일요일'] <= end_date)].copy()
@@ -374,7 +391,7 @@ def run(load_data_func):
                 
                 if has_low_price: return "color: #007bff; font-weight: bold;"
                 if has_high_price: return "color: #28a745; font-weight: bold;"
-                if Side: return "color: #ff4b4b; font-weight: bold;"
+                if has_stock_danger: return "color: #ff4b4b; font-weight: bold;"
                 return ""
 
             st.dataframe(
