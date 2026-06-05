@@ -292,10 +292,12 @@ def run(load_data_func):
                     strokeWidth=4
                 ).encode(
                     x=alt.X('주차_라벨:N', sort=list(display_sales_df['주차_라벨'].unique())),
-                    y=alt.Y('보정판매량:Q'),
+                    # 💡 [핵심 수정] y값을 단순 '보정판매량'이 아닌 'sum(보정판매량)'으로 변경
+                    y=alt.Y('sum(보정판매량):Q'),
                     tooltip=[
                         alt.Tooltip('주차_라벨:N', title='기간'),
-                        alt.Tooltip('보정판매량:Q', format=',.1f', title='✨3주 이동평균 보정치')
+                        # 💡 툴팁도 해당 주차의 총합을 보여주도록 sum 적용
+                        alt.Tooltip('sum(보정판매량):Q', format=',.1f', title='✨총 보정판매량(이동평균)')
                     ]
                 )
                 
