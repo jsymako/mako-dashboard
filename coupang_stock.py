@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np  # 🚀 [추가] 조건부 데이터 처리를 위한 수학 라이브러리
 import datetime
 from dateutil.relativedelta import relativedelta
 import altair as alt
@@ -9,20 +10,17 @@ def run(load_data_func):
     
     st.markdown("""
         <style>
-        /* Altair (Vega-Lite) 툴팁 창 전체 디자인 및 글자 크기 강제 확대 */
         #vg-tooltip-element {
             font-size: 14px !important;
             font-family: 'Malgun Gothic', sans-serif !important;
             padding: 10px !important;
         }
-        /* 툴팁 상단 제목(날짜 등) 크기 */
         #vg-tooltip-element h2 {
             font-size: 15px !important;
             font-weight: bold !important;
             margin-bottom: 6px !important;
             color: #111 !important;
         }
-        /* 툴팁 내부 본문 글자 크기 */
         #vg-tooltip-element table tr td {
             font-size: 14px !important;
             padding: 3px 5px !important;
@@ -171,89 +169,72 @@ def run(load_data_func):
 
         title_prefix = selected_product if selected_product != '전체보기' else (selected_brand if selected_brand != '전체보기' else '전체')
 
-        # === 📈 6-1. 재고량 추이 ===
+        # === 📈 6-1, 6-2 재고/판매가 차트 (기존 동일) ===
         if view_target == "재고량 추이":
             st.subheader(f"{title_prefix} 재고량 변동 흐름")
             stock_line = alt.Chart(display_df).mark_line(point=True).encode(
-                x=common_x,
-                y=alt.Y('재고:Q', title='재고 수량 (개)', axis=common_axis),
-                color=alt.Color('품목명:N', legend=None),
-                tooltip=['일자:T', '브랜드', '품목명', '재고']
+                x=common_x, y=alt.Y('재고:Q', title='재고 수량 (개)', axis=common_axis), color=alt.Color('품목명:N', legend=None), tooltip=['일자:T', '브랜드', '품목명', '재고']
             )
-            stock_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(
-                x=common_x, y='재고:Q', text='품목명:N', color='품목명:N'
-            )
-            
+            stock_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(x=common_x, y='재고:Q', text='품목명:N', color='품목명:N')
             st.altair_chart((stock_line + stock_label).properties(height=450), use_container_width=True)
-            st.markdown("<br>", unsafe_allow_html=True)
 
-        # === 💰 6-2. 판매가 변동 ===
         if view_target == "판매가 변동":
             st.subheader(f"{title_prefix} 판매가 변동 흐름")
             price_line = alt.Chart(display_df).mark_line(point=True).encode(
-                x=common_x,
-                y=alt.Y('판매가:Q', title='판매가 (원)', axis=common_axis, scale=alt.Scale(zero=False)),
-                color=alt.Color('품목명:N', legend=None),
-                tooltip=['일자:T', '브랜드', '품목명', '판매가']
+                x=common_x, y=alt.Y('판매가:Q', title='판매가 (원)', axis=common_axis, scale=alt.Scale(zero=False)), color=alt.Color('품목명:N', legend=None), tooltip=['일자:T', '브랜드', '품목명', '판매가']
             )
-            price_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(
-                x=common_x, y='판매가:Q', text='품목명:N', color='품목명:N'
-            )
-            
+            price_label = alt.Chart(label_df).mark_text(align='left', dx=8, fontSize=14, fontWeight='bold').encode(x=common_x, y='판매가:Q', text='품목명:N', color='품목명:N')
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
-            st.markdown("<br>", unsafe_allow_html=True)
 
-        # === 📦 6-3. 주간 실소진량 추정 차트 ===
+        # === 📦 6-3. 주간 실소진량 추정 차트 (🚀 스마트 하이브리드 보정 적용) ===
         if view_target == "판매량 조회":
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
-            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ 막대는 당주 확정값이며, <b>황금색 꺾은선은 입고 딜레이 오차를 보정한 '3주 이동평균선'</b>입니다.</span>", unsafe_allow_html=True)
+            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ 막대는 당주 계산값이며, <b>황금색 꺾은선은 [입고가 있을 땐 3주 이동평균, 입고가 없을 땐 원본 데이터]를 사용하는 지능형 추세선</b>입니다.</span>", unsafe_allow_html=True)
             
             calc_df = filtered_df.copy()
             calc_df['일자_dt'] = pd.to_datetime(calc_df['일자'])
             calc_df['주차_일요일'] = calc_df['일자_dt'] + pd.to_timedelta(6 - calc_df['일자_dt'].dt.dayofweek, unit='d')
             calc_df['주차_일요일'] = calc_df['주차_일요일'].dt.date
 
-            # 기말재고 
             weekly_stock = calc_df.sort_values('일자_dt').groupby(['옵션ID', '품목명', '주차_일요일']).tail(1)[['옵션ID', '품목명', '주차_일요일', '재고']]
             weekly_stock.rename(columns={'재고': '기말재고'}, inplace=True)
 
-            # 기초재고
             weekly_stock = weekly_stock.sort_values(['옵션ID', '주차_일요일'])
             weekly_stock['기초재고'] = weekly_stock.groupby('옵션ID')['기말재고'].shift(1)
 
-            # 출고 데이터 정산
             if not df_trade_cp.empty:
                 df_trade_cp['출고일_dt'] = pd.to_datetime(df_trade_cp['일자'])
                 df_trade_cp['text_dt'] = df_trade_cp['출고일_dt'] + datetime.timedelta(days=2)
-                
                 df_trade_cp['주차_일요일'] = df_trade_cp['text_dt'] + pd.to_timedelta(6 - df_trade_cp['text_dt'].dt.dayofweek, unit='d')
                 df_trade_cp['주차_일요일'] = df_trade_cp['주차_일요일'].dt.date
                 
                 valid_options = calc_df['옵션ID'].unique()
                 t_df = df_trade_cp[df_trade_cp['옵션ID'].isin(valid_options)]
-                
                 weekly_inbound = t_df.groupby(['옵션ID', '주차_일요일'])['환산수량'].sum().reset_index()
                 weekly_inbound.rename(columns={'환산수량': '주간입고량'}, inplace=True)
             else:
                 weekly_inbound = pd.DataFrame(columns=['옵션ID', '주차_일요일', '주간입고량'])
 
-            # 데이터 정산 병합
             weekly_sales = pd.merge(weekly_stock, weekly_inbound, on=['옵션ID', '주차_일요일'], how='left').fillna({'주간입고량': 0})
             weekly_sales = weekly_sales.dropna(subset=['기초재고']).copy() 
             
             weekly_sales['입고오류플래그'] = (weekly_sales['기초재고'] + weekly_sales['주간입고량']) < weekly_sales['기말재고']
             
             weekly_sales['추정판매량'] = weekly_sales['기초재고'] + weekly_sales['주간입고량'] - weekly_sales['기말재고']
-            weekly_sales['raw_추정판매량'] = weekly_sales['추정판매량']
             weekly_sales['추정판매량'] = weekly_sales['추정판매량'].clip(lower=0)
             
-            # 품목별 그룹화
-            weekly_sales_grouped = weekly_sales.groupby(['품목명', '주차_일요일'])[['기초재고', '주간입고량', '기말재고', '추정판매량', 'raw_추정판매량']].sum().reset_index()
+            weekly_sales_grouped = weekly_sales.groupby(['품목명', '주차_일요일'])[['기초재고', '주간입고량', '기말재고', '추정판매량']].sum().reset_index()
             
-            # 3주 이동평균선 계산
+            # 🚀 [추가 1] 3주 이동평균선 계산 (보정값)
             weekly_sales_grouped = weekly_sales_grouped.sort_values(['품목명', '주차_일요일'])
-            weekly_sales_grouped['보정판매량'] = weekly_sales_grouped.groupby('품목명')['추정판매량'].transform(lambda x: x.rolling(window=3, center=True, min_periods=1).mean())
+            weekly_sales_grouped['이동평균_판매량'] = weekly_sales_grouped.groupby('품목명')['추정판매량'].transform(lambda x: x.rolling(window=3, center=True, min_periods=1).mean())
             
+            # 🚀 [추가 2] 해당 주차 기준 앞뒤 3주간의 "총 입고량" 계산
+            weekly_sales_grouped['3주_입고합계'] = weekly_sales_grouped.groupby('품목명')['주간입고량'].transform(lambda x: x.rolling(window=3, center=True, min_periods=1).sum())
+            
+            # 🚀 [핵심 로직] 입고합계가 0이면 원본(추정판매량), 아니면 이동평균 보정값을 사용하는 '지능형 판매량' 변수 생성
+            weekly_sales_grouped['스마트_보정판매량'] = np.where(weekly_sales_grouped['3주_입고합계'] == 0, weekly_sales_grouped['추정판매량'], weekly_sales_grouped['이동평균_판매량'])
+
             def make_week_label(d):
                 start_d = d - datetime.timedelta(days=6)
                 return f"{start_d.strftime('%m/%d')}~{d.strftime('%m/%d')}"
@@ -266,7 +247,6 @@ def run(load_data_func):
             if display_sales_df.empty:
                 st.info("💡 판매량을 산출하려면 최소 2주 이상의 연속된 데이터가 필요합니다.")
             else:
-                # 1) 기본 당주 판매량 막대 차트
                 sales_bar = alt.Chart(display_sales_df).mark_bar(size=35, cornerRadiusEnd=4).encode(
                     x=alt.X('주차_라벨:N', sort=list(display_sales_df['주차_라벨'].unique()), title='해당 주차 (월~일)', axis=alt.Axis(labelAngle=0, labelFontSize=12)),
                     y=alt.Y('추정판매량:Q', title='주간 소진량 (개)'),
@@ -278,21 +258,22 @@ def run(load_data_func):
                         alt.Tooltip('주간입고량:Q', format=',.1f', title='당주 입고(출고+2일 반영)'),
                         alt.Tooltip('기말재고:Q', format=',.0f', title='남은 재고'),
                         alt.Tooltip('추정판매량:Q', format=',.0f', title='★당주 계산 판매량'),
-                        alt.Tooltip('보정판매량:Q', format=',.1f', title='✨3주 이동평균 보정치')
+                        # 💡 툴팁에 스마트 보정값 표시
+                        alt.Tooltip('스마트_보정판매량:Q', format=',.1f', title='✨스마트 보정판매량(최종)')
                     ]
                 ).properties(height=400)
                 
-                # 2) 황금색 추세선 (합산 및 색상 반영)
+                # 🚀 황금색 선이 이제 무지성 3주 평균이 아닌, '스마트 보정판매량'을 따라갑니다.
                 trend_line = alt.Chart(display_sales_df).mark_line(
                     point=alt.OverlayMarkDef(color='#F1C40F', size=50, fill='#A04000', strokeWidth=2),
                     color='#F1C40F', 
                     strokeWidth=4
                 ).encode(
                     x=alt.X('주차_라벨:N', sort=list(display_sales_df['주차_라벨'].unique())),
-                    y=alt.Y('sum(보정판매량):Q'),
+                    y=alt.Y('sum(스마트_보정판매량):Q'), # 카테고리 합산 시 스마트 보정값의 합계
                     tooltip=[
                         alt.Tooltip('주차_라벨:N', title='기간'),
-                        alt.Tooltip('sum(보정판매량):Q', format=',.1f', title='✨총 보정판매량(이동평균)')
+                        alt.Tooltip('sum(스마트_보정판매량):Q', format=',.1f', title='✨총 스마트 보정판매량')
                     ]
                 )
                 
@@ -306,20 +287,16 @@ def run(load_data_func):
                     
                 st.altair_chart(base_chart.properties(height=400), use_container_width=True)
             
-            # ==========================================
-            # 💡 [핵심 수정] 긴 설명(st.error) 제거하고 심플하게 표출
-            # ==========================================
             error_scan = weekly_sales[(weekly_sales['입고오류플래그'] == True) & (weekly_sales['주차_일요일'] >= start_date) & (weekly_sales['주차_일요일'] <= end_date)].copy()
             if not error_scan.empty:
                 st.markdown("<br>", unsafe_allow_html=True)
                 with st.expander("🚨 명백한 물류 딜레이 오류 감지 리스트 (보정 필요)", expanded=True):
-                    # 설명글(st.error) 삭제됨
                     error_scan['오류주차'] = error_scan['주차_일요일'].apply(make_week_label)
                     error_display = error_scan.groupby(['오류주차', '품목명']).size().reset_index()[['오류주차', '품목명']]
                     st.dataframe(error_display, use_container_width=True, hide_index=True)
 
         # ==========================================
-        # 7. 일자별 상세 모니터링 표 (판매량 조회 시 숨김)
+        # 7. 일자별 상세 모니터링 표 (기존 동일)
         # ==========================================
         if view_target != "판매량 조회":
             st.markdown("---")
@@ -332,7 +309,6 @@ def run(load_data_func):
                     safe_val = int(float(row['안전재고량']))
                 except:
                     val, safe_val = 0, 0
-                    
                 if val <= 0: return "품절 🚨"
                 if safe_val > 0 and val < safe_val: return f"{val:,} 🚨"
                 return f"{val:,}"
@@ -344,7 +320,6 @@ def run(load_data_func):
                     min_val = int(float(row['최소판매가']))
                 except:
                     val, max_val, min_val = 0, 0, 0
-                    
                 if max_val > 0 and val > max_val: return f"{val:,} 🔺"
                 elif min_val > 0 and val < min_val: return f"{val:,} 🔻"
                 return f"{val:,}"
@@ -363,41 +338,26 @@ def run(load_data_func):
             show_df['최소판매가'] = show_df['최소판매가'].apply(lambda x: f"{int(float(x)):,}" if pd.notna(x) else "0")
             show_df['최대판매가'] = show_df['최대판매가'].apply(lambda x: f"{int(float(x)):,}" if pd.notna(x) else "0")
 
-            pivot_df = show_df.pivot_table(
-                index=['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'],
-                columns='일자',
-                values='표시값',
-                aggfunc=lambda x: ' '.join(x)
-            ).reset_index()
+            pivot_df = show_df.pivot_table(index=['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'], columns='일자', values='표시값', aggfunc=lambda x: ' '.join(x)).reset_index()
 
             date_cols = sorted([col for col in pivot_df.columns if col not in ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가']], reverse=True)
             final_cols = ['브랜드', '품목명', '안전재고', '최소판매가', '최대판매가'] + date_cols
             pivot_df = pivot_df[final_cols].fillna("-")
 
             target_width = 90
-                
-            my_column_config = {}
-            for col in date_cols:
-                my_column_config[col] = st.column_config.Column(width=target_width)
+            my_column_config = {col: st.column_config.Column(width=target_width) for col in date_cols}
 
             def color_danger_cells(val):
                 if not isinstance(val, str): return ""
                 has_stock_danger = "🚨" in val
                 has_high_price = "🔺" in val
                 has_low_price = "🔻" in val
-                
                 if has_low_price: return "color: #007bff; font-weight: bold;"
                 if has_high_price: return "color: #28a745; font-weight: bold;"
                 if has_stock_danger: return "color: #ff4b4b; font-weight: bold;"
                 return ""
 
-            st.dataframe(
-                pivot_df.style.map(color_danger_cells), 
-                width="stretch", 
-                height=750, 
-                hide_index=True,
-                column_config=my_column_config
-            )
+            st.dataframe(pivot_df.style.map(color_danger_cells), width="stretch", height=750, hide_index=True, column_config=my_column_config)
 
     except Exception as e:
         st.error(f"오류 발생: {e}")
