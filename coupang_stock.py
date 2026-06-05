@@ -7,7 +7,6 @@ import altair as alt
 def run(load_data_func):
     st.title("쿠팡 현황")
     
-    # 🚀 [확실한 해결책] 파이썬 Altair 명령어를 쓰지 않고, CSS로 툴팁 글자 크기를 강제로 키웁니다!
     st.markdown("""
         <style>
         /* Altair (Vega-Lite) 툴팁 창 전체 디자인 및 글자 크기 강제 확대 */
@@ -185,7 +184,6 @@ def run(load_data_func):
                 x=common_x, y='재고:Q', text='품목명:N', color='품목명:N'
             )
             
-            # 💡 [수정] configure_tooltip 삭제. 에러 방지
             st.altair_chart((stock_line + stock_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
@@ -202,7 +200,6 @@ def run(load_data_func):
                 x=common_x, y='판매가:Q', text='품목명:N', color='품목명:N'
             )
             
-            # 💡 [수정] configure_tooltip 삭제. 에러 방지
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
@@ -285,18 +282,16 @@ def run(load_data_func):
                     ]
                 ).properties(height=400)
                 
-                # 2) 황금색 추세선 (진한 밤색 꼭짓점 적용)
+                # 2) 황금색 추세선 (합산 및 색상 반영)
                 trend_line = alt.Chart(display_sales_df).mark_line(
                     point=alt.OverlayMarkDef(color='#F1C40F', size=50, fill='#A04000', strokeWidth=2),
                     color='#F1C40F', 
                     strokeWidth=4
                 ).encode(
                     x=alt.X('주차_라벨:N', sort=list(display_sales_df['주차_라벨'].unique())),
-                    # 💡 [핵심 수정] y값을 단순 '보정판매량'이 아닌 'sum(보정판매량)'으로 변경
                     y=alt.Y('sum(보정판매량):Q'),
                     tooltip=[
                         alt.Tooltip('주차_라벨:N', title='기간'),
-                        # 💡 툴팁도 해당 주차의 총합을 보여주도록 sum 적용
                         alt.Tooltip('sum(보정판매량):Q', format=',.1f', title='✨총 보정판매량(이동평균)')
                     ]
                 )
@@ -309,16 +304,16 @@ def run(load_data_func):
                 else:
                     base_chart = (sales_bar + trend_line)
                     
-                # 💡 [수정] configure_tooltip 삭제. 에러 방지
                 st.altair_chart(base_chart.properties(height=400), use_container_width=True)
             
-            # 물류 데이터 오류 리스트
+            # ==========================================
+            # 💡 [핵심 수정] 긴 설명(st.error) 제거하고 심플하게 표출
+            # ==========================================
             error_scan = weekly_sales[(weekly_sales['입고오류플래그'] == True) & (weekly_sales['주차_일요일'] >= start_date) & (weekly_sales['주차_일요일'] <= end_date)].copy()
             if not error_scan.empty:
                 st.markdown("<br>", unsafe_allow_html=True)
                 with st.expander("🚨 명백한 물류 딜레이 오류 감지 리스트 (보정 필요)", expanded=True):
-                    st.error("아래 주차는 [시작재고 + 입고량]보다 [남은재고]가 더 많아 수리적으로 오류가 발생한 주차입니다. 실제 판매량은 그래프의 황금색 '이동평균선' 수치를 참고하시는 것을 권장합니다.")
-                    
+                    # 설명글(st.error) 삭제됨
                     error_scan['오류주차'] = error_scan['주차_일요일'].apply(make_week_label)
                     error_display = error_scan.groupby(['오류주차', '품목명']).size().reset_index()[['오류주차', '품목명']]
                     st.dataframe(error_display, use_container_width=True, hide_index=True)
