@@ -105,7 +105,7 @@ def run(load_data_func):
         product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
         selected_product = st.sidebar.selectbox("품목 선택", product_list)
 
-        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "판매가 변동", "판매량 조회"], index=0)
+        view_target = st.sidebar.radio("조회 항목", ["재고량 추이", "판매가 변동", "판매량 추정"], index=0)
         
         today = datetime.date.today()
         if "coupang_start_date" not in st.session_state: 
@@ -187,7 +187,7 @@ def run(load_data_func):
             st.altair_chart((price_line + price_label).properties(height=450), use_container_width=True)
 
         # === 📦 6-3. 주간 실소진량 추정 차트 (🚀 스마트 하이브리드 보정 적용) ===
-        if view_target == "판매량 조회":
+        if view_target == "판매량 추정":
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
             st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ 막대는 당주 계산값이며, <b>황금색 꺾은선은 [입고가 있을 땐 3주 이동평균, 입고가 없을 땐 원본 데이터]를 사용하는 지능형 추세선</b>입니다.</span>", unsafe_allow_html=True)
             
@@ -298,7 +298,7 @@ def run(load_data_func):
         # ==========================================
         # 7. 일자별 상세 모니터링 표 (기존 동일)
         # ==========================================
-        if view_target != "판매량 조회":
+        if view_target != "판매량 추정":
             st.markdown("---")
             st.subheader("일자별 모니터링 상세표")
             st.markdown("※ 🚨재고부족(빨강) | 🔺가격초과(녹색) | 🔻가격미달(파랑)")
