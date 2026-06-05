@@ -120,15 +120,9 @@ def run(load_data_func):
         st.markdown("---")
 
         # ==========================================
-        # 6. 🚀 [글자 확대] 그래프 마우스 오버(툴팁) 폰트 크기 전역 설정
+        # 6. 메인 시각화 세팅 (🚀 툴팁 파라미터 에러 완전 수정)
         # ==========================================
         common_axis = alt.Axis(labelFontSize=14, titleFontSize=16, labelAngle=0)
-        
-        # 툴팁 내부 제목(14px)과 본문 내용(13px) 크기 조정
-        tooltip_config = alt.CompositionConfig(
-            headerFontSize=14,
-            bodyFontSize=13
-        )
         
         x_min = display_df['일자'].min()
         x_max = display_df['일자'].max()
@@ -166,9 +160,9 @@ def run(load_data_func):
                 x=common_x, y='재고:Q', text='품목명:N', color='품목명:N'
             )
             
-            # Altair 차트 객체에 툴팁 설정 주입
+            # 💡 [수정] 정확한 alt.TooltipConfig 속성명을 사용해 글자 확대 주입
             final_chart = (stock_line + stock_label).properties(height=450).configure_tooltip(
-                headerFontSize=14, bodyFontSize=13
+                fontSize=14, titleFontSize=14
             )
             st.altair_chart(final_chart, use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
@@ -187,7 +181,7 @@ def run(load_data_func):
             )
             
             final_chart = (price_line + price_label).properties(height=450).configure_tooltip(
-                headerFontSize=14, bodyFontSize=13
+                fontSize=14, titleFontSize=14
             )
             st.altair_chart(final_chart, use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
@@ -210,12 +204,12 @@ def run(load_data_func):
             weekly_stock = weekly_stock.sort_values(['옵션ID', '주차_일요일'])
             weekly_stock['기초재고'] = weekly_stock.groupby('옵션ID')['기말재고'].shift(1)
 
-            # 출고 데이터에 +2일 리드타임 부여 및 주차 정산
+            # 출고 데이터 정산
             if not df_trade_cp.empty:
                 df_trade_cp['출고일_dt'] = pd.to_datetime(df_trade_cp['일자'])
-                df_trade_cp['쿠팡입고예정일'] = df_trade_cp['출고일_dt'] + datetime.timedelta(days=2)
+                df_trade_cp['text_dt'] = df_trade_cp['출고일_dt'] + datetime.timedelta(days=2)
                 
-                df_trade_cp['주차_일요일'] = df_trade_cp['쿠팡입고예정일'] + pd.to_timedelta(6 - df_trade_cp['쿠팡입고예정일'].dt.dayofweek, unit='d')
+                df_trade_cp['주차_일요일'] = df_trade_cp['text_dt'] + pd.to_timedelta(6 - df_trade_cp['text_dt'].dt.dayofweek, unit='d')
                 df_trade_cp['주차_일요일'] = df_trade_cp['주차_일요일'].dt.date
                 
                 valid_options = calc_df['옵션ID'].unique()
@@ -226,7 +220,7 @@ def run(load_data_func):
             else:
                 weekly_inbound = pd.DataFrame(columns=['옵션ID', '주차_일요일', '주간입고량'])
 
-            # 기본 정산 테이블 병합
+            # 데이터 정산 병합
             weekly_sales = pd.merge(weekly_stock, weekly_inbound, on=['옵션ID', '주차_일요일'], how='left').fillna({'주간입고량': 0})
             weekly_sales = weekly_sales.dropna(subset=['기초재고']).copy() 
             
@@ -236,10 +230,10 @@ def run(load_data_func):
             weekly_sales['raw_추정판매량'] = weekly_sales['추정판매량']
             weekly_sales['추정판매량'] = weekly_sales['추정판매량'].clip(lower=0)
             
-            # 품목명/주차별로 그룹화
+            # 품목별 그룹화
             weekly_sales_grouped = weekly_sales.groupby(['품목명', '주차_일요일'])[['기초재고', '주간입고량', '기말재고', '추정판매량', 'raw_추정판매량']].sum().reset_index()
             
-            # 3주 이동평균선(Moving Average) 계산
+            # 3주 이동평균선 계산
             weekly_sales_grouped = weekly_sales_grouped.sort_values(['품목명', '주차_일요일'])
             weekly_sales_grouped['보정판매량'] = weekly_sales_grouped.groupby('품목명')['추정판매량'].transform(lambda x: x.rolling(window=3, center=True, min_periods=1).mean())
             
@@ -253,7 +247,7 @@ def run(load_data_func):
             display_sales_df = weekly_sales_grouped[mask_sales].copy()
 
             if display_sales_df.empty:
-                st.info("💡 판매량을 산출하려면 최소 2주 이상의 연속된 데이터가 필요합니다. (조회 기간을 넓혀주세요)")
+                st.info("💡 판매량을 산출하려면 최소 2주 이상의 연속된 데이터가 필요합니다.")
             else:
                 # 1) 기본 당주 판매량 막대 차트
                 sales_bar = alt.Chart(display_sales_df).mark_bar(size=35, cornerRadiusEnd=4).encode(
@@ -271,7 +265,7 @@ def run(load_data_func):
                     ]
                 ).properties(height=400)
                 
-                # 2) 🚀 [수정] 황금색 추세선 꼭짓점 색상 변경 (fill='#A04000' 진한 밤색으로 변경하여 눈에 잘 띄게 처리)
+                # 2) 황금색 추세선 (진한 밤색 꼭짓점 적용)
                 trend_line = alt.Chart(display_sales_df).mark_line(
                     point=alt.OverlayMarkDef(color='#F1C40F', size=50, fill='#A04000', strokeWidth=2),
                     color='#F1C40F', 
@@ -285,7 +279,6 @@ def run(load_data_func):
                     ]
                 )
                 
-                # 차트 및 글씨 레이어 결합
                 if selected_product != "전체보기":
                     sales_text = sales_bar.mark_text(align='center', baseline='bottom', dy=-5, fontSize=14, fontWeight='bold', color='#444').encode(
                         text=alt.Text('추정판매량:Q', format=',.0f')
@@ -294,10 +287,10 @@ def run(load_data_func):
                 else:
                     base_chart = (sales_bar + trend_line)
                     
-                # 🚀 [글자 확대] 판매량 차트 전역에 툴팁 폰트 확대 옵션 설정 적용
-                st.altair_chart(base_chart.properties(height=400).configure_tooltip(headerFontSize=14, bodyFontSize=13), use_container_width=True)
+                # 💡 [수정] 올바른 툴팁 폰트 전역 옵션 주입 (.configure_tooltip)
+                st.altair_chart(base_chart.properties(height=400).configure_tooltip(fontSize=14, titleFontSize=14), use_container_width=True)
             
-            # 물류 데이터 오류 리스트 표출 구역
+            # 물류 데이터 오류 리스트
             error_scan = weekly_sales[(weekly_sales['입고오류플래그'] == True) & (weekly_sales['주차_일요일'] >= start_date) & (weekly_sales['주차_일요일'] <= end_date)].copy()
             if not error_scan.empty:
                 st.markdown("<br>", unsafe_allow_html=True)
