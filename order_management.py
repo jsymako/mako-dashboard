@@ -71,16 +71,25 @@ def run(load_data_func):
     weeks_opt = st.sidebar.slider("📊 판매량 산출(최근 N주)", 1, 12, 4)
 
     # ==========================================
-    # 3. 데이터 가공 (박스 단위 환산)
+    # 3. 데이터 가공 (박스 단위 환산 및 재고 연동)
     # ==========================================
-    box_col = next((c for c in df_item.columns if '박스' in c or '입수' in c), df_item.columns[3])
-    df_item['박스입수'] = pd.to_numeric(df_item[box_col], errors='coerce').fillna(1)
-    
-    target_items = df_item[df_item['제조사'].astype(str) == sel_m_id].copy()
-    stock_col = next((c for c in target_items.columns if '재고' in c), None)
-    target_items['현재고(박스)'] = (pd.to_numeric(target_items[stock_col], errors='coerce').fillna(0) / target_items['박스입수']).round(1)
+    # 1) 'ecount_stock' 시트에서 재고 데이터 로드
+    try:
+        df_stock = load_data_func("ecount_stock")
+        # 품목코드와 현재재고 열만 추출 (시트 열 이름이 다를 경우 아래 문자열 수정)
+        stock_map = df_stock[['품목코드', '현재재고']].set_index('품목코드')['현재고'].to_dict()
+    except:
+        stock_map = {}
+        st.sidebar.warning("💡 'ecount_stock' 시트 로드 실패. 재고가 0으로 표시됩니다.")
 
-    # 판매량 가공
+    # 2) 품목 마스터와 병합
+    target_items = df_item[df_item['제조사'].astype(str) == sel_m_id].copy()
+    
+    # 💡 [핵심] 품목코드 기준으로 ecount_stock의 재고를 가져와 박스단위로 환산
+    target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0)
+    target_items['현재고(박스)'] = (target_items['현재고(낱개)'] / target_items['박스입수']).round(1)
+
+    # 판매량 가공 (최근 N주)
     recent_trade = df_trade[df_trade['일자'] >= (datetime.datetime.now() - datetime.timedelta(weeks=weeks_opt))]
     sales = recent_trade.groupby('품목코드')['수량'].sum() / target_items.set_index('품목코드')['박스입수']
     target_items['주평균판매량(박스)'] = (sales / weeks_opt).fillna(0).round(1)
