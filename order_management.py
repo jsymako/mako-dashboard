@@ -5,7 +5,6 @@ import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-
 # 🚀 구글 시트 연결 캐싱 (인증 최적화)
 @st.cache_resource
 def get_gspread_client():
