@@ -15,8 +15,12 @@ def get_gspread_client():
 
 def run(load_data_func):
     st.title("📦 발주 관리 (Order Management)")
-    st.markdown("<p style='color: #666; font-size: 1.1rem;'>판매량과 재고를 참고하여 제조사 및 차수별 발주 물량을 입력하고 취합합니다.</p>", unsafe_allow_html=True)
-    st.markdown("---")
+
+    try:
+        with open("style.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
 
     # ==========================================
     # 1. 필수 데이터 로드
