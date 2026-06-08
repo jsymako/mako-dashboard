@@ -21,11 +21,16 @@ def run(load_data_func):
         df_trade_raw = load_data_func("trade_record")
         df_item = load_data_func("ecount_item_data")
         
-        df_trade_raw.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액']
+        # 🚀 [수정] 구글 시트의 7개 열에 맞게 이름표를 7개로 늘렸습니다. ('담당자' 추가)
+        df_trade_raw.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
+        
         df_trade_raw['일자'] = pd.to_datetime(df_trade_raw['일자'], errors='coerce')
         df_trade_raw['수량'] = pd.to_numeric(df_trade_raw['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_trade_raw['공급가액'] = pd.to_numeric(df_trade_raw['공급가액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_trade_raw = df_trade_raw.dropna(subset=['일자'])
+        
+        # 🚀 [추가] 담당자가 빈칸이면 '미지정'으로 처리
+        df_trade_raw['담당자'] = df_trade_raw['담당자'].replace(['nan', 'None', '', None], '미지정').fillna('미지정')
         
         box_col_name = df_item.columns[3] 
         df_item_master = df_item[['품목코드', '이름', '브랜드', box_col_name]].copy()
