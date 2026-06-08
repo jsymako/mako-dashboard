@@ -1,333 +1,299 @@
 import streamlit as st
 import pandas as pd
+import datetime
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import json
-from streamlit_option_menu import option_menu 
-import datetime
-import holidays 
 
+# 🚀 구글 시트 연결 캐싱 (인증 최적화)
+@st.cache_resource
+def get_gspread_client():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds_dict = json.loads(st.secrets["gcp_service_account"])
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    return gspread.authorize(creds)
 
-import own_stock
-import coupang_stock
-import sales_trend
-import trade_trend
-import ar_trend
-import sales_perf
-import inbound_manager
-import work_report
-import order_management
+# 🚀 신규 차수 생성을 위한 팝업 다이얼로그 정의
+@st.dialog("➕ 신규 발주 차수 생성")
+def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client_func):
+    st.write(f"🏭 제조사: **{sel_m_name}**")
+    new_r = st.number_input("생성할 신규 차수 번호 입력", min_value=1, value=int(default_next_round), step=1)
+    st.markdown("<p style='color:#7f8c8d; font-size:0.9rem;'>※ 신규 생성 시 초기 상태는 자동으로 <b>'입력중'</b>으로 세팅됩니다.</p>", unsafe_allow_html=True)
+    
+    if st.form_submit_button if hasattr(st, "form_submit_button") else st.button("🚀 차수 생성 및 즉시 시작", use_container_width=True):
+        with st.spinner("새로운 발주 차수를 개설하고 있습니다..."):
+            try:
+                client = get_client_func()
+                doc = client.open("통합재고관리")
+                try: sheet_s = doc.worksheet("Order_Status")
+                except: sheet_s = doc.add_worksheet(title="Order_Status", rows="500", cols="5")
+                
+                # 기존 상태 로드 및 중복 검사 후 추가
+                records = sheet_s.get_all_records()
+                df_st = pd.DataFrame(records)
+                
+                if not df_st.empty and ((df_st['제조사ID'].astype(str) == str(sel_m_id)) & (df_st['차수'].astype(str) == str(new_r))).any():
+                    st.error(f"❌ 이미 존재하는 차수입니다. ({new_r}차)")
+                else:
+                    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+                    sheet_s.append_row([str(sel_m_id), str(new_r), "입력중", today_str])
+                    st.session_state[f"cur_round_{sel_m_id}"] = int(new_r)
+                    st.success("🎉 새로운 발주 차수가 생성되었습니다!")
+                    st.cache_data.clear()
+                    st.rerun()
+            except Exception as e:
+                st.error(f"생성 실패: {e}")
 
-st.set_page_config(page_title="통합재고관리", page_icon="🏠", layout="wide")
-
-# 🚀 공통 데이터 로드 함수
-@st.cache_data(ttl=600)
-def load_sheet_data(worksheet_name):
+def run(load_data_func):
+    # 🚀 공통 CSS 로더 고정 반영
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds_dict = json.loads(st.secrets["gcp_service_account"])
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
-        doc = client.open("통합재고관리")
-        sheet = doc.worksheet(worksheet_name)
-        data = sheet.get_all_values()
+        with open("style.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+    st.title("📦 발주 관리 시스템")
+    st.markdown("---")
+
+    # ==========================================
+    # 1. 데이터 마스터 로드 및 안전 장치
+    # ==========================================
+    try:
+        df_m = load_data_func("Manufacturers")
+        df_item = load_data_func("ecount_item_data")
+        df_trade = load_data_func("trade_record")
+        df_emp = load_data_func("Employees")
+        df_stock = load_data_func("ecount_stock")
         
-        if len(data) <= 1:
-            return pd.DataFrame(columns=data[0] if data else [])
+        df_order = load_data_func("Order_Records")
+        if df_order is None or df_order.empty:
+            df_order = pd.DataFrame(columns=['제조사ID', '차수', '품목코드', '직원명', '발주량'])
             
-        df = pd.DataFrame(data[1:], columns=data[0])
-        return df
+        df_status = load_data_func("Order_Status")
+        if df_status is None or df_status.empty:
+            df_status = pd.DataFrame(columns=['제조사ID', '차수', '상태', '최종수정일'])
     except Exception as e:
-        return None 
+        st.error(f"구글 마스터 데이터 동기화 실패: {e}")
+        return
 
-# -----------------------------------------------------------------
-# 🚀 1. 사이드바만 강제로 다크 모드로 만드는 CSS
-# -----------------------------------------------------------------
-st.markdown("""
-    <style>
-    /* 메인 화면은 하얗게 두고, 사이드바 껍데기만 다크 네이비로 강제 지정 */
-    [data-testid="stSidebar"] {
-        background-color: #1E212B !important;
-        min-width: 200px !important;
-        max-width: 200px !important;
-    }
+    # 기본 파싱 정제
+    df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
+    df_trade['일자'] = pd.to_datetime(df_trade['일자'], errors='coerce')
+    df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+    df_order['발주량'] = pd.to_numeric(df_order['발주량'], errors='coerce').fillna(0)
     
-    /* 스트림릿 내부의 숨겨진 하얀색 레이어도 다크 네이비로 덮어쓰기 */
-    [data-testid="stSidebar"] > div:first-child {
-        background-color: #1E212B !important;
-        min-width: 200px !important;
-        max-width: 200px !important;
-        padding-top: 30px !important; 
-        padding-bottom: 0px !important; /* 🚀 껍데기 하단 여백 제거 */
-    }
-    
-    /* 🚀 [범인 검거] 캡처해주신 160x60 사이즈의 투명한 사이드바 헤더 영역 완전히 박살내기 */
-    [data-testid="stSidebarHeader"] {
-        padding: 0px !important;
-        height: 0px !important;
-        min-height: 0px !important;
-        margin: 0px !important;
-        display: none !important; /* 공간만 차지하던 유령 헤더 아예 삭제 */
-    }
-    
-    /* 🚀 사이드바 안쪽 내용물(메뉴) 상/하단 여백 완전 제거 */
-    [data-testid="stSidebarUserContent"] {
-        padding-top: 0px !important;
-        padding-bottom: 0px !important; /* 🚀 [핵심] 캡처에 나온 하단 보라색 여백을 박멸합니다! */
-    }
-    
-    /* 빈 마크다운(style) 찌꺼기들이 차지하는 16px 마진 제거 */
-    [data-testid="stSidebar"] div.element-container:has(style),
-    [data-testid="stSidebar"] div.element-container:has(script) {
-        display: none !important;
-        height: 0px !important;
-        margin: 0px !important;
-    }
+    # 타입 에러 방지용 재고 맵핑
+    try:
+        stock_map = df_stock.set_index('품목코드')['현재재고'].astype(str).str.replace(',', '')
+        stock_map = pd.to_numeric(stock_map, errors='coerce').fillna(0).to_dict()
+    except:
+        stock_map = {}
 
-    /* 열기/닫기 화살표 색상을 흰색으로 */
-    [data-testid="collapsedControl"] * { display: none !important; }
-    [data-testid="collapsedControl"]::after {
-        content: "❯" !important;
-        font-size: 22px !important;
-        font-weight: 900 !important;
-        color: #FFFFFF !important;
-        display: block !important;
-        margin-left: 10px !important;
-    }
-    [data-testid="stSidebarNav"] {
-        display: none !important;
-    }
+    emp_list = sorted(df_emp['성명'].dropna().unique().tolist()) if df_emp is not None and '성명' in df_emp.columns else ["미지정"]
+
+    # ==========================================
+    # 2. 사이드바 (제조사 및 담당자만 고정 배치)
+    # ==========================================
+    st.sidebar.markdown("### 🏭 소속 및 제조사")
+    sel_emp = st.sidebar.selectbox("👨‍💼 내 이름(입력자) 선택", emp_list)
+    m_dict = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
+    sel_m_name = st.sidebar.selectbox("제조사 필터", list(m_dict.keys()))
+    sel_m_id = m_dict[sel_m_name]
+
+    # ==========================================
+    # 3. 메인 화면 제어 컨트롤러 (차수 탐색 및 생성)
+    # ==========================================
+    # 해당 제조사의 기존 차수 목록 추출
+    all_rounds = df_status[df_status['제조사ID'].astype(str) == str(sel_m_id)]['차수'].astype(str).tolist()
+    all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
     
-    /* 혹시 모를 iframe 하얀색 모서리 잔재 제거 */
-    iframe {
-        background-color: transparent !important;
-    }
+    # 세션 상태 주입을 통한 차수 기억 연동
+    state_key = f"cur_round_{sel_m_id}"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = all_rounds[-1] if all_rounds else 1
+        
+    # 차수 이동 및 매칭용 서브 UI 레이아웃
+    ctrl_box = st.container(border=True)
+    with ctrl_box:
+        cc1, cc2, cc3, cc4, cc5 = st.columns([1, 2, 1, 2, 2])
+        
+        # 차수 다운 버튼 <
+        if cc1.button("◀ 이전 차수", use_container_width=True):
+            if all_rounds and st.session_state[state_key] in all_rounds:
+                cur_idx = all_rounds.index(st.session_state[state_key])
+                if cur_idx > 0: st.session_state[state_key] = all_rounds[cur_idx - 1]
+            else:
+                if st.session_state[state_key] > 1: st.session_state[state_key] -= 1
+            st.rerun()
+            
+        # 현재 차수 정보 표출
+        with cc2:
+            st.markdown(f"<h3 style='text-align:center; margin:0; padding-top:2px;'>🎯 {st.session_state[state_key]}차 발주</h3>", unsafe_allow_html=True)
+            
+        # 차수 업 버튼 >
+        if cc3.button("다음 차수 ▶", use_container_width=True):
+            if all_rounds and st.session_state[state_key] in all_rounds:
+                cur_idx = all_rounds.index(st.session_state[state_key])
+                if cur_idx < len(all_rounds) - 1: st.session_state[state_key] = all_rounds[cur_idx + 1]
+            else:
+                st.session_state[state_key] += 1
+            st.rerun()
 
-    /* 🚀 [추가] 사이드바 내부 세로 블록(stVerticalBlock)의 강제 하단 여백 및 간격 완벽 제거 */
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        padding-bottom: 0px !important;
-        gap: 0px !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
-        padding-bottom: 0px !important;
-        margin-bottom: 0px !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
+        # 실시간 상태 체크 및 변경 스위치
+        round_val = st.session_state[state_key]
+        status_filter = (df_status['제조사ID'].astype(str) == str(sel_m_id)) & (df_status['차수'].astype(str) == str(round_val))
+        db_status = df_status[status_filter]['상태'].iloc[0] if not df_status[status_filter].empty else "입력중"
+        
+        with cc4:
+            status_opts = ["입력중", "완료"]
+            sel_status = st.selectbox("🚦 차수 상태 관리", status_opts, index=status_opts.index(db_status) if db_status in status_opts else 0)
+            
+        # 신규 차수 팝업 트리거
+        with cc5:
+            st.markdown("<div style='padding-top:4px;'></div>", unsafe_allow_html=True)
+            next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
+            # 🚀 [핵심 수정] color="primary"를 type="primary"로 변경했습니다!
+            if st.button("➕ 신규 차수 생성", type="primary", use_container_width=True):
+                create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
-# -----------------------------------------------------------------
-# 🚀 2. ECharts 감성의 메뉴바 (option_menu 복구)
-# -----------------------------------------------------------------
-with st.sidebar:
-    main_menu = option_menu(
-        menu_title=None, 
-        options=["대시 보드", "자사 재고", "판매 현황", "입고 현황", "쿠팡 현황", "업무 보고", "영업 실적", "채권 분석","발주 관리"],
-        icons=[
-            "grid",             # 대시 보드 (바둑판 모양)
-            "boxes",            # 자사 재고 (쌓여있는 상자)
-            "graph-up-arrow",   # 판매 현황 (상승하는 그래프)
-            "truck",            # 입고 현황 (배송 트럭)
-            "box-seam",         # 쿠팡 재고 (테이핑 된 택배 상자)
-            "pencil-square",    # 업무 보고 (펜과 종이)
-            "award",            # 영업 실적 (트로피/뱃지)
-            "cash-stack"        # 채권 분석 (쌓여있는 돈/현금)
-        ],
-        default_index=0, 
-        styles={
-            "container": {
-                "padding": "0!important", 
-                "background-color": "#1E212B",
-                "border-radius": "0px !important",  # 🚀 [추가] 전체 껍데기의 둥근 모서리를 직각으로 펴서 하얀 틈새를 완벽 차단합니다!
-                "border": "none"                    # 🚀 [추가] 혹시 모를 외곽선도 제거
-            },
-            "icon": {
-                "color": "#FFFFFF",               
-                "font-size": "1.1rem"               # 🚀 1. [수정] 아이콘 크기 (기본 1.1rem -> 더 키우려면 1.2rem, 1.3rem)
-            },
-            "nav-link": {
-                "font-size": "1.05rem",            # 🚀 2. [수정] 글자 크기 (기본 1.05rem -> 더 키우려면 1.1rem, 1.2rem)
-                "text-align": "left", 
-                "margin": "0px 0px 4px 0px",        # 🚀 3. [수정] 버튼과 버튼 사이의 간격 (4px을 8px로 늘리면 메뉴 사이가 벌어집니다)
-                "padding": "3px 15px",            # 🚀 4. [수정] 버튼 자체의 크기 (위아래 10px, 양옆 15px 여백. 15px 20px로 늘리면 버튼이 훨씬 커집니다)
-                "border-radius": "0.5rem",          # (개별 메뉴 버튼의 둥근 모서리는 그대로 유지)
-                "color": "#FFFFFF",               
-                "font-weight": "400",
-                "border": "none",
-                "--hover-color": "#485068"        
-            },
-            "nav-link-selected": {
-                "background-color": "#485068",    
-                "color": "#FFFFFF",               
-                "font-weight": "600",             
-                "border": "none"
-            },
+    # 분석 주차 및 입고 대기 참고 차수 설정 바
+    param_box = st.columns([4, 6])
+    with param_box[0]:
+        weeks_opt = st.slider("📊 판매량 산출 기준 (최근 N주)", min_value=1, max_value=12, value=4)
+    with param_box[1]:
+        ref_rounds = st.multiselect("🚚 입고정산/참고용 과거 차수 선택 (합산 표출)", [r for r in all_rounds if r != round_val], placeholder="비교 및 이월 잔량 차수 선택")
+
+    # ==========================================
+    # 4. 박스 단위 완전 연산 및 명칭 결합
+    # ==========================================
+    target_items = df_item[df_item['제조사'].astype(str) == str(sel_m_id)].copy()
+    if target_items.empty:
+        st.warning(f"💡 현재 '{sel_m_name}' 제조사로 등록된 마스터 품목이 없습니다.")
+        return
+
+    target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1)
+    
+    # 브랜드 + 품목이름 복합구조 적용
+    target_items['품목명'] = "[" + target_items['브랜드'].fillna('미분류').astype(str) + "] " + target_items['이름'].astype(str)
+    
+    target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0).astype(float)
+    target_items['현재고(박스)'] = (target_items['현재고(낱개)'] / target_items['박스단위']).round(1)
+
+    # 주평균 판매량 (박스 변환)
+    recent_limit = datetime.datetime.now() - datetime.timedelta(weeks=weeks_opt)
+    df_trade_recent = df_trade[df_trade['일자'] >= recent_limit]
+    sales_units = df_trade_recent.groupby('품목코드')['수량'].sum().reindex(target_items['품목코드'], fill_value=0)
+    target_items['주평균판매량(박스)'] = ((sales_units / target_items.set_index('품목코드')['박스단위']) / weeks_opt).fillna(0).round(1)
+
+    # 🚀 참고용 과거 차수 데이터 연동 수식
+    if ref_rounds:
+        df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
+        ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum().reindex(target_items['품목코드'], fill_value=0)
+        target_items['참고 차수 발주량(박스)'] = ref_series.values
+    else:
+        target_items['참고 차수 발주량(박스)'] = 0.0
+
+    # ==========================================
+    # 5. 다중 사용자 피벗 테이블 연산 
+    # ==========================================
+    curr_orders = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(str) == str(round_val))]
+    
+    if not curr_orders.empty:
+        order_pivot = curr_orders.pivot_table(index='품목코드', columns='직원명', values='발주량', aggfunc='sum').fillna(0)
+    else:
+        order_pivot = pd.DataFrame(index=target_items['품목코드'])
+    
+    base_columns = target_items[['품목코드', '품목명', '현재고(박스)', '주평균판매량(박스)', '참고 차수 발주량(박스)']]
+    final_df = pd.merge(base_columns, order_pivot, on='품목코드', how='left').fillna(0)
+    
+    # 내 입력 및 타 직원 열 분리
+    if sel_emp not in final_df.columns:
+        final_df['내 발주량(박스)'] = 0.0
+    else:
+        final_df['내 발주량(박스)'] = final_df[sel_emp]
+        
+    other_staffs = [c for c in order_pivot.columns if c != sel_emp and c != '품목코드']
+    
+    # 🚀 총 발주량 합계 오류 방어
+    if other_staffs:
+        final_df['총 발주량(박스)'] = final_df[other_staffs].sum(axis=1) + final_df['내 발주량(박스)']
+    else:
+        final_df['총 발주량(박스)'] = final_df['내 발주량(박스)']
+
+    display_layout = ['품목코드', '품목명', '현재고(박스)', '주평균판매량(박스)', '참고 차수 발주량(박스)'] + other_staffs + ['내 발주량(박스)', '총 발주량(박스)']
+    final_df = final_df[display_layout]
+
+    # ==========================================
+    # 6. 표 렌더링
+    # ==========================================
+    calculated_height = (len(final_df) + 1) * 36 + 45
+    
+    editable_config = st.data_editor(
+        final_df,
+        disabled=[c for c in display_layout if c != '내 발주량(박스)'],
+        hide_index=True,
+        use_container_width=True,
+        height=int(calculated_height),
+        column_config={
+            "내 발주량(박스)": st.column_config.NumberColumn("내 발주량(박스✏️)", min_value=0.0, step=0.1, format="%.1f"),
+            "총 발주량(박스)": st.column_config.NumberColumn("총 발주량(박스)", format="%.1f"),
+            "현재고(박스)": st.column_config.NumberColumn("현재고(박스)", format="%.1f"),
+            "주평균판매량(박스)": st.column_config.NumberColumn("주평균판매량", format="%.1f"),
+            "참고 차수 발주량(박스)": st.column_config.NumberColumn("🛒 선택차수 입고대기분", format="%.1f")
         }
     )
 
-    # st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.5); margin: 10px 0px;">', unsafe_allow_html=True)
-    
-# -----------------------------------------------------------------
-# 🚀 3. 메인 대시보드 화면 (1줄에 3개 나란히 배치)
-# -----------------------------------------------------------------
-def render_dashboard():
-    st.title("마코펫 통합조회시스템")
-    
-    st.markdown("""
-        <style>
-        .dash-card {
-            border: 1px solid #e0e0e0; 
-            border-radius: 10px; 
-            padding: 20px; 
-            margin-bottom: 10px; 
-            background: #fff; 
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.05); 
-            height: 250px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .dash-title { font-size: 1.4rem; font-weight: 600; color: #111; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .dash-stat { font-size: 1.4rem; font-weight: 600; color: #0275d8; }
-        .status-ok { color: #5cb85c; font-weight: normal; font-size: 1.2rem; }
-        .status-err { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
-        .status-warn { color: #f0ad4e; font-weight: bold; font-size: 1.2rem; }
-        .sub-text { font-size: 1.1rem; margin-top: 5px; background: #f8f9fa; padding: 12px; border-radius: 6px; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    modules = {
-        "자사 재고": {"sheet_name": "ecount_stock", "icon": "📦", "type": "latest_only"},
-        "쿠팡 재고": {"sheet_name": "coupang_stock", "icon": "🚀", "type": "missing_check", "offset": 1},
-        "판매 현황": {"sheet_name": "trade_record", "icon": "🤝", "type": "missing_check", "offset": 2}
-    }
-
-    today = pd.Timestamp.now().normalize()
-    kr_holidays = holidays.KR(years=range(today.year - 1, today.year + 1))
-    
-    module_items = list(modules.items())
-    
-    # 🚀 [핵심 수정] 2줄씩 나누던 코드를 지우고, 화면을 3등분(3열)하여 한 줄로 나란히 배치합니다.
-    cols = st.columns(3)
-    
-    for i, (m_name, m_info) in enumerate(module_items):
-        with cols[i]:
-            try: 
-                df = load_sheet_data(m_info["sheet_name"])
+    # ==========================================
+    # 7. 통합 저장
+    # ==========================================
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("💾 데이터 및 진행 상태 통합 저장", use_container_width=True, type="primary"):
+        with st.spinner("구글 시트에 실시간 업로드 및 동기화 중..."):
+            try:
+                client = get_gspread_client()
+                doc = client.open("통합재고관리")
                 
-                if df is not None and not df.empty:
-                    date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일', '시간', '일시', '업데이트'])), None)
-                    
-                    if m_info["type"] == "latest_only":
-                        latest_str = "확인 불가"
-                        if date_col:
-                            parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
-                            if not parsed_dates.empty:
-                                latest_str = parsed_dates.max().strftime('%Y-%m-%d %H:%M')
-                                
-                        st.markdown(f"""
-                            <div class="dash-card">
-                                <div>
-                                    <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                    <div style="margin-bottom: 8px;">연동 상태: <span class="status-ok">🟢 정상 수신중</span></div>
-                                </div>
-                                <div class="sub-text">
-                                    <b>최신 데이터 갱신 일시:</b><br>
-                                    <span style="font-size:1.1rem; color:#0275d8; font-weight:bold;">{latest_str}</span>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
+                # ① 상태(Order_Status) 업데이트
+                sheet_s = doc.worksheet("Order_Status")
+                records_s = sheet_s.get_all_records()
+                df_st_save = pd.DataFrame(records_s)
+                
+                if not df_st_save.empty:
+                    df_st_save = df_st_save[~((df_st_save['제조사ID'].astype(str) == str(sel_m_id)) & (df_st_save['차수'].astype(str) == str(round_val)))]
+                today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+                new_status_row = pd.DataFrame([{"제조사ID": str(sel_m_id), "차수": str(round_val), "상태": str(sel_status), "최종수정일": today_str}])
+                df_st_save = pd.concat([df_st_save, new_status_row], ignore_index=True)
+                
+                sheet_s.clear()
+                sheet_s.update([df_st_save.columns.values.tolist()] + df_st_save.astype(str).values.tolist())
 
-                    elif m_info["type"] == "missing_check":
-                        if date_col:
-                            parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
-                            
-                            if not parsed_dates.empty:
-                                latest_date_str = parsed_dates.max().strftime('%Y-%m-%d')
-                                unique_dates_set = set(parsed_dates.dt.strftime('%Y-%m-%d'))
-                                
-                                target_date = today - pd.Timedelta(days=m_info["offset"])
-                                past_month = pd.date_range(end=target_date, periods=30, freq='D')
-                                
-                                valid_business_days = [bd for bd in past_month if bd.weekday() < 5 and bd.date() not in kr_holidays]
-                                
-                                missing_days = []
-                                for bd in valid_business_days:
-                                    bd_str = bd.strftime('%Y-%m-%d')
-                                    if bd_str not in unique_dates_set:
-                                        missing_days.append(bd.strftime('%m/%d(%a)'))
-                                
-                                if missing_days:
-                                    if len(missing_days) > 5:
-                                        display_missing = ', '.join(missing_days[:5]) + f" ...외 {len(missing_days)-5}일"
-                                    else:
-                                        display_missing = ', '.join(missing_days)
-                                        
-                                    missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{display_missing}</span>"
-                                    icon_status = "⚠️ 누락 확인"
-                                    icon_class = "status-warn"
-                                else:
-                                    missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음</span>"
-                                    icon_status = "🟢 정상 수신중"
-                                    icon_class = "status-ok"
+                # ② 발주 수량(Order_Records) 업데이트
+                sheet_o = doc.worksheet("Order_Records")
+                records_o = sheet_o.get_all_records()
+                df_ord_save = pd.DataFrame(records_o)
+                
+                if not df_ord_save.empty:
+                    df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
+                                               (df_ord_save['차수'].astype(str) == str(round_val)) & 
+                                               (df_ord_save['직원명'].astype(str) == str(sel_emp)))]
+                
+                changed_rows = editable_config[editable_config['내 발주량(박스)'] > 0][['품목코드', '내 발주량(박스)']].copy()
+                changed_rows['제조사ID'] = str(sel_m_id)
+                changed_rows['차수'] = str(round_val)
+                changed_rows['직원명'] = str(sel_emp)
+                changed_rows.rename(columns={'내 발주량(박스)': '발주량'}, inplace=True)
+                changed_rows = changed_rows[['제조사ID', '차수', '품목코드', '직원명', '발주량']]
+                
+                df_final_ord = pd.concat([df_ord_save, changed_rows], ignore_index=True)
+                
+                sheet_o.clear()
+                if df_final_ord.empty:
+                    sheet_o.append_row(['제조사ID', '차수', '품목코드', '직원명', '발주량'])
+                else:
+                    sheet_o.update([df_final_ord.columns.values.tolist()] + df_final_ord.astype(str).values.tolist())
 
-                                target_label = f"D-{m_info['offset']}"
-
-                                st.markdown(f"""
-                                    <div class="dash-card">
-                                        <div>
-                                            <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                            <div style="margin-bottom: 8px;">연동 상태: <span class="{icon_class}">{icon_status}</span></div>
-                                            <div>최신 데이터: <span class="dash-stat">{latest_date_str}</span></div>
-                                        </div>
-                                        <div class="sub-text">
-                                            <b>🔍 30일 내 누락 (기준: {target_label}):</b><br>{missing_str}
-                                        </div>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.markdown(f"<div class='dash-card'><div><div class='dash-title'>{m_info['icon']} {m_name}</div><div>연동 상태: <span class='status-warn'>⚠️ 날짜 파싱 오류</span></div></div></div>", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                            <div class="dash-card">
-                                <div>
-                                    <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                    <div>연동 상태: <span class="status-err">🔴 점검 필요</span></div>
-                                </div>
-                                <div class="sub-text">시트명 불일치 또는 데이터가 없습니다.</div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        
+                st.cache_data.clear()
+                st.success(f"🎉 {round_val}차 발주 수량 및 진행상태 [{sel_status}] 저장이 성공적으로 완료되었습니다!")
+                st.rerun()
             except Exception as e:
-                st.markdown(f"""
-                    <div class="dash-card">
-                        <div>
-                            <div class="dash-title">{m_info['icon']} {m_name}</div>
-                            <div>연동 상태: <span class="status-err">🔴 분석 중단</span></div>
-                        </div>
-                        <div class="sub-text" style="color:red; font-size:0.8rem;">데이터 구조 오류가 발생했습니다.</div>
-                    </div>
-                """, unsafe_allow_html=True)
-    
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-
-# -----------------------------------------------------------------
-# 🚀 4. 메뉴 선택에 따른 화면 전환 (다시 복구!)
-# -----------------------------------------------------------------
-if main_menu == "대시 보드" or main_menu is None:
-    render_dashboard()
-elif main_menu == "자사 재고":
-    own_stock.run(load_sheet_data) 
-elif main_menu == "쿠팡 현황":
-    coupang_stock.run(load_sheet_data)
-elif main_menu == "입고 현황":
-    inbound_manager.run(load_sheet_data)
-elif main_menu == "판매 현황":
-    trade_trend.run(load_sheet_data)
-elif main_menu == "업무 보고":
-    work_report.run(load_sheet_data)
-elif main_menu == "채권 분석":
-    ar_trend.run(load_sheet_data)
-elif main_menu == "영업 실적":
-    sales_perf.run(load_sheet_data)
-elif main_menu == "발주 관리":
-    order_management.run(load_sheet_data)
+                st.error(f"구글 시트 연동 중 에러 발생: {e}")
