@@ -14,25 +14,34 @@ def get_gspread_client():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     return gspread.authorize(creds)
 
-
 def run(load_data_func):
     st.title("채권 분석")
 
-# 🚀 방금 만든 안전한 'ar_trend.css'를 불러옵니다.
+    # 🚀 방금 만든 안전한 'ar_trend.css'를 불러옵니다.
     try:
         with open("style.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         pass
 
-        
-    MANAGER_MAP = {
-        "001": "이계성", "002": "이계흥", "004": "황일용",
-        "00026": "신의명", "007": "정상영", "009": "이경옥"
-    }
-    MANAGER_ORDER = ["이계성", "이계흥", "황일용", "신의명", "정상영", "이경옥"]
+    # =================================================================
+    # 🚀 [핵심 추가] 하드코딩 맵 삭제 및 Employees 시트 동적 로드
+    # =================================================================
+    try:
+        df_emp = load_data_func("Employees")
+        # 직원ID를 키(Key), 성명을 값(Value)으로 하는 자동 매핑 사전(Dictionary) 생성
+        dynamic_manager_map = {str(row['직원ID']).strip(): str(row['성명']).strip() for _, row in df_emp.iterrows()}
+        # 드롭다운에 표시할 직원 이름 목록 (가나다순 정렬)
+        manager_list = sorted(list(set(dynamic_manager_map.values())))
+    except Exception as e:
+        # 혹시 시트 로드에 실패할 경우를 대비한 안전장치 (기존 데이터)
+        dynamic_manager_map = {
+            "001": "이계성", "002": "이계흥", "004": "황일용",
+            "00026": "신의명", "007": "정상영", "009": "이경옥"
+        }
+        manager_list = ["신의명", "이경옥", "이계성", "이계흥", "정상영", "황일용"]
 
-    # 🎨 [CSS] 데이터 카드 디자인 (업로더 관련 억지 CSS는 없습니다)
+    # 🎨 [CSS] 데이터 카드 디자인
     st.markdown("""
         <style>
         .ar-container {
@@ -65,8 +74,6 @@ def run(load_data_func):
         </style>
     """, unsafe_allow_html=True)
 
-    
-
     # 🚀 [최적화 2] 메모(코멘트) 데이터 세션 관리
     if "ar_memo_data" not in st.session_state:
         try:
@@ -83,7 +90,7 @@ def run(load_data_func):
     uploaded_file = st.file_uploader("", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
 
     if not uploaded_file:
-        st.info("👆 이카운트 생성 DATA파일을 업로드 해주세요.")
+        st.info("👆 이카운트 채권 DATA파일을 업로드 해주세요.")
         return
 
     try:
@@ -103,7 +110,10 @@ def run(load_data_func):
                 
                 manager_col = next((c for c in df.columns if '담당자' in str(c)), None)
                 if manager_col:
-                    df[manager_col] = df[manager_col].ffill().astype(str).str.strip().apply(lambda x: MANAGER_MAP.get(x, "기타/미지정"))
+                    # 💡 [핵심 연동] 이카운트 데이터의 코드값을 Employees 시트 기반으로 매핑 (이름이면 그대로, 매핑 안 되면 기타/미지정)
+                    df[manager_col] = df[manager_col].ffill().astype(str).str.strip().apply(
+                        lambda x: dynamic_manager_map.get(x, x if x in manager_list else "기타/미지정")
+                    )
 
                 month_cols = [c for c in df.columns if '20' in str(c) and ('/' in str(c) or '-' in str(c))]
                 df_melt = df.melt(id_vars=['거래처명', '구분'] + ([manager_col] if manager_col else []), value_vars=month_cols, var_name='기준월', value_name='금액')
@@ -121,11 +131,9 @@ def run(load_data_func):
         month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
         m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
 
-        month_list = sorted(list(df_pivot['기준월'].unique()), reverse=True)
-        m0, m1, m2 = month_list[0], (month_list[1] if len(month_list) > 1 else None), (month_list[2] if len(month_list) > 2 else None)
-
-        valid_mgrs = [m for m in MANAGER_ORDER if m in df_pivot[manager_col].unique()]
-        sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + valid_mgrs) if manager_col else "전체보기"
+        # 💡 [드롭다운 수정] 데이터 존재 유무와 무관하게 Employees에 등록된 모든 직원을 드롭다운에 노출합니다.
+        sel_m = st.sidebar.selectbox("담당자 선택", ["전체보기"] + manager_list) if manager_col else "전체보기"
+        
         hide_zero = st.sidebar.checkbox("당월 잔액 0원 숨기기", value=True)
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
@@ -147,12 +155,11 @@ def run(load_data_func):
             p1 = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
             p2 = group[group['기준월'] == m2].iloc[0] if m2 in group['기준월'].values else None
             
-            # 🚀 [핵심 수정] 잔액 하나만 가져오던 것을 '잔액, 매출, 수금' 3개 모두 묶어서 표(DataFrame) 형태로 가져옵니다.
             trend_df = group[group['기준월'].isin(sorted(month_list[:12]))].sort_values('기준월')
             trend_data = trend_df.set_index('기준월')[['잔액', '매출', '수금']]
             
             cards_data.append({
-                'name': trader, 'mgr': curr[manager_col], 'trend': trend_data, # 🚀 trend_data로 변경!
+                'name': trader, 'mgr': curr[manager_col], 'trend': trend_data,
                 'm0': curr['매출'], 's0': curr['수금'], 'j0': curr['잔액'], 'd0': d0,
                 'm1': p1['매출'] if p1 is not None else 0, 's1': p1['수금'] if p1 is not None else 0, 'j1': p1['잔액'] if p1 is not None else 0, 'd1': get_dso(1),
                 'm2': p2['매출'] if p2 is not None else 0, 's2': p2['수금'] if p2 is not None else 0, 'j2': p2['잔액'] if p2 is not None else 0, 'd2': get_dso(2)
@@ -223,14 +230,11 @@ def run(load_data_func):
                 with col_graph:
                     st.markdown('<div class="graph-title">📈 12개월 추이</div>', unsafe_allow_html=True)
                     
-                    # 🚀 [UI 혁신] X축 날짜를 '개월 수'로 압축하고, 범례를 최상단으로 끌어올립니다.
-                    # 1. 데이터를 그래프용으로 예쁘게 폅니다.
                     plot_df = row['trend'].copy().reset_index(drop=True)
-                    plot_df.index = range(1, len(plot_df) + 1) # 1, 2, 3... 12 로 변경
+                    plot_df.index = range(1, len(plot_df) + 1)
                     plot_df.index.name = 'M'
                     plot_df = plot_df.reset_index().melt('M', var_name='항목', value_name='금액')
                     
-                    # 2. Altair 차트로 섬세하게 디자인합니다.
                     chart = alt.Chart(plot_df).mark_line(point=True, strokeWidth=2.5).encode(
                         x=alt.X('M:O', title=None, axis=alt.Axis(labelAngle=0, labelColor='#555')),
                         y=alt.Y('금액:Q', title=None, axis=alt.Axis(format=',.0f', labelColor='#555')),
@@ -241,21 +245,17 @@ def run(load_data_func):
                         ),
                         tooltip=[alt.Tooltip('M:O', title='개월차'), '항목', alt.Tooltip('금액:Q', format=',')]
                     ).properties(
-                        # 🚀 [수정 1] 높이를 아주 과감하게 380으로 키웁니다! (필요시 400 이상으로 팍팍 늘려보세요)
                         height=280
                     )
                     
-                    # 🚀 [수정 2] theme=None 을 추가해서 "스트림릿 넌 빠져, 내 설정대로 그릴 거야!" 라고 강제합니다.
                     st.altair_chart(chart, use_container_width=True, theme=None)
 
-                # st.markdown('<div class="memo-section">', unsafe_allow_html=True)
                 memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
                 m_col, b_col = st.columns([6, 1])
                 with m_col:
                     memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
                 with b_col:
                     if st.button("💾 저장", key=f"save_{row['name']}", use_container_width=True):
-                        # 1. 화면 중앙 팝업 표시
                         placeholder = st.empty()
                         placeholder.markdown(f"""
                             <div style='position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
@@ -267,9 +267,8 @@ def run(load_data_func):
                             </div>
                         """, unsafe_allow_html=True)
 
-                        # 2. 미리 캐싱된 클라이언트로 즉시 저장
                         try:
-                            client = get_gspread_client() # 🚀 여기서 로그인 과정 없이 바로 가져옴!
+                            client = get_gspread_client() 
                             doc = client.open("통합재고관리")
                             sheet = doc.worksheet("ar_memo")
                             
@@ -278,13 +277,12 @@ def run(load_data_func):
                             sheet.clear()
                             sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
                             
-                            # 세션 상태 업데이트
                             st.session_state.ar_memo_data = pd.DataFrame(list(all_memos.items()), columns=['거래처명', '메모'])
                             st.toast("성공적으로 저장되었습니다!")
                         except Exception as e:
                             st.error(f"저장 실패: {e}")
                         
-                        placeholder.empty() # 팝업 제거
+                        placeholder.empty()
                         st.rerun()
                 st.markdown('</div></div>', unsafe_allow_html=True)
 
