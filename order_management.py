@@ -23,7 +23,7 @@ def run(load_data_func):
     st.markdown("---")
 
     # ==========================================
-    # 1. 데이터 로드 (KeyError 방어 로직 강화)
+    # 1. 데이터 로드 및 변수 초기화
     # ==========================================
     try:
         df_m = load_data_func("Manufacturers")
@@ -31,21 +31,21 @@ def run(load_data_func):
         df_trade = load_data_func("trade_record")
         df_emp = load_data_func("Employees")
         
-        # 🚀 [KeyError 방어] 시트가 비어있을 때 컬럼을 강제로 생성
-        df_order = load_data_func("Order_Records")
-        expected_cols = ['제조사ID', '차수', '품목코드', '직원명', '발주량']
-        if df_order is None or df_order.empty:
-            df_order = pd.DataFrame(columns=expected_cols)
+        # 🚀 [핵심] emp_list를 여기서 확실하게 정의합니다.
+        if df_emp is not None and not df_emp.empty and '성명' in df_emp.columns:
+            emp_list = sorted(df_emp['성명'].dropna().unique().tolist())
         else:
-            # 시트에는 있는데 데이터프레임에 컬럼이 안 잡히는 경우 대비
-            for col in expected_cols:
-                if col not in df_order.columns:
-                    df_order[col] = ""
-
+            emp_list = ["직원 명단 없음"] # 시트가 비어있어도 에러 방지
+        
+        # ... (이하 기존 Order_Records, Order_Status 로드 로직 동일) ...
+        df_order = load_data_func("Order_Records")
+        if df_order is None or df_order.empty:
+            df_order = pd.DataFrame(columns=['제조사ID', '차수', '품목코드', '직원명', '발주량'])
+            
         df_status = load_data_func("Order_Status")
         if df_status is None or df_status.empty:
             df_status = pd.DataFrame(columns=['제조사ID', '차수', '상태', '최종수정일'])
-            
+
     except Exception as e:
         st.error(f"데이터를 불러오는 중 오류가 발생했습니다: {e}")
         return
