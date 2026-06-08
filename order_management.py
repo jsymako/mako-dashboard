@@ -14,7 +14,7 @@ def get_gspread_client():
     return gspread.authorize(creds)
 
 # 🚀 신규 차수 생성을 위한 팝업 다이얼로그 정의
-@st.dialog("➕ 신규 발주 차수 생성")
+@st.dialog("➕ 신규 차수 생성")
 def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client_func):
     st.write(f"🏭 제조사: **{sel_m_name}**")
     new_r = st.number_input("생성할 신규 차수 번호 입력", min_value=1, value=int(default_next_round), step=1)
