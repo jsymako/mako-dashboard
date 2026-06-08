@@ -14,13 +14,16 @@ def get_gspread_client():
     return gspread.authorize(creds)
 
 def run(load_data_func):
-    st.title("📦 발주 관리 (Order Management)")
-
+    # 🚀 공통 CSS 적용 (대표님 요청사항 영구 반영)
     try:
         with open("style.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         pass
+
+    st.title("📦 발주 관리 (Order Management)")
+    st.markdown("<p style='color: #666; font-size: 1.1rem;'>판매량과 재고를 참고하여 제조사 및 차수별 발주 물량을 입력하고 취합합니다.</p>", unsafe_allow_html=True)
+    st.markdown("---")
 
     # ==========================================
     # 1. 필수 데이터 로드
@@ -48,9 +51,6 @@ def run(load_data_func):
     df_trade['일자'] = pd.to_datetime(df_trade['일자'], errors='coerce')
     df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
     
-    # '재고' 열 찾기 (이름이 다를 수 있으므로 방어 로직)
-    stock_col = next((col for col in df_item.columns if '재고' in col), None)
-    
     # 직원 목록 동적 로드
     emp_list = []
     if df_emp is not None and not df_emp.empty and '성명' in df_emp.columns:
@@ -69,20 +69,24 @@ def run(load_data_func):
     sel_m_name = st.sidebar.selectbox("🏭 제조사 선택", list(m_dict.keys()))
     sel_m_id = m_dict[sel_m_name]
     
-    # ③ 차수 선택 (기존 차수 목록 + 신규 입력 가능)
+    # ③ 차수 선택 (UI/UX 대폭 개선)
     exist_rounds = df_order[df_order['제조사ID'] == sel_m_id]['차수'].unique().tolist()
     exist_rounds = sorted([int(r) for r in exist_rounds if str(r).isdigit()], reverse=True)
     
-    round_mode = st.sidebar.radio("발주 차수", ["기존 발주 조회/수정", "새로운 차수 생성"])
-    if round_mode == "새로운 차수 생성":
-        sel_round = st.sidebar.number_input("신규 차수 입력", min_value=1, value=(max(exist_rounds)+1 if exist_rounds else 1), step=1)
+    st.sidebar.markdown("---")
+    round_mode = st.sidebar.radio("📌 발주 차수 모드", ["기존 발주 조회/수정", "➕ 새로운 차수 생성"])
+    
+    if round_mode == "➕ 새로운 차수 생성":
+        sel_round = st.sidebar.number_input("신규 차수 (숫자)", min_value=1, value=(max(exist_rounds)+1 if exist_rounds else 1), step=1)
+        st.sidebar.info("💡 숫자를 정하고 표에 발주량을 입력한 뒤 **[저장]**을 누르면 자동으로 신규 방이 개설됩니다.")
     else:
         if not exist_rounds:
-            st.sidebar.warning("기존 발주 내역이 없습니다. 신규 차수를 생성해주세요.")
+            st.sidebar.warning("기존 발주 내역이 없습니다. [새로운 차수 생성]을 선택해주세요.")
             sel_round = 1
         else:
-            sel_round = st.sidebar.selectbox("기존 차수 선택", exist_rounds)
+            sel_round = st.sidebar.selectbox("조회할 기존 차수", exist_rounds, format_func=lambda x: f"{x}차 발주")
             
+    st.sidebar.markdown("---")
     # ④ 판매량 분석 기준 주차 선택
     weeks_opt = st.sidebar.slider("📊 평균 판매량 산출 기준 (최근 N주)", min_value=1, max_value=12, value=4, step=1)
 
@@ -98,6 +102,16 @@ def run(load_data_func):
     if target_items.empty:
         st.warning(f"'{sel_m_name}' 제조사에 매핑된 품목이 없습니다. 마스터 데이터를 확인해주세요.")
         return
+
+    # 🚀 [핵심 보완] '재고'라는 글자가 포함된 열을 스마트하게 찾기 (띄어쓰기 무시)
+    stock_col = None
+    for col in target_items.columns:
+        if '재고' in str(col).replace(' ', ''):
+            stock_col = col
+            break
+            
+    if not stock_col:
+        st.warning(f"💡 ecount_item_data 시트에서 '재고'라는 단어가 들어간 열을 찾을 수 없어서 0으로 표시됩니다. (현재 시트의 열 이름들: {', '.join(target_items.columns)})")
 
     # 재고 매핑
     target_items['현재고'] = pd.to_numeric(target_items[stock_col], errors='coerce').fillna(0) if stock_col else 0
