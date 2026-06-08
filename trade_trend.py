@@ -20,7 +20,7 @@ def run(load_data_func):
         df_trade_raw = load_data_func("trade_record")
         df_item = load_data_func("ecount_item_data")
         
-        # 🚀 [추가] Employees 탭에서 직원 정보 로드
+        # Employees 탭에서 직원 정보 로드
         df_emp = load_data_func("Employees")
         
         df_trade_raw.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
@@ -48,15 +48,12 @@ def run(load_data_func):
         df_trade['월'] = df_trade['일자'].dt.strftime('%Y년 %m월')
 
         # ==========================================
-        # 🚀 1-1. 담당자 목록 리스트업 (Employees + 실제 데이터 조합)
+        # 🚀 1-1. 담당자 목록 리스트업 (오직 Employees 탭 기준)
         # ==========================================
-        emp_list = []
+        manager_list = []
         if df_emp is not None and not df_emp.empty and '성명' in df_emp.columns:
-            emp_list = df_emp['성명'].dropna().unique().tolist()
-            
-        # 혹시 Employees 시트에 없는 과거 담당자나 '미지정' 데이터가 누락되지 않도록 실제 데이터와 합칩니다.
-        actual_managers = df_trade['담당자'].dropna().unique().tolist()
-        manager_list = sorted(list(set(emp_list + actual_managers)))
+            # 💡 [핵심 수정] 판매 데이터에 누가 있든 상관없이, 무조건 직원 명부(Employees)에 있는 사람만 추출합니다.
+            manager_list = sorted(df_emp['성명'].dropna().unique().tolist())
 
         # ==========================================
         # 2. 사이드바 필터 (연쇄 필터링 + 초기화 방어)
@@ -68,7 +65,7 @@ def run(load_data_func):
         if 'trade_brands' not in st.session_state: st.session_state.trade_brands = []
         if 'trade_prods' not in st.session_state: st.session_state.trade_prods = []
 
-        # 🚀 0) 담당자 필터 (가장 최상위 필터)
+        # 0) 담당자 필터 (가장 최상위 필터)
         safe_managers = [m for m in st.session_state.trade_managers if m in manager_list]
         selected_managers = st.sidebar.multiselect(
             "담당자 선택", 
@@ -197,7 +194,7 @@ def run(load_data_func):
             if selected_products: disp_tag = f"{len(selected_products)}개 품목"
             elif selected_brands: disp_tag = f"{len(selected_brands)}개 브랜드"
             elif selected_traders: disp_tag = f"{len(selected_traders)}개 거래처"
-            elif selected_managers: disp_tag = f"{len(selected_managers)}명 담당자" # 🚀 반영
+            elif selected_managers: disp_tag = f"{len(selected_managers)}명 담당자" 
             
             c3.metric("기준 대상", disp_tag)
             c4.metric("총 출고수량", f"{int(total_qty):,} 개")
@@ -253,7 +250,6 @@ def run(load_data_func):
             # ------------------------------------------
             st.markdown("---")
             
-            # 🚀 랭킹 차트 기준에 '담당자' 추가 가능하지만 우선 기존 스펙 유지 (품목/거래처)
             rank_mode = st.radio("그래프 기준", ["품목", "거래처"], horizontal=True)
             
             if "품목" in rank_mode:
