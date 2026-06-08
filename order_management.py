@@ -23,20 +23,32 @@ def run(load_data_func):
     st.markdown("---")
 
     # ==========================================
-    # 1. 데이터 로드
+    # 1. 데이터 로드 (KeyError 방어 로직 강화)
     # ==========================================
-    df_m = load_data_func("Manufacturers")
-    df_item = load_data_func("ecount_item_data")
-    df_trade = load_data_func("trade_record")
-    df_emp = load_data_func("Employees")
-    df_order = load_data_func("Order_Records")
-    df_status = load_data_func("Order_Status") # 🚀 상태 시트
-    
-    # 데이터 정리
-    df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
-    df_trade['일자'] = pd.to_datetime(df_trade['일자'], errors='coerce')
-    df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-    emp_list = sorted(df_emp['성명'].dropna().unique().tolist())
+    try:
+        df_m = load_data_func("Manufacturers")
+        df_item = load_data_func("ecount_item_data")
+        df_trade = load_data_func("trade_record")
+        df_emp = load_data_func("Employees")
+        
+        # 🚀 [KeyError 방어] 시트가 비어있을 때 컬럼을 강제로 생성
+        df_order = load_data_func("Order_Records")
+        expected_cols = ['제조사ID', '차수', '품목코드', '직원명', '발주량']
+        if df_order is None or df_order.empty:
+            df_order = pd.DataFrame(columns=expected_cols)
+        else:
+            # 시트에는 있는데 데이터프레임에 컬럼이 안 잡히는 경우 대비
+            for col in expected_cols:
+                if col not in df_order.columns:
+                    df_order[col] = ""
+
+        df_status = load_data_func("Order_Status")
+        if df_status is None or df_status.empty:
+            df_status = pd.DataFrame(columns=['제조사ID', '차수', '상태', '최종수정일'])
+            
+    except Exception as e:
+        st.error(f"데이터를 불러오는 중 오류가 발생했습니다: {e}")
+        return
 
     # ==========================================
     # 2. 사이드바 필터
