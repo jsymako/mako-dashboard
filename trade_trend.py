@@ -3,7 +3,6 @@ import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
 import altair as alt
-import holidays
 
 def run(load_data_func):
     st.title("판매 현황")
@@ -21,7 +20,9 @@ def run(load_data_func):
         df_trade_raw = load_data_func("trade_record")
         df_item = load_data_func("ecount_item_data")
         
-        # 🚀 [수정] 구글 시트의 7개 열에 맞게 이름표를 7개로 늘렸습니다. ('담당자' 추가)
+        # 🚀 [추가] Employees 탭에서 직원 정보 로드
+        df_emp = load_data_func("Employees")
+        
         df_trade_raw.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
         
         df_trade_raw['일자'] = pd.to_datetime(df_trade_raw['일자'], errors='coerce')
@@ -29,7 +30,6 @@ def run(load_data_func):
         df_trade_raw['공급가액'] = pd.to_numeric(df_trade_raw['공급가액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
         df_trade_raw = df_trade_raw.dropna(subset=['일자'])
         
-        # 🚀 [추가] 담당자가 빈칸이면 '미지정'으로 처리
         df_trade_raw['담당자'] = df_trade_raw['담당자'].replace(['nan', 'None', '', None], '미지정').fillna('미지정')
         
         box_col_name = df_item.columns[3] 
@@ -48,20 +48,42 @@ def run(load_data_func):
         df_trade['월'] = df_trade['일자'].dt.strftime('%Y년 %m월')
 
         # ==========================================
+        # 🚀 1-1. 담당자 목록 리스트업 (Employees + 실제 데이터 조합)
+        # ==========================================
+        emp_list = []
+        if df_emp is not None and not df_emp.empty and '성명' in df_emp.columns:
+            emp_list = df_emp['성명'].dropna().unique().tolist()
+            
+        # 혹시 Employees 시트에 없는 과거 담당자나 '미지정' 데이터가 누락되지 않도록 실제 데이터와 합칩니다.
+        actual_managers = df_trade['담당자'].dropna().unique().tolist()
+        manager_list = sorted(list(set(emp_list + actual_managers)))
+
+        # ==========================================
         # 2. 사이드바 필터 (연쇄 필터링 + 초기화 방어)
         # ==========================================
         
         # --- 세션 상태 초기화 (값 보존용) ---
+        if 'trade_managers' not in st.session_state: st.session_state.trade_managers = []
         if 'trade_traders' not in st.session_state: st.session_state.trade_traders = []
         if 'trade_brands' not in st.session_state: st.session_state.trade_brands = []
         if 'trade_prods' not in st.session_state: st.session_state.trade_prods = []
 
-        # 1) 거래처 필터 (가장 최상위 필터)
-        trader_list = sorted(list(df_trade['거래처명'].dropna().unique()))
+        # 🚀 0) 담당자 필터 (가장 최상위 필터)
+        safe_managers = [m for m in st.session_state.trade_managers if m in manager_list]
+        selected_managers = st.sidebar.multiselect(
+            "담당자 선택", 
+            options=manager_list,
+            default=safe_managers,
+            placeholder="전체 보기",
+            key="manager_multi"
+        )
+        st.session_state.trade_managers = selected_managers
+
+        # 1) 거래처 필터 (담당자에 종속됨)
+        temp_trader_df = df_trade if not selected_managers else df_trade[df_trade['담당자'].isin(selected_managers)]
+        trader_list = sorted(list(temp_trader_df['거래처명'].dropna().unique()))
         
-        # 이전에 선택했던 값이 현재 목록에 없으면(삭제되었으면) 안전하게 빼고 로드
         safe_traders = [t for t in st.session_state.trade_traders if t in trader_list]
-        
         selected_traders = st.sidebar.multiselect(
             "거래처 선택", 
             options=trader_list,
@@ -72,12 +94,10 @@ def run(load_data_func):
         st.session_state.trade_traders = selected_traders
 
         # 2) 브랜드 필터 (거래처에 종속됨)
-        temp_brand_df = df_trade if not selected_traders else df_trade[df_trade['거래처명'].isin(selected_traders)]
+        temp_brand_df = temp_trader_df if not selected_traders else temp_trader_df[temp_trader_df['거래처명'].isin(selected_traders)]
         brand_list = sorted(list(temp_brand_df['브랜드'].dropna().unique()))
         
-        # 거래처를 바꿔서 브랜드 목록이 좁혀졌을 때, 기존에 선택한 브랜드가 살아있다면 유지
         safe_brands = [b for b in st.session_state.trade_brands if b in brand_list]
-        
         selected_brands = st.sidebar.multiselect(
             "브랜드 선택", 
             options=brand_list,
@@ -91,9 +111,7 @@ def run(load_data_func):
         temp_prod_df = temp_brand_df if not selected_brands else temp_brand_df[temp_brand_df['브랜드'].isin(selected_brands)]
         prod_list = sorted(list(temp_prod_df['공식품목명'].dropna().unique()))
         
-        # 브랜드를 바꿔서 품목 목록이 좁혀졌을 때, 기존에 선택한 품목이 살아있다면 유지
         safe_prods = [p for p in st.session_state.trade_prods if p in prod_list]
-
         selected_products = st.sidebar.multiselect(
             "품목 선택", 
             options=prod_list,
@@ -107,6 +125,8 @@ def run(load_data_func):
 
         # 4) 공통 데이터 필터 적용 (최종 화면용)
         filtered_df = df_trade.copy()
+        if selected_managers:
+            filtered_df = filtered_df[filtered_df['담당자'].isin(selected_managers)]
         if selected_traders:
             filtered_df = filtered_df[filtered_df['거래처명'].isin(selected_traders)]
         if selected_brands:
@@ -177,6 +197,7 @@ def run(load_data_func):
             if selected_products: disp_tag = f"{len(selected_products)}개 품목"
             elif selected_brands: disp_tag = f"{len(selected_brands)}개 브랜드"
             elif selected_traders: disp_tag = f"{len(selected_traders)}개 거래처"
+            elif selected_managers: disp_tag = f"{len(selected_managers)}명 담당자" # 🚀 반영
             
             c3.metric("기준 대상", disp_tag)
             c4.metric("총 출고수량", f"{int(total_qty):,} 개")
@@ -232,6 +253,7 @@ def run(load_data_func):
             # ------------------------------------------
             st.markdown("---")
             
+            # 🚀 랭킹 차트 기준에 '담당자' 추가 가능하지만 우선 기존 스펙 유지 (품목/거래처)
             rank_mode = st.radio("그래프 기준", ["품목", "거래처"], horizontal=True)
             
             if "품목" in rank_mode:
@@ -283,7 +305,6 @@ def run(load_data_func):
             if len(m_data) < 12:
                 st.warning("예측 모델을 구동하려면 최소 12개월 이상의 과거 거래 데이터가 필요합니다.")
             else:
-                # 🚀 [추가됨] 예측 알고리즘 안내 박스 (시각적 피드백)
                 @st.dialog("수요 예측 알고리즘 안내", width="large")
                 def show_algo_popup():
                     st.markdown("""
@@ -299,7 +320,6 @@ def run(load_data_func):
                         </div>
                     """, unsafe_allow_html=True)
 
-                # 🚀 2. 팝업을 띄우는 버튼 생성
                 if st.button("수요 예측 알고리즘 안내"):
                     show_algo_popup()
 
@@ -308,7 +328,6 @@ def run(load_data_func):
                 else:
                     b_unit = filtered_df['박스입수'].mean()
 
-                # 예측 알고리즘 로직 수행
                 base_12m = m_data['수량'].tail(12).mean()
                 base_3m = m_data['수량'].tail(3).mean()
                 blended_avg = (base_12m * 0.6) + (base_3m * 0.4)
@@ -323,7 +342,6 @@ def run(load_data_func):
                     f_res.append({'월_dt': t_date, '예측수량': blended_avg * seasonal_idx.get(t_date.month, 1.0)})
                 f_df = pd.DataFrame(f_res)
 
-                # 그래프 오버랩 처리
                 past_df = m_data.tail(12).reset_index().rename(columns={'수량':'값','월_dt':'날'})
                 past_df['순서'] = range(1, 13)
                 past_df['공통월_라벨'] = past_df['날'].dt.strftime('%m월')
