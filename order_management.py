@@ -82,8 +82,12 @@ def run(load_data_func):
     df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
     df_order['발주량'] = pd.to_numeric(df_order['발주량'], errors='coerce').fillna(0)
     
-    stock_map = df_stock.set_index('품목코드')['현재재고'].astype(str).str.replace(',', '')
-    stock_map = pd.to_numeric(stock_map, errors='coerce').fillna(0).to_dict()
+    # 타입 에러 방지용 재고 맵핑
+    try:
+        stock_map = df_stock.set_index('품목코드')['현재재고'].astype(str).str.replace(',', '')
+        stock_map = pd.to_numeric(stock_map, errors='coerce').fillna(0).to_dict()
+    except:
+        stock_map = {}
 
     emp_list = sorted(df_emp['성명'].dropna().unique().tolist()) if df_emp is not None and '성명' in df_emp.columns else ["미지정"]
 
@@ -122,7 +126,7 @@ def run(load_data_func):
                 if st.session_state[state_key] > 1: st.session_state[state_key] -= 1
             st.rerun()
             
-        # 현재 차수 정보 폰트 스케일업 표출
+        # 현재 차수 정보 표출
         with cc2:
             st.markdown(f"<h3 style='text-align:center; margin:0; padding-top:2px;'>🎯 {st.session_state[state_key]}차 발주</h3>", unsafe_allow_html=True)
             
@@ -142,13 +146,14 @@ def run(load_data_func):
         
         with cc4:
             status_opts = ["입력중", "완료"]
-            sel_status = st.selectbox("🚦 차수 상태 관리", status_opts, index=status_opts.index(db_status))
+            sel_status = st.selectbox("🚦 차수 상태 관리", status_opts, index=status_opts.index(db_status) if db_status in status_opts else 0)
             
         # 신규 차수 팝업 트리거
         with cc5:
             st.markdown("<div style='padding-top:4px;'></div>", unsafe_allow_html=True)
             next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
-            if st.button("➕ 신규 차수 생성", color="primary", use_container_width=True):
+            # 🚀 [핵심 수정] color="primary"를 type="primary"로 변경했습니다!
+            if st.button("➕ 신규 차수 생성", type="primary", use_container_width=True):
                 create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
     # 분석 주차 및 입고 대기 참고 차수 설정 바
@@ -168,7 +173,7 @@ def run(load_data_func):
 
     target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1)
     
-    # 🚀 [품목이름 결합 수정] 브랜드 + 품목이름 복합구조 적용
+    # 브랜드 + 품목이름 복합구조 적용
     target_items['품목명'] = "[" + target_items['브랜드'].fillna('미분류').astype(str) + "] " + target_items['이름'].astype(str)
     
     target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0).astype(float)
@@ -180,9 +185,9 @@ def run(load_data_func):
     sales_units = df_trade_recent.groupby('품목코드')['수량'].sum().reindex(target_items['품목코드'], fill_value=0)
     target_items['주평균판매량(박스)'] = ((sales_units / target_items.set_index('품목코드')['박스단위']) / weeks_opt).fillna(0).round(1)
 
-    # 🚀 [참고용 과거 차수 데이터 연동 수식] Multi-Select 대응 구조
+    # 🚀 참고용 과거 차수 데이터 연동 수식
     if ref_rounds:
-        df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].isin(ref_rounds))]
+        df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
         ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum().reindex(target_items['품목코드'], fill_value=0)
         target_items['참고 차수 발주량(박스)'] = ref_series.values
     else:
@@ -192,28 +197,35 @@ def run(load_data_func):
     # 5. 다중 사용자 피벗 테이블 연산 
     # ==========================================
     curr_orders = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(str) == str(round_val))]
-    order_pivot = curr_orders.pivot_table(index='품목코드', columns='직원명', values='발주량', aggfunc='sum').fillna(0)
+    
+    if not curr_orders.empty:
+        order_pivot = curr_orders.pivot_table(index='품목코드', columns='직원명', values='발주량', aggfunc='sum').fillna(0)
+    else:
+        order_pivot = pd.DataFrame(index=target_items['품목코드'])
     
     base_columns = target_items[['품목코드', '품목명', '현재고(박스)', '주평균판매량(박스)', '참고 차수 발주량(박스)']]
     final_df = pd.merge(base_columns, order_pivot, on='품목코드', how='left').fillna(0)
     
-    # 내 입력 및 타 직원 열 위상 분리 정렬
+    # 내 입력 및 타 직원 열 분리
     if sel_emp not in final_df.columns:
         final_df['내 발주량(박스)'] = 0.0
     else:
         final_df['내 발주량(박스)'] = final_df[sel_emp]
         
-    other_staffs = [c for c in order_pivot.columns if c != sel_emp]
-    final_df['총 발주량(박스)'] = final_df[other_staffs].sum(axis=1) + final_df['내 발주량(박스)']
+    other_staffs = [c for c in order_pivot.columns if c != sel_emp and c != '품목코드']
+    
+    # 🚀 총 발주량 합계 오류 방어
+    if other_staffs:
+        final_df['총 발주량(박스)'] = final_df[other_staffs].sum(axis=1) + final_df['내 발주량(박스)']
+    else:
+        final_df['총 발주량(박스)'] = final_df['내 발주량(박스)']
 
-    # 컬럼 가독성 정렬 순서 정의
     display_layout = ['품목코드', '품목명', '현재고(박스)', '주평균판매량(박스)', '참고 차수 발주량(박스)'] + other_staffs + ['내 발주량(박스)', '총 발주량(박스)']
     final_df = final_df[display_layout]
 
     # ==========================================
-    # 6. 🚀 표 스크롤 완전 제거 패치 및 렌더링
+    # 6. 표 렌더링
     # ==========================================
-    # 💡 행 개수에 맞춰 높이를 동적으로 연산하여 내부 스크롤바 발생 원천 차단
     calculated_height = (len(final_df) + 1) * 36 + 45
     
     editable_config = st.data_editor(
@@ -232,7 +244,7 @@ def run(load_data_func):
     )
 
     # ==========================================
-    # 7. 통합 저장 분기 처리 엔진
+    # 7. 통합 저장
     # ==========================================
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 데이터 및 진행 상태 통합 저장", use_container_width=True, type="primary"):
@@ -246,7 +258,6 @@ def run(load_data_func):
                 records_s = sheet_s.get_all_records()
                 df_st_save = pd.DataFrame(records_s)
                 
-                # 기존 데이터 내 동일 조건 검색 후 정리
                 if not df_st_save.empty:
                     df_st_save = df_st_save[~((df_st_save['제조사ID'].astype(str) == str(sel_m_id)) & (df_st_save['차수'].astype(str) == str(round_val)))]
                 today_str = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -262,12 +273,10 @@ def run(load_data_func):
                 df_ord_save = pd.DataFrame(records_o)
                 
                 if not df_ord_save.empty:
-                    # 내 데이터만 타깃하여 덮어쓰기 정제
                     df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
                                                (df_ord_save['차수'].astype(str) == str(round_val)) & 
                                                (df_ord_save['직원명'].astype(str) == str(sel_emp)))]
                 
-                # 에디터 시트에서 수정한 값 추출
                 changed_rows = editable_config[editable_config['내 발주량(박스)'] > 0][['품목코드', '내 발주량(박스)']].copy()
                 changed_rows['제조사ID'] = str(sel_m_id)
                 changed_rows['차수'] = str(round_val)
@@ -287,4 +296,4 @@ def run(load_data_func):
                 st.success(f"🎉 {round_val}차 발주 수량 및 진행상태 [{sel_status}] 저장이 성공적으로 완료되었습니다!")
                 st.rerun()
             except Exception as e:
-                st.error(f"구글 시트 연동 중 물리적 에러 발생: {e}")
+                st.error(f"구글 시트 연동 중 에러 발생: {e}")
