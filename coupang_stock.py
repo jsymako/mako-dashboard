@@ -101,6 +101,7 @@ def run(load_data_func):
         brand_list = ["전체보기"] + sorted(list(df['브랜드'].dropna().unique()))
         selected_brand = st.sidebar.selectbox("브랜드 선택 (카테고리)", brand_list)
 
+
         prod_df = df if selected_brand == "전체보기" else df[df['브랜드'] == selected_brand]
         product_list = ["전체보기"] + sorted(list(prod_df['품목명'].dropna().unique()))
         selected_product = st.sidebar.selectbox("품목 선택", product_list)
