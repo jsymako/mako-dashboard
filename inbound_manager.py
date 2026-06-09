@@ -5,6 +5,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 from datetime import datetime
 import time
+from utils import custom_fullscreen_spinner
 
 # =====================================================================
 # ⚙️ 글자 크기 조정 변수
