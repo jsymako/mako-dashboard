@@ -277,8 +277,8 @@ def run(load_data_func):
     # 6. 총 CBM 표시 및 표 렌더링 
     # ==========================================
     st.markdown(f"""
-        <div style="background-color: #2E86C1; padding: 6px; border-radius: 8px; text-align: center; color: white; margin-bottom: 6px;">
-            <h4 style="margin: 0; color: white; font-weight: 600;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.2f} CBM</h4>
+        <div style="background-color: #2E86C1; padding: 12px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px; display: flex; justify-content: center; align-items: center;">
+            <span style="font-size: 1.2rem; font-weight: bold;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.2f} CBM</span>
         </div>
     """, unsafe_allow_html=True)
 
