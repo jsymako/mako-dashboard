@@ -13,7 +13,7 @@ def get_gspread_client():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     return gspread.authorize(creds)
 
-# 🚀 신규 차수 생성을 위한 팝업 다이얼로그 (안전한 Form 구조 적용 및 에러 방어)
+# 🚀 신규 차수 생성을 위한 팝업 다이얼로그
 @st.dialog("➕ 신규 발주 차수 생성")
 def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client_func):
     st.write(f"🏭 대상 제조사: **{sel_m_name}**")
@@ -32,12 +32,11 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                         sheet_s = doc.worksheet("Order_Status")
                     except: 
                         sheet_s = doc.add_worksheet(title="Order_Status", rows="500", cols="4")
-                        sheet_s.append_row(['제조사ID', '차수', '상태', '최종수정일']) # 시트가 없었으면 1행에 헤더 강제 추가
+                        sheet_s.append_row(['제조사ID', '차수', '상태', '최종수정일'])
                     
                     records = sheet_s.get_all_records()
                     df_st = pd.DataFrame(records)
                     
-                    # 🚀 [KeyError 완벽 방어] 열이 확실히 존재하는지 체크
                     is_duplicate = False
                     if not df_st.empty and '제조사ID' in df_st.columns and '차수' in df_st.columns:
                         is_duplicate = ((df_st['제조사ID'].astype(str) == str(sel_m_id)) & (df_st['차수'].astype(str) == str(new_r))).any()
@@ -45,7 +44,6 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                     if is_duplicate:
                         st.error(f"❌ 이미 존재하는 차수입니다. ({new_r}차)")
                     else:
-                        # 시트는 있는데 1행 헤더가 비어있을 경우 껍데기 추가
                         if not sheet_s.row_values(1):
                             sheet_s.append_row(['제조사ID', '차수', '상태', '최종수정일'])
                             
@@ -59,7 +57,6 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                     st.error(f"차수 생성 중 오류 발생: {e}")
 
 def run(load_data_func):
-    # 🚀 공통 CSS 로더 고정 반영
     try:
         with open("style.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -81,7 +78,6 @@ def run(load_data_func):
         df_order = load_data_func("Order_Records")
         df_status = load_data_func("Order_Status")
         
-        # 구조 방어선 구축
         expected_order_cols = ['제조사ID', '차수', '품목코드', '직원명', '발주량']
         if df_order is None or df_order.empty:
             df_order = pd.DataFrame(columns=expected_order_cols)
@@ -100,22 +96,19 @@ def run(load_data_func):
         st.error(f"구글 시트 데이터 마스터 동기화 실패: {e}")
         return
 
-    # 정산 전처리 숫자인식화
+    # 데이터 정제 (숫자 변환)
     df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
     df_trade['일자'] = pd.to_datetime(df_trade['일자'], errors='coerce')
-    df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-    df_order['발주량'] = pd.to_numeric(df_order['발주량'], errors='coerce').fillna(0)
+    df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(int)
+    df_order['발주량'] = pd.to_numeric(df_order['발주량'], errors='coerce').fillna(0).astype(int)
     
-    # 🚀 [재고 연동 패치] ecount_stock 정상 인덱싱 연동 완료
     try:
         df_stock.columns = df_stock.columns.astype(str).str.strip()
         stock_map = df_stock.set_index('품목코드')['현재재고'].astype(str).str.replace(',', '')
         stock_map = pd.to_numeric(stock_map, errors='coerce').fillna(0).to_dict()
-    except Exception as e:
+    except:
         stock_map = {}
-        st.warning(f"⚠️ ecount_stock 매핑 엔진 경고: {e}")
 
-    # 🚀 직원 명부 권한 필터링 ("발주입력" 열이 "Y"인 직원 추출)
     emp_list = sorted(df_emp['성명'].dropna().unique().tolist()) if df_emp is not None and '성명' in df_emp.columns else ["미지정"]
     
     if df_emp is not None and '발주입력' in df_emp.columns:
@@ -124,12 +117,11 @@ def run(load_data_func):
         allowed_input_emps = emp_list.copy()
 
     # ==========================================
-    # 2. 사이드바 (제조사 선택 / 담당자 지정 / 생성 다이얼로그)
+    # 2. 사이드바 (소속 및 제조사)
     # ==========================================
     st.sidebar.markdown("### 🏭 수입 통제 센터")
     sel_emp = st.sidebar.selectbox("👨‍💼 내 이름(입력자) 선택", emp_list)
     
-    # 내 이름이 발주 권한 목록(Y)에 없을 경우를 대비한 가동 강제 보장
     if sel_emp not in allowed_input_emps and sel_emp != "미지정":
         allowed_input_emps.append(sel_emp)
         
@@ -138,7 +130,6 @@ def run(load_data_func):
     sel_m_id = m_dict[sel_m_name]
 
     st.sidebar.markdown("---")
-    # 신규 생성 트리거 버튼 배치
     all_rounds = df_status[df_status['제조사ID'].astype(str) == str(sel_m_id)]['차수'].astype(str).tolist()
     all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
     next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
@@ -147,120 +138,113 @@ def run(load_data_func):
         create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
     # ==========================================
-    # 3. 메인 제어반 상단 레이아웃 (드롭다운식 선택)
+    # 3. 메인 제어반 (드롭다운식 선택)
     # ==========================================
     if not all_rounds:
         st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. 왼쪽 사이드바에서 [신규 발주 차수 생성]을 진행해 주세요.")
         return
 
-    # 세션 기반 드롭다운 인덱스 연동 유지
     round_key = f"selected_round_{sel_m_id}"
     if round_key not in st.session_state or st.session_state[round_key] not in all_rounds:
-        st.session_state[round_key] = all_rounds[-1] # 기본값은 가장 최신 차수
+        st.session_state[round_key] = all_rounds[-1] 
 
     main_ctrl = st.container(border=True)
     with main_ctrl:
         mc1, mc2, mc3 = st.columns([3, 3, 4])
         with mc1:
             selected_round_val = st.selectbox(
-                "🎯 조회 및 수정할 차수 선택", 
+                "🎯 조회/수정 차수 선택", 
                 all_rounds, 
                 index=all_rounds.index(st.session_state[round_key]),
                 format_func=lambda x: f"📦 {x}차 발주 내역"
             )
             st.session_state[round_key] = selected_round_val
         
-        # 실시간 상태 마스터 추적
         status_filter = (df_status['제조사ID'].astype(str) == str(sel_m_id)) & (df_status['차수'].astype(str) == str(selected_round_val))
         db_status = df_status[status_filter]['상태'].iloc[0] if not df_status[status_filter].empty else "입력중"
         
         with mc2:
             status_opts = ["입력중", "완료"]
-            sel_status = st.selectbox("🚦 해당 차수 진행 상태 변경", status_opts, index=status_opts.index(db_status) if db_status in status_opts else 0)
+            sel_status = st.selectbox("🚦 상태 변경", status_opts, index=status_opts.index(db_status) if db_status in status_opts else 0)
             
         with mc3:
-            weeks_opt = st.slider("📊 판매량 주차 스케일 (최근 N주)", min_value=1, max_value=12, value=4)
+            weeks_opt = st.slider("📊 판매량 산출 기준 (최근 N주)", min_value=1, max_value=12, value=4)
 
-    # 보조 참고용 멀티셀렉터
-    ref_rounds = st.multiselect("🚚 입고 정산용 참고 차수 선택 (대기량 합산용)", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
+    ref_rounds = st.multiselect("🚚 입고 정산용 참고 차수 (대기량 합산용)", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
 
     # ==========================================
-    # 4. SCM 수식 연산 및 컬럼 하이브리드 결합
+    # 4. SCM 수식 연산 (완벽한 정수/수식 적용)
     # ==========================================
     target_items = df_item[df_item['제조사'].astype(str) == str(sel_m_id)].copy()
     if target_items.empty:
         st.warning(f"💡 현재 '{sel_m_name}' 제조사로 등록된 마스터 품목이 없습니다.")
         return
 
-    target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1)
-    
-    # 🚀 [요구사항] 브랜드 + 품목명 복합 표출 처리
+    target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1).astype(int)
     target_items['품목명'] = "[" + target_items['브랜드'].fillna('미분류').astype(str) + "] " + target_items['이름'].astype(str)
     
-    target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0).astype(float)
-    target_items['현재고'] = (target_items['현재고(낱개)'] / target_items['박스단위']).round(1)
+    # 1. 현재고 (박스 변환) -> 정수
+    target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0).astype(int)
+    target_items['현재고'] = (target_items['현재고(낱개)'] / target_items['박스단위']).fillna(0).astype(int)
 
-    # 주평균 판매량 (박스 변환 적용)
+    # 2. 기간총판매량 (해당 담당자 + 최근 N주 총합) -> 정수
     recent_limit = datetime.datetime.now() - datetime.timedelta(weeks=weeks_opt)
-    df_trade_recent = df_trade[df_trade['일자'] >= recent_limit]
+    # 🚀 내 이름(sel_emp)으로 필터링 적용!
+    df_trade_recent = df_trade[(df_trade['일자'] >= recent_limit) & (df_trade['담당자'] == str(sel_emp))]
     sales_units = df_trade_recent.groupby('품목코드')['수량'].sum().reindex(target_items['품목코드'], fill_value=0)
-    target_items['주평균판매량'] = ((sales_units / target_items.set_index('품목코드')['박스단위']) / weeks_opt).fillna(0).round(1)
+    # 🚀 주평균이 아니라 기간 총판매량이므로 weeks_opt로 나누지 않습니다.
+    target_items['기간총판매량'] = (sales_units / target_items.set_index('품목코드')['박스단위']).fillna(0).astype(int)
 
-    # 선택차수 입고대기분 (Multi-Select 합산화)
+    # 3. 입고대기분 (다중 선택 합산) -> 정수
     if ref_rounds:
         df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
         ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum().reindex(target_items['품목코드'], fill_value=0)
-        target_items['선택차수 입고대기분'] = ref_series.values
+        target_items['입고대기분'] = ref_series.fillna(0).astype(int).values
     else:
-        target_items['선택차수 입고대기분'] = 0.0
+        target_items['입고대기분'] = 0
 
-    # 🚀 [요구사항] 가용예상재고 계산 공식 (현재고 + 입고대기분 - 주평균판매량)
-    target_items['가용예상재고'] = (target_items['현재고'] + target_items['선택차수 입고대기분'] - target_items['주평균판매량']).round(1)
+    # 4. 가용예상재고 (현재고 + 입고대기분 - 기간총판매량) -> 정수
+    target_items['가용예상재고'] = (target_items['현재고'] + target_items['입고대기분'] - target_items['기간총판매량']).astype(int)
 
     # ==========================================
     # 5. 권한 기반 다중 사용자 피벗 매핑 연산
     # ==========================================
     curr_orders = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(str) == str(selected_round_val))]
     
-    # 🚀 일반 직원 입력량과 '수정량' 데이터를 구분하여 피벗 결합
     pivot_cols = allowed_input_emps + ['수정량']
     if not curr_orders.empty:
         order_pivot = curr_orders.pivot_table(index='품목코드', columns='직원명', values='발주량', aggfunc='sum').fillna(0)
-        for c in pivot_cols:
-            if c not in order_pivot.columns: order_pivot[c] = 0.0
-        order_pivot = order_pivot[pivot_cols]
     else:
-        order_pivot = pd.DataFrame(0.0, index=target_items['품목코드'], columns=pivot_cols)
+        order_pivot = pd.DataFrame(0, index=target_items['품목코드'], columns=pivot_cols)
+        
+    # 빈 열 0으로 강제 세팅 후 정수 변환 (NaN으로 인한 에러 방지)
+    for c in pivot_cols:
+        if c not in order_pivot.columns: order_pivot[c] = 0
+    order_pivot = order_pivot[pivot_cols].fillna(0).astype(int)
     
-    base_columns = target_items[['품목코드', '품목명', '현재고', '주평균판매량', '선택차수 입고대기분', '가용예상재고']]
+    base_columns = target_items[['품목코드', '품목명', '현재고', '기간총판매량', '입고대기분', '가용예상재고']]
     final_df = pd.merge(base_columns, order_pivot.reset_index(), on='품목코드', how='left').fillna(0)
     
-    # 🚀 권한 명단에 맞춰 열 이름 매핑 ('(박스)' 명칭화)
     emp_column_rename = {emp: f"{emp}(박스)" for emp in allowed_input_emps}
     final_df.rename(columns=emp_column_rename, inplace=True)
     
     renamed_emp_cols = [f"{emp}(박스)" for emp in allowed_input_emps]
     my_edit_col = f"{sel_emp}(박스)"
     
-    # 🚀 [요구사항] 입력 총량 계산 (직원들의 총 입력량 더한 값)
-    final_df['입력 총량'] = final_df[renamed_emp_cols].sum(axis=1).round(1)
-    
-    # 🚀 [요구사항] 수정량 입력 매핑
-    final_df['수정량 입력✏️'] = final_df['수정량'].astype(float).round(1)
-    
-    # 🚀 [요구사항] 최종발주량 계산 공식 (입력 총량 - 수정량 입력)
-    final_df['최종발주량'] = (final_df['입력 총량'] - final_df['수정량 입력✏️']).round(1)
+    # 5. 수정량, 입력총량, 최종발주량 연산 -> 정수
+    final_df['수정량 입력✏️'] = final_df['수정량'].astype(int)
+    final_df['입력 총량'] = final_df[renamed_emp_cols].sum(axis=1).astype(int)
+    final_df['최종발주량'] = (final_df['입력 총량'] - final_df['수정량 입력✏️']).astype(int)
 
-    # 데이터 에디터 최종 열 시퀀스 설계
-    display_layout = ['품목코드', '품목명', '현재고', '주평균판매량', '선택차수 입고대기분', '가용예상재고'] + renamed_emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량']
+    # 최종 출력 레이아웃
+    display_layout = ['품목코드', '품목명', '현재고', '기간총판매량', '입고대기분', '가용예상재고'] + renamed_emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량']
     final_df = final_df[display_layout]
 
     # ==========================================
-    # 6. 표 스크롤 완전 차단 (동적 높이 패치)
+    # 6. 표 렌더링 (모든 컬럼 정수 포맷 적용 %d)
     # ==========================================
     calculated_height = (len(final_df) + 1) * 36 + 45
     
-    # 🚀 오직 로그인한 '내 입력 컬럼'과 '수정량 입력✏️' 열만 쓰기 권한 부여
     allowed_edit_cols = [my_edit_col, '수정량 입력✏️']
     disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
     
@@ -271,33 +255,31 @@ def run(load_data_func):
         use_container_width=True,
         height=int(calculated_height),
         column_config={
-            my_edit_col: st.column_config.NumberColumn(f"{sel_emp}(박스✏️)", min_value=0.0, step=0.1, format="%.1f"),
-            "수정량 입력✏️": st.column_config.NumberColumn("수정량 입력✏️", step=0.1, format="%.1f"),
-            "입력 총량": st.column_config.NumberColumn("입력 총량", format="%.1f"),
-            "최종발주량": st.column_config.NumberColumn("최종발주량", format="%.1f"),
-            "현재고": st.column_config.NumberColumn("현재고", format="%.1f"),
-            "주평균판매량": st.column_config.NumberColumn("주평균판매량", format="%.1f"),
-            "선택차수 입고대기분": st.column_config.NumberColumn("선택차수 입고대기분", format="%.1f"),
-            "가용예상재고": st.column_config.NumberColumn("가용예상재고", format="%.1f")
+            my_edit_col: st.column_config.NumberColumn(f"{sel_emp}(박스✏️)", min_value=0, step=1, format="%d"),
+            "수정량 입력✏️": st.column_config.NumberColumn("수정량 입력✏️", step=1, format="%d"),
+            "입력 총량": st.column_config.NumberColumn("입력 총량", format="%d"),
+            "최종발주량": st.column_config.NumberColumn("최종발주량", format="%d"),
+            "현재고": st.column_config.NumberColumn("현재고", format="%d"),
+            "기간총판매량": st.column_config.NumberColumn(f"총판매량({weeks_opt}주)", format="%d"),
+            "입고대기분": st.column_config.NumberColumn("입고대기분", format="%d"),
+            "가용예상재고": st.column_config.NumberColumn("가용예상재고", format="%d")
         }
     )
 
     # ==========================================
-    # 7. 통합 저장 분기 처리 엔진
+    # 7. 통합 저장 엔진 (정수형 데이터 저장)
     # ==========================================
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
-        with st.spinner("구글 시트에 실시간 덮어쓰기 정산 중..."):
+        with st.spinner("구글 시트에 실시간 업로드 및 동기화 중..."):
             try:
                 client = get_gspread_client()
                 doc = client.open("통합재고관리")
                 
-                # ① 상태(Order_Status) 업데이트
                 sheet_s = doc.worksheet("Order_Status")
                 records_s = sheet_s.get_all_records()
                 df_st_save = pd.DataFrame(records_s)
                 
-                # 🚀 [KeyError 방어 보강] 저장할 때도 컬럼 유무 체크
                 if not df_st_save.empty and '제조사ID' in df_st_save.columns and '차수' in df_st_save.columns:
                     df_st_save = df_st_save[~((df_st_save['제조사ID'].astype(str) == str(sel_m_id)) & (df_st_save['차수'].astype(str) == str(selected_round_val)))]
                 elif df_st_save.empty or '제조사ID' not in df_st_save.columns:
@@ -310,7 +292,6 @@ def run(load_data_func):
                 sheet_s.clear()
                 sheet_s.update([df_st_save.columns.values.tolist()] + df_st_save.astype(str).values.tolist())
 
-                # ② 발주 수량(Order_Records) 업데이트
                 sheet_o = doc.worksheet("Order_Records")
                 records_o = sheet_o.get_all_records()
                 df_ord_save = pd.DataFrame(records_o)
@@ -322,7 +303,6 @@ def run(load_data_func):
                 elif df_ord_save.empty or '제조사ID' not in df_ord_save.columns:
                     df_ord_save = pd.DataFrame(columns=['제조사ID', '차수', '품목코드', '직원명', '발주량'])
                 
-                # 내 입력값 추출
                 my_rows = editable_config[editable_config[my_edit_col] > 0][['품목코드', my_edit_col]].copy()
                 my_rows['제조사ID'] = str(sel_m_id)
                 my_rows['차수'] = str(selected_round_val)
@@ -330,7 +310,6 @@ def run(load_data_func):
                 my_rows.rename(columns={my_edit_col: '발주량'}, inplace=True)
                 my_rows = my_rows[['제조사ID', '차수', '품목코드', '직원명', '발주량']]
                 
-                # 수정량 입력값 추출
                 adjust_rows = editable_config[editable_config['수정량 입력✏️'] != 0][['품목코드', '수정량 입력✏️']].copy()
                 adjust_rows['제조사ID'] = str(sel_m_id)
                 adjust_rows['차수'] = str(selected_round_val)
@@ -338,7 +317,6 @@ def run(load_data_func):
                 adjust_rows.rename(columns={'수정량 입력✏️': '발주량'}, inplace=True)
                 adjust_rows = adjust_rows[['제조사ID', '차수', '품목코드', '직원명', '발주량']]
                 
-                # 최종 취합 후 업로드
                 df_final_ord = pd.concat([df_ord_save, my_rows, adjust_rows], ignore_index=True)
                 
                 sheet_o.clear()
