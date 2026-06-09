@@ -290,7 +290,7 @@ def run(load_data_func):
     
     col_config = {
         sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
-        "수정량 입력✏️": st.column_config.NumberColumn("수정량(±)✏️", step=1, format="%d"),
+        "수정량 입력✏️": st.column_config.NumberColumn("(±)조정✏️", step=1, format="%d"),
         "입력 총량": st.column_config.NumberColumn("➕입력총량", format="%d"),
         "최종발주량": st.column_config.NumberColumn("💠최종수량", format="%d"),
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
