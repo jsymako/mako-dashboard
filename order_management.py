@@ -173,7 +173,7 @@ def run(load_data_func):
     ref_rounds = st.multiselect("🚚 입고 정산용 참고 차수 (대기량 합산용)", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
 
     # ==========================================
-    # 4. SCM 수식 연산 (완벽한 정수/수식 적용)
+    # 4. 🚀 SCM 수식 연산 (결측치 원천 차단 및 Map 매핑 적용)
     # ==========================================
     target_items = df_item[df_item['제조사'].astype(str) == str(sel_m_id)].copy()
     if target_items.empty:
@@ -183,28 +183,31 @@ def run(load_data_func):
     target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1).astype(int)
     target_items['품목명'] = "[" + target_items['브랜드'].fillna('미분류').astype(str) + "] " + target_items['이름'].astype(str)
     
-    # 1. 현재고 (박스 변환) -> 정수
+    # 1. 현재고 (박스 변환)
     target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0).astype(int)
     target_items['현재고'] = (target_items['현재고(낱개)'] / target_items['박스단위']).fillna(0).astype(int)
 
-    # 2. 기간총판매량 (해당 담당자 + 최근 N주 총합) -> 정수
+    # 2. 기간총판매량 (해당 담당자 + 최근 N주 총합) 
     recent_limit = datetime.datetime.now() - datetime.timedelta(weeks=weeks_opt)
-    # 🚀 내 이름(sel_emp)으로 필터링 적용!
     df_trade_recent = df_trade[(df_trade['일자'] >= recent_limit) & (df_trade['담당자'] == str(sel_emp))]
-    sales_units = df_trade_recent.groupby('품목코드')['수량'].sum().reindex(target_items['품목코드'], fill_value=0)
-    # 🚀 주평균이 아니라 기간 총판매량이므로 weeks_opt로 나누지 않습니다.
-    target_items['기간총판매량'] = (sales_units / target_items.set_index('품목코드')['박스단위']).fillna(0).astype(int)
+    sales_units = df_trade_recent.groupby('품목코드')['수량'].sum() # 품목코드 기준 그룹핑
+    
+    # 🚀 Map을 사용하여 안전하게 품목코드 1:1 매칭
+    target_items['기간총판매량(낱개)'] = target_items['품목코드'].map(sales_units).fillna(0)
+    target_items['기간총판매량'] = (target_items['기간총판매량(낱개)'] / target_items['박스단위']).fillna(0).astype(int)
 
-    # 3. 입고대기분 (다중 선택 합산) -> 정수
+    # 3. 입고대기분 (다중 선택 합산)
     if ref_rounds:
         df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
-        ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum().reindex(target_items['품목코드'], fill_value=0)
-        target_items['입고대기분'] = ref_series.fillna(0).astype(int).values
+        ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum()
+        # 🚀 Map을 사용하여 안전하게 매칭
+        target_items['입고대기분'] = target_items['품목코드'].map(ref_series).fillna(0).astype(int)
     else:
         target_items['입고대기분'] = 0
 
-    # 4. 가용예상재고 (현재고 + 입고대기분 - 기간총판매량) -> 정수
-    target_items['가용예상재고'] = (target_items['현재고'] + target_items['입고대기분'] - target_items['기간총판매량']).astype(int)
+    # 4. 가용예상재고 (현재고 + 입고대기분 - 기간총판매량) 
+    # 🚀 마지막으로 한번 더 fillna(0) 처리 후 안전하게 astype(int)
+    target_items['가용예상재고'] = (target_items['현재고'] + target_items['입고대기분'] - target_items['기간총판매량']).fillna(0).astype(int)
 
     # ==========================================
     # 5. 권한 기반 다중 사용자 피벗 매핑 연산
@@ -217,11 +220,11 @@ def run(load_data_func):
     else:
         order_pivot = pd.DataFrame(0, index=target_items['품목코드'], columns=pivot_cols)
         
-    # 빈 열 0으로 강제 세팅 후 정수 변환 (NaN으로 인한 에러 방지)
     for c in pivot_cols:
         if c not in order_pivot.columns: order_pivot[c] = 0
     order_pivot = order_pivot[pivot_cols].fillna(0).astype(int)
     
+    # Merge 시 발생할 수 있는 결측치 차단
     base_columns = target_items[['품목코드', '품목명', '현재고', '기간총판매량', '입고대기분', '가용예상재고']]
     final_df = pd.merge(base_columns, order_pivot.reset_index(), on='품목코드', how='left').fillna(0)
     
@@ -231,10 +234,10 @@ def run(load_data_func):
     renamed_emp_cols = [f"{emp}(박스)" for emp in allowed_input_emps]
     my_edit_col = f"{sel_emp}(박스)"
     
-    # 5. 수정량, 입력총량, 최종발주량 연산 -> 정수
-    final_df['수정량 입력✏️'] = final_df['수정량'].astype(int)
-    final_df['입력 총량'] = final_df[renamed_emp_cols].sum(axis=1).astype(int)
-    final_df['최종발주량'] = (final_df['입력 총량'] - final_df['수정량 입력✏️']).astype(int)
+    # 5. 수정량, 입력총량, 최종발주량 연산
+    final_df['수정량 입력✏️'] = final_df['수정량'].fillna(0).astype(int)
+    final_df['입력 총량'] = final_df[renamed_emp_cols].sum(axis=1).fillna(0).astype(int)
+    final_df['최종발주량'] = (final_df['입력 총량'] - final_df['수정량 입력✏️']).fillna(0).astype(int)
 
     # 최종 출력 레이아웃
     display_layout = ['품목코드', '품목명', '현재고', '기간총판매량', '입고대기분', '가용예상재고'] + renamed_emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량']
