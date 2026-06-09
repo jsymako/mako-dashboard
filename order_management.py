@@ -14,19 +14,19 @@ def get_gspread_client():
     return gspread.authorize(creds)
 
 # 🚀 신규 차수 생성을 위한 팝업 다이얼로그
-@st.dialog("➕ 신규 발주 차수 생성")
+@st.dialog("➕ 신규 발주 생성")
 def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client_func):
-    st.write(f"🏭 대상 제조사: **{sel_m_name}**")
+    st.write(f"제조사: **{sel_m_name}**")
     
     with st.form("new_round_form", clear_on_submit=True):
         new_r = st.number_input("생성할 신규 차수 번호를 입력하세요", min_value=1, value=int(default_next_round), step=1)
         sel_feet = st.selectbox("컨테이너 크기 (피트)", ["40피트", "20피트"])
         
         st.markdown("<p style='color:#7f8c8d; font-size:0.9rem;'>※ 생성 시 초기 상태는 '입력중'으로 지정되며, 생성된 차수만 메인 화면에서 조회 가능합니다.</p>", unsafe_allow_html=True)
-        submit_btn = st.form_submit_button("🚀 차수 개설 및 생성하기", use_container_width=True)
+        submit_btn = st.form_submit_button("신규 발주 차수 생성", use_container_width=True)
         
         if submit_btn:
-            with st.spinner("새로운 발주 차수를 구글 시트에 등록 중..."):
+            with st.spinner("새로운 발주 차수를 저장 중..."):
                 try:
                     client = get_client_func()
                     doc = client.open("통합재고관리")
@@ -65,7 +65,7 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    st.title("📦 발주 관리 시스템")
+    st.title("📦 발주 관리")
     st.markdown("---")
 
     # ==========================================
@@ -121,18 +121,16 @@ def run(load_data_func):
     # ==========================================
     # 2. 사이드바 (제조사 및 신규생성만 남김)
     # ==========================================
-    st.sidebar.markdown("### 🏭 소속 및 제조사")
     
     m_dict = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
     sel_m_name = st.sidebar.selectbox("제조사 필터", list(m_dict.keys()))
     sel_m_id = m_dict[sel_m_name]
 
-    st.sidebar.markdown("---")
     all_rounds = df_status[df_status['제조사ID'].astype(str) == str(sel_m_id)]['차수'].astype(str).tolist()
     all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
     next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
     
-    if st.sidebar.button("➕ 신규 발주 차수 생성", type="primary", use_container_width=True):
+    if st.sidebar.button("➕ 신규 발주 생성", type="primary", use_container_width=True):
         create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
     # ==========================================
