@@ -4,6 +4,7 @@ import datetime
 import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from utils import custom_fullscreen_spinner
 
 # 🚀 구글 시트 연결 캐싱
 @st.cache_resource
@@ -314,7 +315,7 @@ def run(load_data_func):
     # ==========================================
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
-        with st.spinner("데이터베이스에 실시간 업로드 및 동기화 중..."):
+        with custom_fullscreen_spinner("데이터베이스에 실시간 업로드 및 동기화 중..."):
             try:
                 client = get_gspread_client()
                 doc = client.open("통합재고관리")
