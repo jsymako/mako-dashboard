@@ -13,7 +13,7 @@ def get_gspread_client():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     return gspread.authorize(creds)
 
-# 🚀 신규 차수 생성을 위한 팝업 다이얼로그 (안전한 Form 구조 적용)
+# 🚀 신규 차수 생성을 위한 팝업 다이얼로그 (안전한 Form 구조 적용 및 에러 방어)
 @st.dialog("➕ 신규 발주 차수 생성")
 def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client_func):
     st.write(f"🏭 대상 제조사: **{sel_m_name}**")
@@ -28,15 +28,27 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                 try:
                     client = get_client_func()
                     doc = client.open("통합재고관리")
-                    try: sheet_s = doc.worksheet("Order_Status")
-                    except: sheet_s = doc.add_worksheet(title="Order_Status", rows="500", cols="5")
+                    try: 
+                        sheet_s = doc.worksheet("Order_Status")
+                    except: 
+                        sheet_s = doc.add_worksheet(title="Order_Status", rows="500", cols="4")
+                        sheet_s.append_row(['제조사ID', '차수', '상태', '최종수정일']) # 시트가 없었으면 1행에 헤더 강제 추가
                     
                     records = sheet_s.get_all_records()
                     df_st = pd.DataFrame(records)
                     
-                    if not df_st.empty and ((df_st['제조사ID'].astype(str) == str(sel_m_id)) & (df_st['차수'].astype(str) == str(new_r))).any():
+                    # 🚀 [KeyError 완벽 방어] 열이 확실히 존재하는지 체크
+                    is_duplicate = False
+                    if not df_st.empty and '제조사ID' in df_st.columns and '차수' in df_st.columns:
+                        is_duplicate = ((df_st['제조사ID'].astype(str) == str(sel_m_id)) & (df_st['차수'].astype(str) == str(new_r))).any()
+                    
+                    if is_duplicate:
                         st.error(f"❌ 이미 존재하는 차수입니다. ({new_r}차)")
                     else:
+                        # 시트는 있는데 1행 헤더가 비어있을 경우 껍데기 추가
+                        if not sheet_s.row_values(1):
+                            sheet_s.append_row(['제조사ID', '차수', '상태', '최종수정일'])
+                            
                         today_str = datetime.datetime.now().strftime("%Y-%m-%d")
                         sheet_s.append_row([str(sel_m_id), str(new_r), "입력중", today_str])
                         st.session_state[f"selected_round_{sel_m_id}"] = int(new_r)
@@ -150,7 +162,6 @@ def run(load_data_func):
     with main_ctrl:
         mc1, mc2, mc3 = st.columns([3, 3, 4])
         with mc1:
-            # 🚀 [수정] 무조건 1차부터 보이던 로직 탈피 -> 생성된 차수만 드롭다운 표출
             selected_round_val = st.selectbox(
                 "🎯 조회 및 수정할 차수 선택", 
                 all_rounds, 
@@ -177,6 +188,10 @@ def run(load_data_func):
     # 4. SCM 수식 연산 및 컬럼 하이브리드 결합
     # ==========================================
     target_items = df_item[df_item['제조사'].astype(str) == str(sel_m_id)].copy()
+    if target_items.empty:
+        st.warning(f"💡 현재 '{sel_m_name}' 제조사로 등록된 마스터 품목이 없습니다.")
+        return
+
     target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1)
     
     # 🚀 [요구사항] 브랜드 + 품목명 복합 표출 처리
@@ -207,11 +222,10 @@ def run(load_data_func):
     # ==========================================
     curr_orders = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(str) == str(selected_round_val))]
     
-    # 🚀 일반 직원 입력량과 '수정량' 데이터를 구분하여 피벗 결합하기 위해 빈 컬럼 사전 구축
+    # 🚀 일반 직원 입력량과 '수정량' 데이터를 구분하여 피벗 결합
     pivot_cols = allowed_input_emps + ['수정량']
     if not curr_orders.empty:
         order_pivot = curr_orders.pivot_table(index='품목코드', columns='직원명', values='발주량', aggfunc='sum').fillna(0)
-        # 필요한 권한 컬럼 재정렬 및 빈 공간 자동 0 처리
         for c in pivot_cols:
             if c not in order_pivot.columns: order_pivot[c] = 0.0
         order_pivot = order_pivot[pivot_cols]
@@ -246,7 +260,7 @@ def run(load_data_func):
     # ==========================================
     calculated_height = (len(final_df) + 1) * 36 + 45
     
-    # 🚀 오직 로그인한 '내 입력 컬럼'과 '수정량 입력✏️' 열만 쓰기 권한 부여, 나머지는 잠금(disabled)
+    # 🚀 오직 로그인한 '내 입력 컬럼'과 '수정량 입력✏️' 열만 쓰기 권한 부여
     allowed_edit_cols = [my_edit_col, '수정량 입력✏️']
     disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
     
@@ -269,7 +283,7 @@ def run(load_data_func):
     )
 
     # ==========================================
-    # 7. 통합 동기화 저장 엔진
+    # 7. 통합 저장 분기 처리 엔진
     # ==========================================
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
@@ -278,13 +292,17 @@ def run(load_data_func):
                 client = get_gspread_client()
                 doc = client.open("통합재고관리")
                 
-                # ① Order_Status 갱신
+                # ① 상태(Order_Status) 업데이트
                 sheet_s = doc.worksheet("Order_Status")
                 records_s = sheet_s.get_all_records()
                 df_st_save = pd.DataFrame(records_s)
                 
-                if not df_st_save.empty:
+                # 🚀 [KeyError 방어 보강] 저장할 때도 컬럼 유무 체크
+                if not df_st_save.empty and '제조사ID' in df_st_save.columns and '차수' in df_st_save.columns:
                     df_st_save = df_st_save[~((df_st_save['제조사ID'].astype(str) == str(sel_m_id)) & (df_st_save['차수'].astype(str) == str(selected_round_val)))]
+                elif df_st_save.empty or '제조사ID' not in df_st_save.columns:
+                    df_st_save = pd.DataFrame(columns=['제조사ID', '차수', '상태', '최종수정일'])
+                    
                 today_str = datetime.datetime.now().strftime("%Y-%m-%d")
                 new_status_row = pd.DataFrame([{"제조사ID": str(sel_m_id), "차수": str(selected_round_val), "상태": str(sel_status), "최종수정일": today_str}])
                 df_st_save = pd.concat([df_st_save, new_status_row], ignore_index=True)
@@ -292,16 +310,17 @@ def run(load_data_func):
                 sheet_s.clear()
                 sheet_s.update([df_st_save.columns.values.tolist()] + df_st_save.astype(str).values.tolist())
 
-                # ② Order_Records (내 발주량 + 시스템 수정량 병합 저장)
+                # ② 발주 수량(Order_Records) 업데이트
                 sheet_o = doc.worksheet("Order_Records")
                 records_o = sheet_o.get_all_records()
                 df_ord_save = pd.DataFrame(records_o)
                 
-                if not df_ord_save.empty:
-                    # 내 이름으로 기록된 행과 '수정량' 명의로 기록된 기존 수치를 정조준하여 삭제
+                if not df_ord_save.empty and '제조사ID' in df_ord_save.columns:
                     df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
                                                (df_ord_save['차수'].astype(str) == str(selected_round_val)) & 
                                                (df_ord_save['직원명'].isin([str(sel_emp), '수정량'])))]
+                elif df_ord_save.empty or '제조사ID' not in df_ord_save.columns:
+                    df_ord_save = pd.DataFrame(columns=['제조사ID', '차수', '품목코드', '직원명', '발주량'])
                 
                 # 내 입력값 추출
                 my_rows = editable_config[editable_config[my_edit_col] > 0][['품목코드', my_edit_col]].copy()
@@ -315,7 +334,7 @@ def run(load_data_func):
                 adjust_rows = editable_config[editable_config['수정량 입력✏️'] != 0][['품목코드', '수정량 입력✏️']].copy()
                 adjust_rows['제조사ID'] = str(sel_m_id)
                 adjust_rows['차수'] = str(selected_round_val)
-                adjust_rows['직원명'] = '수정량' # 피벗 시 '수정량' 열로 들어오도록 이름을 매칭 고정
+                adjust_rows['직원명'] = '수정량' 
                 adjust_rows.rename(columns={'수정량 입력✏️': '발주량'}, inplace=True)
                 adjust_rows = adjust_rows[['제조사ID', '차수', '품목코드', '직원명', '발주량']]
                 
@@ -323,13 +342,10 @@ def run(load_data_func):
                 df_final_ord = pd.concat([df_ord_save, my_rows, adjust_rows], ignore_index=True)
                 
                 sheet_o.clear()
-                if df_final_ord.empty:
-                    sheet_o.append_row(['제조사ID', '차수', '품목코드', '직원명', '발주량'])
-                else:
-                    sheet_o.update([df_final_ord.columns.values.tolist()] + df_final_ord.astype(str).values.tolist())
+                sheet_o.update([df_final_ord.columns.values.tolist()] + df_final_ord.astype(str).values.tolist())
 
                 st.cache_data.clear()
                 st.success(f"🎉 {selected_round_val}차 SCM 발주 계획안 및 수정 수량이 [{sel_status}] 상태로 완벽하게 동기화되었습니다!")
                 st.rerun()
             except Exception as e:
-                st.error(f"구글 분산 원장 기록 중 치명적 동기화 에러 발생: {e}")
+                st.error(f"구글 시트 연동 중 에러 발생: {e}")
