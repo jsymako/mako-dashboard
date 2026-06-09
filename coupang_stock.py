@@ -63,7 +63,18 @@ def run(load_data_func):
         # ==========================================
         try:
             df_trade = load_data_func("trade_record")
-            df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액']
+            
+            # 🚀 [핵심 방어 로직] trade_record 시트의 열 개수 변경 대응
+            base_cols = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
+            actual_cols = len(df_trade.columns)
+            
+            # 시트에 열이 7개 이상으로 늘어나더라도, 우리가 필요한 앞의 7개만 잘라서 씁니다.
+            if actual_cols >= 7:
+                df_trade = df_trade.iloc[:, :7]
+                df_trade.columns = base_cols
+            else:
+                df_trade.columns = base_cols[:actual_cols]
+
             df_trade['일자'] = pd.to_datetime(df_trade['일자'], errors='coerce')
             df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
             df_trade['품목코드'] = df_trade['품목코드'].astype(str).str.strip()
