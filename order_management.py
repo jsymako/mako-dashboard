@@ -139,7 +139,7 @@ def run(load_data_func):
     # 3. 메인 제어반
     # ==========================================
     if not all_rounds:
-        st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. 왼쪽 사이드바에서 [신규 발주 차수 생성]을 진행해 주세요.")
+        st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. [신규 발주 생성]을 진행해 주세요.")
         return
 
     round_key = f"selected_round_{sel_m_id}"
@@ -148,7 +148,7 @@ def run(load_data_func):
 
     main_ctrl = st.container(border=True)
     with main_ctrl:
-        c1, c2, c3, c4 = st.columns([2.5, 3, 2, 2])
+        c1, c2, c3, c4, c5, c6 = st.columns([2.5, 3, 2, 2, 2, 2])
         
         with c1:
             # 🚀 사이드바의 입력자 선택도 "Y" 권한자 목록만 표출되도록 강제
@@ -207,7 +207,6 @@ def run(load_data_func):
                     except Exception as e:
                         st.error(f"삭제 오류: {e}")
                         
-        c5, c6 = st.columns([6, 4])
         with c5:
             ref_rounds = st.multiselect("🚚 입고 정산용 참고 차수 (대기량 합산용)", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
         with c6:
@@ -278,8 +277,8 @@ def run(load_data_func):
     # 6. 총 CBM 표시 및 표 렌더링 
     # ==========================================
     st.markdown(f"""
-        <div style="background-color: #2E86C1; padding: 15px; border-radius: 8px; text-align: center; color: white; margin-bottom: 20px;">
-            <h4 style="margin: 0; color: white; font-weight: 600;">🚢 현재 발주 컨테이너 총 체적: <span style="font-size: 1.5em;">{total_cbm:,.2f} CBM</span></h4>
+        <div style="background-color: #2E86C1; padding: 10px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: white; font-weight: 600;">🚢 현재 발주 컨테이너 총 CBM : <span style="font-size: 1.5em;">{total_cbm:,.2f} CBM</span></h4>
         </div>
     """, unsafe_allow_html=True)
 
