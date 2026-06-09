@@ -291,12 +291,12 @@ def run(load_data_func):
     col_config = {
         sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
         "수정량 입력✏️": st.column_config.NumberColumn("수정량(±)✏️", step=1, format="%d"),
-        "입력 총량": st.column_config.NumberColumn("입력총량", format="%d",step=1),
-        "최종발주량": st.column_config.NumberColumn("최종수량량", format="%d",help="입력 총량에서 수정량이 반영된 최종 확정 수치입니다."),
+        "입력 총량": st.column_config.NumberColumn("🎯입력총량", format="%d"),
+        "최종발주량": st.column_config.NumberColumn("🎯최종수량", format="%d"),
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
-        "기간총판매량": st.column_config.NumberColumn(f"총판매량({weeks_opt}주)", format="%d"),
+        "기간총판매량": st.column_config.NumberColumn(f"({weeks_opt}주 판매량)", format="%d"),
         "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
-        "가용예상재고": st.column_config.NumberColumn("가용재고", format="%d"),
+        "가용예상재고": st.column_config.NumberColumn("🎯가용재고", format="%d"),
         "CBM": st.column_config.NumberColumn("CBM", format="%.3f"),
         "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.3f")
     }
