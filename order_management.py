@@ -208,9 +208,9 @@ def run(load_data_func):
                         st.error(f"삭제 오류: {e}")
                         
         with c5:
-            ref_rounds = st.multiselect("🚚 입고 정산용 참고 차수 (대기량 합산용)", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
+            ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
         with c6:
-            weeks_opt = st.slider("📊 판매량 산출 기준 (최근 N주)", min_value=1, max_value=12, value=4)
+            weeks_opt = st.slider("📊 판매량 설정 (최근 N주)", min_value=1, max_value=12, value=4)
 
     # ==========================================
     # 4. SCM 수식 연산 및 CBM 로드
