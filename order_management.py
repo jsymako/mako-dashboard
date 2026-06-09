@@ -126,8 +126,6 @@ def run(load_data_func):
     sel_m_name = st.sidebar.selectbox("제조사 필터", list(m_dict.keys()))
     sel_m_id = m_dict[sel_m_name]
 
-    st.markdown("---")
-
     all_rounds = df_status[df_status['제조사ID'].astype(str) == str(sel_m_id)]['차수'].astype(str).tolist()
     all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
     next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
