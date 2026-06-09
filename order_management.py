@@ -110,12 +110,13 @@ def run(load_data_func):
     except:
         stock_map = {}
 
-    emp_list = sorted(df_emp['성명'].dropna().unique().tolist()) if df_emp is not None and '성명' in df_emp.columns else ["미지정"]
-    
-    if df_emp is not None and '발주입력' in df_emp.columns:
-        allowed_input_emps = sorted(df_emp[df_emp['발주입력'].astype(str).str.upper() == 'Y']['성명'].dropna().unique().tolist())
+    # 🚀 [요구사항] "발주입력" 열의 값이 "Y"인 직원만 엄격하게 추출
+    if df_emp is not None and '성명' in df_emp.columns and '발주입력' in df_emp.columns:
+        allowed_input_emps = sorted(df_emp[df_emp['발주입력'].astype(str).str.strip().str.upper() == 'Y']['성명'].dropna().unique().tolist())
+        if not allowed_input_emps:
+            allowed_input_emps = ["권한자 없음"]
     else:
-        allowed_input_emps = emp_list.copy()
+        allowed_input_emps = ["권한자 없음"]
 
     # ==========================================
     # 2. 사이드바 (제조사 및 신규생성만 남김)
@@ -135,7 +136,7 @@ def run(load_data_func):
         create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
     # ==========================================
-    # 3. 메인 제어반 (입력자 선택 메인으로 이동)
+    # 3. 메인 제어반
     # ==========================================
     if not all_rounds:
         st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. 왼쪽 사이드바에서 [신규 발주 차수 생성]을 진행해 주세요.")
@@ -150,10 +151,8 @@ def run(load_data_func):
         c1, c2, c3, c4 = st.columns([2.5, 3, 2, 2])
         
         with c1:
-            # 🚀 입력자 선택을 메인 UI 상단으로 이동
-            sel_emp = st.selectbox("👨‍💼 내 이름(입력자) 선택", emp_list)
-            if sel_emp not in allowed_input_emps and sel_emp != "미지정":
-                allowed_input_emps.append(sel_emp)
+            # 🚀 사이드바의 입력자 선택도 "Y" 권한자 목록만 표출되도록 강제
+            sel_emp = st.selectbox("👨‍💼 내 이름(입력자) 선택", allowed_input_emps)
         
         def format_round_display(r):
             row = df_status[(df_status['제조사ID'].astype(str) == str(sel_m_id)) & (df_status['차수'].astype(str) == str(r))]
@@ -222,7 +221,6 @@ def run(load_data_func):
         st.warning(f"💡 현재 '{sel_m_name}' 제조사로 등록된 마스터 품목이 없습니다.")
         return
 
-    # 🚀 CBM 데이터 로드 방어 로직
     target_items['CBM'] = pd.to_numeric(target_items.get('CBM', 0), errors='coerce').fillna(0.0)
     target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1).astype(int)
     target_items['품목명'] = "[" + target_items['브랜드'].fillna('미분류').astype(str) + "] " + target_items['이름'].astype(str)
@@ -247,7 +245,7 @@ def run(load_data_func):
     target_items['가용예상재고'] = (target_items['현재고'] + target_items['입고대기분'] - target_items['기간총판매량']).fillna(0).astype(int)
 
     # ==========================================
-    # 5. 피벗 및 직원별 (박스) 글자 제거 연산
+    # 5. 피벗 연산
     # ==========================================
     curr_orders = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(str) == str(selected_round_val))]
     
@@ -261,19 +259,15 @@ def run(load_data_func):
         if c not in order_pivot.columns: order_pivot[c] = 0
     order_pivot = order_pivot[pivot_cols].fillna(0).astype(int)
     
-    # CBM 추가
     base_columns = target_items[['품목코드', '품목명', 'CBM', '현재고', '기간총판매량', '입고대기분', '가용예상재고']]
     final_df = pd.merge(base_columns, order_pivot.reset_index(), on='품목코드', how='left').fillna(0)
     
-    # 🚀 (박스) 글자 제거 적용
     emp_cols = allowed_input_emps
     
-    # 🚀 수정량 덧셈 로직 적용 (단순 + 연산)
     final_df['수정량 입력✏️'] = final_df['수정량'].fillna(0).astype(int)
     final_df['입력 총량'] = final_df[emp_cols].sum(axis=1).fillna(0).astype(int)
     final_df['최종발주량'] = (final_df['입력 총량'] + final_df['수정량 입력✏️']).fillna(0).astype(int)
 
-    # 🚀 품목별 CBM 합계 연산
     final_df['합계 CBM'] = (final_df['최종발주량'] * final_df['CBM']).fillna(0).astype(float)
     total_cbm = final_df['합계 CBM'].sum()
 
@@ -283,7 +277,6 @@ def run(load_data_func):
     # ==========================================
     # 6. 총 CBM 표시 및 표 렌더링 
     # ==========================================
-    # 🚀 CBM 하이라이트 박스
     st.markdown(f"""
         <div style="background-color: #2E86C1; padding: 15px; border-radius: 8px; text-align: center; color: white; margin-bottom: 20px;">
             <h4 style="margin: 0; color: white; font-weight: 600;">🚢 현재 발주 컨테이너 총 체적: <span style="font-size: 1.5em;">{total_cbm:,.2f} CBM</span></h4>
@@ -295,7 +288,6 @@ def run(load_data_func):
     allowed_edit_cols = [sel_emp, '수정량 입력✏️']
     disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
     
-    # 동적 컬럼 세팅
     col_config = {
         sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
         "수정량 입력✏️": st.column_config.NumberColumn("수정량(±)✏️", step=1, format="%d"),
