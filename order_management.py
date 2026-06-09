@@ -126,6 +126,8 @@ def run(load_data_func):
     sel_m_name = st.sidebar.selectbox("제조사 필터", list(m_dict.keys()))
     sel_m_id = m_dict[sel_m_name]
 
+    st.sidebar.markdown("---")
+
     all_rounds = df_status[df_status['제조사ID'].astype(str) == str(sel_m_id)]['차수'].astype(str).tolist()
     all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
     next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
@@ -275,8 +277,8 @@ def run(load_data_func):
     # 6. 총 CBM 표시 및 표 렌더링 
     # ==========================================
     st.markdown(f"""
-        <div style="background-color: #2E86C1; padding: 10px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px;">
-            <h4 style="margin: 0; color: white; font-weight: 600;">🚢 현재 발주 컨테이너 총 CBM : <span style="font-size: 1.5em;">{total_cbm:,.2f} CBM</span></h4>
+        <div style="background-color: #2E86C1; padding: 6px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: white; font-weight: 600;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.2f} CBM</h4>
         </div>
     """, unsafe_allow_html=True)
 
