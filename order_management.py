@@ -65,13 +65,26 @@ def run(load_data_func):
         df_emp = load_data_func("Employees")
         df_stock = load_data_func("ecount_stock")
         
+        # [Order_Records 방어 로직]
         df_order = load_data_func("Order_Records")
+        expected_order_cols = ['제조사ID', '차수', '품목코드', '직원명', '발주량']
         if df_order is None or df_order.empty:
-            df_order = pd.DataFrame(columns=['제조사ID', '차수', '품목코드', '직원명', '발주량'])
+            df_order = pd.DataFrame(columns=expected_order_cols)
+        else:
+            for col in expected_order_cols:
+                if col not in df_order.columns:
+                    df_order[col] = ""
             
+        # 🚀 [Order_Status 방어 로직 추가] -> 이번 에러의 원인 해결!
         df_status = load_data_func("Order_Status")
+        expected_status_cols = ['제조사ID', '차수', '상태', '최종수정일']
         if df_status is None or df_status.empty:
-            df_status = pd.DataFrame(columns=['제조사ID', '차수', '상태', '최종수정일'])
+            df_status = pd.DataFrame(columns=expected_status_cols)
+        else:
+            for col in expected_status_cols:
+                if col not in df_status.columns:
+                    df_status[col] = ""
+                    
     except Exception as e:
         st.error(f"구글 마스터 데이터 동기화 실패: {e}")
         return
