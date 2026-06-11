@@ -130,23 +130,26 @@ def run(load_data_func):
     all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
     next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
     
+    # 🚀 [핵심 수정] UI에 표시할 차수 리스트를 '최신순(내림차순)'으로 뒤집어 놓습니다.
+    display_rounds = sorted(all_rounds, reverse=True)
+    
     if st.sidebar.button("➕ 신규 발주 생성", type="primary", use_container_width=True):
         create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
     # ==========================================
-    # 3. 메인 제어반 (CBM 가로 배열 통합)
+    # 3. 메인 제어반 
     # ==========================================
-    if not all_rounds:
+    if not display_rounds:
         st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. [신규 발주 생성]을 진행해 주세요.")
         return
 
     round_key = f"selected_round_{sel_m_id}"
-    if round_key not in st.session_state or st.session_state[round_key] not in all_rounds:
-        st.session_state[round_key] = all_rounds[-1] 
+    if round_key not in st.session_state or st.session_state[round_key] not in display_rounds:
+        # 내림차순 리스트이므로 [0]번째가 가장 최신 차수입니다.
+        st.session_state[round_key] = display_rounds[0] 
 
     main_ctrl = st.container(border=True)
     with main_ctrl:
-        # 🚀 컬럼을 7개로 쪼개어 다른 요소들과 동일한 크기로 수평 배치
         c2, c3, c4, c1, c5, c6, c7 = st.columns([3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0])
         
         with c1:
@@ -162,10 +165,11 @@ def run(load_data_func):
             return f"📦 {r}차"
 
         with c2:
+            # 🚀 뒤집힌 display_rounds를 사용하여 최신 차수가 맨 위로 올라옵니다.
             selected_round_val = st.selectbox(
                 "🎯 조회/수정 차수 선택", 
-                all_rounds, 
-                index=all_rounds.index(st.session_state[round_key]),
+                display_rounds, 
+                index=display_rounds.index(st.session_state[round_key]),
                 format_func=format_round_display
             )
             st.session_state[round_key] = selected_round_val
@@ -206,12 +210,12 @@ def run(load_data_func):
                         st.error(f"삭제 오류: {e}")
                         
         with c5:
-            ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
+            # 🚀 입고 대기 다중 선택도 최신순(내림차순)으로 정렬됩니다.
+            ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in display_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
         with c6:
             months_opt = st.slider("📊 평균판매량 (최근N달)", min_value=1, max_value=12, value=3)
             
         with c7:
-            # 🚀 다른 컨트롤 요소들과 한 줄에 배치되도록 빈 공간 생성
             cbm_placeholder = st.empty()
 
     # ==========================================
@@ -287,7 +291,6 @@ def run(load_data_func):
     # ==========================================
     # 6. 상단 제어반에 CBM 주입 및 표 렌더링 
     # ==========================================
-    # 🚀 다른 입력 폼(selectbox 등)과 똑같은 디자인의 '읽기 전용' 텍스트 인풋으로 CBM 주입!
     with cbm_placeholder:
         st.text_input("🚢 총 CBM", value=f"{total_cbm:.8f}", disabled=True)
 
@@ -319,7 +322,7 @@ def run(load_data_func):
     )
 
     # ==========================================
-    # 7. 통합 저장 엔진 (오류 수정 완료)
+    # 7. 통합 저장 엔진
     # ==========================================
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
@@ -348,7 +351,6 @@ def run(load_data_func):
                 records_o = sheet_o.get_all_records()
                 df_ord_save = pd.DataFrame(records_o)
                 
-                # ✅ 불필요한 텍스트 오타 제거된 부분
                 if not df_ord_save.empty and '제조사ID' in df_ord_save.columns:
                     df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
                                                (df_ord_save['차수'].astype(str) == str(selected_round_val)) & 
