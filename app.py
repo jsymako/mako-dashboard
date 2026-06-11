@@ -120,7 +120,7 @@ st.markdown("""
 with st.sidebar:
     main_menu = option_menu(
         menu_title=None, 
-        options=["대시 보드", "자사 재고", "판매 현황", "입고 현황", "쿠팡 현황", "업무 보고", "영업 실적", "채권 분석","발주 관리"],
+        options=["대시 보드", "자사 재고", "판매 현황", "입고 현황", "쿠팡 현황", "업무 보고", "영업 실적", "채권 분석","발주 입력"],
         icons=[
             "grid",             # 대시 보드 (바둑판 모양)
             "boxes",            # 자사 재고 (쌓여있는 상자)
@@ -328,5 +328,5 @@ elif main_menu == "채권 분석":
     ar_trend.run(load_sheet_data)
 elif main_menu == "영업 실적":
     sales_perf.run(load_sheet_data)
-elif main_menu == "발주 관리":
+elif main_menu == "발주 입력":
     order_management.run(load_sheet_data)
