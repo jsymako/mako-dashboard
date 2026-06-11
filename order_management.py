@@ -305,8 +305,8 @@ def run(load_data_func):
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
         "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
         "가용예상재고": st.column_config.NumberColumn("가용재고", format="%d"),
-        "전체평균": st.column_config.NumberColumn(f"전체1주", format="%.1f"),
-        "입력자평균": st.column_config.NumberColumn(f"나의1주", format="%.1f"),
+        "전체평균": st.column_config.NumberColumn(f"전체1주", format="%.2f"),
+        "입력자평균": st.column_config.NumberColumn(f"나의1주", format="%.2f"),
         "CBM": st.column_config.NumberColumn("CBM", format="%.3f"),
         "합계 CBM": st.column_config.NumberColumn("CBM", format="%.3f")
     }
