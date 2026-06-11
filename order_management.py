@@ -207,11 +207,10 @@ def run(load_data_func):
         with c5:
             ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
         with c6:
-            # 🚀 [요구사항] 주 단위에서 월 단위 평균 참조로 변경
             months_opt = st.slider("📊 평균판매량 산출 (최근 N개월)", min_value=1, max_value=12, value=3)
 
     # ==========================================
-    # 4. SCM 수식 연산 및 CBM 로드 (로직 완전 개편)
+    # 4. SCM 수식 연산 및 CBM 로드 
     # ==========================================
     target_items = df_item[df_item['제조사'].astype(str) == str(sel_m_id)].copy()
     if target_items.empty:
@@ -225,7 +224,6 @@ def run(load_data_func):
     target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0).astype(int)
     target_items['현재고'] = (target_items['현재고(낱개)'] / target_items['박스단위']).fillna(0).astype(int)
 
-    # 🚀 최근 N개월의 데이터를 필터링하고 주(Week) 수 계산 (1개월 = 30일 가정)
     days_to_subtract = months_opt * 30
     weeks_in_period = days_to_subtract / 7.0
     recent_limit = datetime.datetime.now() - datetime.timedelta(days=days_to_subtract)
@@ -233,18 +231,15 @@ def run(load_data_func):
     df_trade_recent = df_trade[df_trade['일자'] >= recent_limit].copy()
     df_trade_recent_emp = df_trade_recent[df_trade_recent['담당자'] == str(sel_emp)]
     
-    # 누적 판매량 산출 (전체 & 입력자)
     total_sales_units = df_trade_recent.groupby('품목코드')['수량'].sum()
     emp_sales_units = df_trade_recent_emp.groupby('품목코드')['수량'].sum()
     
-    # 1주일 평균 판매량 연산 (총합 / 박스단위 / N주) -> 반올림 후 정수형
     target_items['전체평균(낱개)'] = target_items['품목코드'].map(total_sales_units).fillna(0)
     target_items['입력자평균(낱개)'] = target_items['품목코드'].map(emp_sales_units).fillna(0)
     
     target_items['전체평균'] = ((target_items['전체평균(낱개)'] / target_items['박스단위']) / weeks_in_period).round(0).astype(int)
     target_items['입력자평균'] = ((target_items['입력자평균(낱개)'] / target_items['박스단위']) / weeks_in_period).round(0).astype(int)
 
-    # 입고 대기분 연산
     if ref_rounds:
         df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
         ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum()
@@ -252,7 +247,6 @@ def run(load_data_func):
     else:
         target_items['입고대기분'] = 0
 
-    # 🚀 [요구사항] 가용예상재고 공식 수정 (현재재고 + 입고대기 = 가용재고)
     target_items['가용예상재고'] = (target_items['현재고'] + target_items['입고대기분']).fillna(0).astype(int)
 
     # ==========================================
@@ -270,7 +264,6 @@ def run(load_data_func):
         if c not in order_pivot.columns: order_pivot[c] = 0
     order_pivot = order_pivot[pivot_cols].fillna(0).astype(int)
     
-    # 🚀 기본 컬럼 구조 재편성 (전체평균, 입력자평균 삽입)
     base_columns = target_items[['품목코드', '품목명', 'CBM', '현재고', '입고대기분', '가용예상재고', '전체평균', '입력자평균']]
     final_df = pd.merge(base_columns, order_pivot.reset_index(), on='품목코드', how='left').fillna(0)
     
@@ -283,9 +276,12 @@ def run(load_data_func):
     final_df['합계 CBM'] = (final_df['최종발주량'] * final_df['CBM']).fillna(0).astype(float)
     total_cbm = final_df['합계 CBM'].sum()
 
-    # 🚀 화면에 표시될 최종 레이아웃 순서 확정
     display_layout = ['품목코드', '품목명', 'CBM', '현재고', '입고대기분', '가용예상재고', '전체평균', '입력자평균'] + emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량', '합계 CBM']
     final_df = final_df[display_layout]
+
+    # 🚀 [핵심] Multi-Index 컬럼 생성: 1층은 기존 이름, 2층은 "수정필요"
+    multi_cols = [(col, "수정필요") for col in display_layout]
+    final_df.columns = pd.MultiIndex.from_tuples(multi_cols)
 
     # ==========================================
     # 6. 총 CBM 표시 및 표 렌더링 
@@ -296,34 +292,24 @@ def run(load_data_func):
         </div>
     """, unsafe_allow_html=True)
 
-    calculated_height = (len(final_df) + 1) * 36 + 45
+    # 🚀 Multi-Index 구조에 맞춰 편집 허용 컬럼도 튜플로 매핑
+    allowed_edit_cols = [
+        (sel_emp, "수정필요"), 
+        ('수정량 입력✏️', "수정필요")
+    ]
+    disabled_list = [c for c in final_df.columns if c not in allowed_edit_cols]
     
-    allowed_edit_cols = [sel_emp, '수정량 입력✏️']
-    disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
-    
-    # 🚀 신규 열 포맷팅 적용
-    col_config = {
-        sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
-        "수정량 입력✏️": st.column_config.NumberColumn("(±)조정✏️", step=1, format="%d"),
-        "입력 총량": st.column_config.NumberColumn("➕입력총량", format="%d"),
-        "최종발주량": st.column_config.NumberColumn("💠최종수량", format="%d"),
-        "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
-        "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
-        "가용예상재고": st.column_config.NumberColumn("📦가용재고", format="%d"),
-        "전체평균": st.column_config.NumberColumn(f"전체 주평균({months_opt}개월)", format="%d"),
-        "입력자평균": st.column_config.NumberColumn(f"내 주평균({months_opt}개월)", format="%d"),
-        "CBM": st.column_config.NumberColumn("CBM", format="%.3f"),
-        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.3f")
-    }
-
+    # 🚀 Multi-Index를 사용할 때는 column_config 대신 상단에서 직접 구조를 잡아주므로 제거합니다.
     editable_config = st.data_editor(
         final_df,
         disabled=disabled_list,
         hide_index=True,
         use_container_width=True,
-        height=500,
-        column_config=col_config
+        height=500
     )
+
+    # 🚀 [중요] 구글 시트 저장 및 DB 연동을 위해 2층 구조를 다시 원래의 1층(단층) 배열로 되돌림
+    editable_config.columns = display_layout
 
     # ==========================================
     # 7. 통합 저장 엔진 
