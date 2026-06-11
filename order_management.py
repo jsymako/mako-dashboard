@@ -147,7 +147,7 @@ def run(load_data_func):
     main_ctrl = st.container(border=True)
     with main_ctrl:
         # 🚀 컬럼을 7개로 쪼개어 다른 요소들과 동일한 크기로 수평 배치
-        c1, c2, c3, c4, c5, c6, c7 = st.columns([1.5, 2.0, 1.2, 1.4, 2.0, 1.5, 1.5])
+        c2, c3, c4, c1, c5, c6, c7 = st.columns([3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0])
         
         with c1:
             sel_emp = st.selectbox("👨‍💼 내 이름(입력자) 선택", allowed_input_emps)
