@@ -134,7 +134,7 @@ def run(load_data_func):
         create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
     # ==========================================
-    # 3. 메인 제어반
+    # 3. 메인 제어반 (CBM 통합)
     # ==========================================
     if not all_rounds:
         st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. [신규 발주 생성]을 진행해 주세요.")
@@ -146,6 +146,9 @@ def run(load_data_func):
 
     main_ctrl = st.container(border=True)
     with main_ctrl:
+        # 🚀 [요구사항] 제어반 박스 내부 최상단에 CBM이 들어갈 빈 전용 플레이스홀더 선언
+        cbm_placeholder = st.empty()
+        
         c2, c3, c4, c1, c5, c6 = st.columns([3, 2, 2, 2, 3, 2])
         
         with c1:
@@ -217,7 +220,6 @@ def run(load_data_func):
         st.warning(f"💡 현재 '{sel_m_name}' 제조사로 등록된 마스터 품목이 없습니다.")
         return
 
-    # 🚀 파이썬의 최대 정밀도 연산 유지 (소수점 15자리 이상)
     target_items['CBM'] = pd.to_numeric(target_items.get('CBM', 0), errors='coerce').fillna(0.0)
     target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1).astype(int)
     target_items['품목명'] = "[" + target_items['브랜드'].fillna('미분류').astype(str) + "] " + target_items['이름'].astype(str)
@@ -274,7 +276,6 @@ def run(load_data_func):
     final_df['입력 총량'] = final_df[emp_cols].sum(axis=1).fillna(0).astype(int)
     final_df['최종발주량'] = (final_df['입력 총량'] + final_df['수정량 입력✏️']).fillna(0).astype(int)
 
-    # 합계 CBM 연산
     final_df['합계 CBM'] = (final_df['최종발주량'] * final_df['CBM']).fillna(0).astype(float)
     total_cbm = final_df['합계 CBM'].sum()
 
@@ -282,19 +283,19 @@ def run(load_data_func):
     final_df = final_df[display_layout]
 
     # ==========================================
-    # 6. 총 CBM 표시 및 표 렌더링 (단층 구조 원복)
+    # 6. 상단 제어반에 CBM 주입 및 표 렌더링 
     # ==========================================
-    # 🚀 표시 단위 소수점 8자리로 증가 (최대 정밀도 반영)
-    st.markdown(f"""
-        <div style="background-color: #2E86C1; padding: 12px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px; display: flex; justify-content: center; align-items: center;">
-            <span style="font-size: 1.2rem; font-weight: bold;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.2f} CBM</span>
-        </div>
-    """, unsafe_allow_html=True)
+    # 🚀 [핵심] 3번 구역에 선언해둔 상단 플레이스홀더 칸에 계산 완료된 총 CBM 값을 역으로 주입
+    with cbm_placeholder:
+        st.markdown(f"""
+            <div style="background-color: #2E86C1; padding: 10px; border-radius: 6px; text-align: center; color: white; margin-bottom: 15px; display: flex; justify-content: center; align-items: center;">
+                <span style="font-size: 1.15rem; font-weight: bold;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.8f} CBM</span>
+            </div>
+        """, unsafe_allow_html=True)
 
     allowed_edit_cols = [sel_emp, '수정량 입력✏️']
     disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
     
-    # 🚀 대괄호 접두사 제거 & CBM 소수점 8자리(.8f) 포맷 적용
     col_config = {
         "품목명": st.column_config.TextColumn("품목명(브랜드)"),
         sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
@@ -304,10 +305,10 @@ def run(load_data_func):
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
         "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
         "가용예상재고": st.column_config.NumberColumn("📦가용재고", format="%d"),
-        "전체평균": st.column_config.NumberColumn(f"전체 평균({months_opt}M)", format="%d"),
-        "입력자평균": st.column_config.NumberColumn(f"내 평균({months_opt}M)", format="%d"),
-        "CBM": st.column_config.NumberColumn("단위CBM", format="%.5f"),
-        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.5f")
+        "전체평균": st.column_config.NumberColumn(f"전체 평균(최근 {months_opt}M)", format="%d"),
+        "입력자평균": st.column_config.NumberColumn(f"내 평균(최근 {months_opt}M)", format="%d"),
+        "CBM": st.column_config.NumberColumn("단위CBM", format="%.8f"),
+        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.8f")
     }
 
     editable_config = st.data_editor(
@@ -349,7 +350,7 @@ def run(load_data_func):
                 records_o = sheet_o.get_all_records()
                 df_ord_save = pd.DataFrame(records_o)
                 
-                if not df_ord_save.empty and '제조사ID' in df_ord_save.columns:
+                if not df_ord_save.empty Sea and '제조사ID' in df_ord_save.columns:
                     df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
                                                (df_ord_save['차수'].astype(str) == str(selected_round_val)) & 
                                                (df_ord_save['직원명'].isin([str(sel_emp), '수정량'])))]
