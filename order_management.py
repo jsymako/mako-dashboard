@@ -242,9 +242,9 @@ def run(load_data_func):
     target_items['전체평균(낱개)'] = target_items['품목코드'].map(total_sales_units).fillna(0)
     target_items['입력자평균(낱개)'] = target_items['품목코드'].map(emp_sales_units).fillna(0)
     
-    target_items['전체평균'] = ((target_items['전체평균(낱개)'] / target_items['박스단위']) / weeks_in_period).round(0).astype(int)
-    target_items['입력자평균'] = ((target_items['입력자평균(낱개)'] / target_items['박스단위']) / weeks_in_period).round(0).astype(int)
-
+    target_items['전체평균'] = ((target_items['전체평균(낱개)'] / target_items['박스단위']) / weeks_in_period).astype(float)
+    target_items['입력자평균'] = ((target_items['입력자평균(낱개)'] / target_items['박스단위']) / weeks_in_period).astype(float)
+    
     if ref_rounds:
         df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
         ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum()
