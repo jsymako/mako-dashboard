@@ -307,8 +307,8 @@ def run(load_data_func):
         "가용예상재고": st.column_config.NumberColumn("가용재고", format="%d"),
         "전체평균": st.column_config.NumberColumn(f"전체평균({months_opt}M)", format="%d"),
         "입력자평균": st.column_config.NumberColumn(f"내평균({months_opt}M)", format="%d"),
-        "CBM": st.column_config.NumberColumn("단위CBM", format="%.3f"),
-        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.3f")
+        "CBM": st.column_config.NumberColumn("CBM", format="%.3f"),
+        "합계 CBM": st.column_config.NumberColumn("CBM", format="%.3f")
     }
 
     # 🚀 [오류 수정] 모든 직원에 대해 소수점을 없애는(format="%d") 설정 동적 추가
