@@ -130,7 +130,7 @@ with st.sidebar:
             "pencil-square",    # 업무 보고 (펜과 종이)
             "award",            # 영업 실적 (트로피/뱃지)
             "cash-stack",        # 채권 분석 (쌓여있는 돈/현금)
-            "cart-plus"
+            "cart"
         ],
         default_index=0, 
         styles={
