@@ -305,8 +305,8 @@ def run(load_data_func):
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
         "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
         "가용예상재고": st.column_config.NumberColumn("가용재고", format="%d"),
-        "전체평균": st.column_config.NumberColumn(f"전체1주평균", format="%d"),
-        "입력자평균": st.column_config.NumberColumn(f"내1주평균", format="%d"),
+        "전체평균": st.column_config.NumberColumn(f"전체1주", format="%d"),
+        "입력자평균": st.column_config.NumberColumn(f"나의1주", format="%d"),
         "CBM": st.column_config.NumberColumn("CBM", format="%.3f"),
         "합계 CBM": st.column_config.NumberColumn("CBM", format="%.3f")
     }
@@ -314,7 +314,7 @@ def run(load_data_func):
     # 🚀 [오류 수정] 모든 직원에 대해 소수점을 없애는(format="%d") 설정 동적 추가
     for emp in emp_cols:
         if emp == sel_emp:
-            col_config[emp] = st.column_config.NumberColumn(f"{emp}✏️", min_value=0, step=1, format="%d")
+            col_config[emp] = st.column_config.NumberColumn(f"{emp}", min_value=0, step=1, format="%d")
         else:
             col_config[emp] = st.column_config.NumberColumn(emp, format="%d")
 
