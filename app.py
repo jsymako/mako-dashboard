@@ -129,7 +129,8 @@ with st.sidebar:
             "box-seam",         # 쿠팡 재고 (테이핑 된 택배 상자)
             "pencil-square",    # 업무 보고 (펜과 종이)
             "award",            # 영업 실적 (트로피/뱃지)
-            "cash-stack"        # 채권 분석 (쌓여있는 돈/현금)
+            "cash-stack",        # 채권 분석 (쌓여있는 돈/현금)
+            "cart-plus"
         ],
         default_index=0, 
         styles={
