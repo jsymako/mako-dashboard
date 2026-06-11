@@ -324,8 +324,10 @@ def run(load_data_func):
         .map(lambda _: "font-weight: bold;", subset=["가용예상재고"]) \
         .map(lambda _: "font-weight: bold; color: #000000; background-color: #E6F2FF;", subset=[sel_emp]) \
         .map(lambda _: "font-weight: bold; color: #0275d8;", subset=["입력 총량"]) \
+        .map(lambda _: "font-weight: bold; color: #3c6e30;", subset=["전체평균"]) \
+        .map(lambda _: "font-weight: bold; color: #3c6e30;", subset=["입력자평균"]) \
         .map(lambda _: "font-weight: bold; color: #D9534F;", subset=["수정량 입력✏️"]) \
-        .map(lambda _: "color: #0275d8; font-weight: bold;", subset=["최종발주량"])
+        .map(lambda _: "color: #b8091f; font-weight: bold;", subset=["최종발주량"])
 
     editable_config = st.data_editor(
         styled_df, 
