@@ -350,7 +350,7 @@ def run(load_data_func):
                 records_o = sheet_o.get_all_records()
                 df_ord_save = pd.DataFrame(records_o)
                 
-                if not df_ord_save.empty Sea and '제조사ID' in df_ord_save.columns:
+                if not df_ord_save.empty and '제조사ID' in df_ord_save.columns:
                     df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
                                                (df_ord_save['차수'].astype(str) == str(selected_round_val)) & 
                                                (df_ord_save['직원명'].isin([str(sel_emp), '수정량'])))]
