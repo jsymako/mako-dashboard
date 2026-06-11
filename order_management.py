@@ -53,7 +53,7 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                         today_str = datetime.datetime.now().strftime("%Y-%m-%d")
                         sheet_s.append_row([str(sel_m_id), str(new_r), "입력중", str(sel_feet), today_str])
                         st.session_state[f"selected_round_{sel_m_id}"] = int(new_r)
-                        st.success("🎉 새로운 발주 차수가 정상 생성되었습니다!")
+                        st.success("새로운 차수가 생성되었습니다!")
                         st.cache_data.clear()
                         st.rerun()
                 except Exception as e:
@@ -66,7 +66,7 @@ def run(load_data_func):
     except FileNotFoundError:
         pass
 
-    st.title("📦 발주 관리")
+    st.title("발주 입력")
 
     # ==========================================
     # 1. 데이터 마스터 로드 및 안전 장치
@@ -153,7 +153,7 @@ def run(load_data_func):
         c2, c3, c4, c1, c5, c6, c7 = st.columns([3.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0])
         
         with c1:
-            sel_emp = st.selectbox("👨‍💼 내 이름(입력자) 선택", allowed_input_emps)
+            sel_emp = st.selectbox("👨‍💼 입력자 선택", allowed_input_emps)
         
         def format_round_display(r):
             row = df_status[(df_status['제조사ID'].astype(str) == str(sel_m_id)) & (df_status['차수'].astype(str) == str(r))]
@@ -184,7 +184,7 @@ def run(load_data_func):
             
         with c4:
             st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-            if st.button("🗑️ 차수 삭제", type="secondary", use_container_width=True):
+            if st.button("🗑️ 현재 차수 삭제", type="secondary", use_container_width=True):
                 with st.spinner("삭제 중..."):
                     try:
                         client = get_gspread_client()
@@ -211,7 +211,7 @@ def run(load_data_func):
                         
         with c5:
             # 🚀 입고 대기 다중 선택도 최신순(내림차순)으로 정렬됩니다.
-            ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in display_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
+            ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in display_rounds if r != selected_round_val], placeholder="과거 차수 선택")
         with c6:
             months_opt = st.slider("📊 평균판매량 (최근N달)", min_value=1, max_value=12, value=3)
             
