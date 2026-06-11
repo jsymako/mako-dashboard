@@ -276,12 +276,9 @@ def run(load_data_func):
     final_df['합계 CBM'] = (final_df['최종발주량'] * final_df['CBM']).fillna(0).astype(float)
     total_cbm = final_df['합계 CBM'].sum()
 
+    # 🚀 에러 원인이었던 Multi-Index 완전 제거!
     display_layout = ['품목코드', '품목명', 'CBM', '현재고', '입고대기분', '가용예상재고', '전체평균', '입력자평균'] + emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량', '합계 CBM']
     final_df = final_df[display_layout]
-
-    # 🚀 [핵심] Multi-Index 컬럼 생성: 1층은 기존 이름, 2층은 "수정필요"
-    multi_cols = [(col, "수정필요") for col in display_layout]
-    final_df.columns = pd.MultiIndex.from_tuples(multi_cols)
 
     # ==========================================
     # 6. 총 CBM 표시 및 표 렌더링 
@@ -292,24 +289,39 @@ def run(load_data_func):
         </div>
     """, unsafe_allow_html=True)
 
-    # 🚀 Multi-Index 구조에 맞춰 편집 허용 컬럼도 튜플로 매핑
-    allowed_edit_cols = [
-        (sel_emp, "수정필요"), 
-        ('수정량 입력✏️', "수정필요")
-    ]
-    disabled_list = [c for c in final_df.columns if c not in allowed_edit_cols]
+    # 수정 권한 열을 원래 1단 문자열로 설정 (에러 방지)
+    allowed_edit_cols = [sel_emp, '수정량 입력✏️']
+    disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
     
-    # 🚀 Multi-Index를 사용할 때는 column_config 대신 상단에서 직접 구조를 잡아주므로 제거합니다.
+    # 🚀 2단(Multi-Index)이 아니어도 시각적으로 구역이 완벽히 분리되게 해주는 대괄호 그룹핑 마법!
+    col_config = {
+        "품목코드": st.column_config.TextColumn("[📋마스터] 품목코드"),
+        "품목명": st.column_config.TextColumn("[📋마스터] 품목명 (브랜드)"),
+        "CBM": st.column_config.NumberColumn("[📋마스터] 단위CBM", format="%.3f"),
+        
+        "현재고": st.column_config.NumberColumn("[📦물류] 현재고", format="%d"),
+        "입고대기분": st.column_config.NumberColumn("[📦물류] 입고대기", format="%d"),
+        "가용예상재고": st.column_config.NumberColumn("[📦물류] 가용재고", format="%d"),
+        
+        "전체평균": st.column_config.NumberColumn(f"[📊소진량] 전체 평균", format="%d"),
+        "입력자평균": st.column_config.NumberColumn(f"[📊소진량] 내 평균", format="%d"),
+        
+        sel_emp: st.column_config.NumberColumn(f"[👤발주] {sel_emp}✏️", min_value=0, step=1, format="%d"),
+        
+        "입력 총량": st.column_config.NumberColumn("[🎯정산] ➕입력총량", format="%d"),
+        "수정량 입력✏️": st.column_config.NumberColumn("[🎯정산] (±)조정✏️", step=1, format="%d"),
+        "최종발주량": st.column_config.NumberColumn("[🎯정산] 💠최종수량", format="%d"),
+        "합계 CBM": st.column_config.NumberColumn("[🎯정산] CBM합", format="%.3f")
+    }
+
     editable_config = st.data_editor(
         final_df,
         disabled=disabled_list,
         hide_index=True,
         use_container_width=True,
-        height=500
+        height=500,
+        column_config=col_config
     )
-
-    # 🚀 [중요] 구글 시트 저장 및 DB 연동을 위해 2층 구조를 다시 원래의 1층(단층) 배열로 되돌림
-    editable_config.columns = display_layout
 
     # ==========================================
     # 7. 통합 저장 엔진 
