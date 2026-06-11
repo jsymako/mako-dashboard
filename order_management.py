@@ -296,12 +296,12 @@ def run(load_data_func):
     col_config = {
         "품목명": st.column_config.TextColumn("품목명(브랜드)"),
         sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
-        "수정량 입력✏️": st.column_config.NumberColumn("(±)조정✏️", step=1, format="%d"),
-        "입력 총량": st.column_config.NumberColumn("➕입력총량", format="%d"),
-        "최종발주량": st.column_config.NumberColumn("💠최종수량", format="%d"),
+        "수정량 입력✏️": st.column_config.NumberColumn("(±)조정", step=1, format="%d"),
+        "입력 총량": st.column_config.NumberColumn("입력총량", format="%d"),
+        "최종발주량": st.column_config.NumberColumn("최종수량", format="%d"),
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
         "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
-        "가용예상재고": st.column_config.NumberColumn("📦가용재고", format="%d"),
+        "가용예상재고": st.column_config.NumberColumn("가용재고", format="%d"),
         "전체평균": st.column_config.NumberColumn(f"전체 평균({months_opt}M)", format="%d"),
         "입력자평균": st.column_config.NumberColumn(f"내 평균({months_opt}M)", format="%d"),
         "CBM": st.column_config.NumberColumn("단위CBM", format="%.3f"),
@@ -311,6 +311,7 @@ def run(load_data_func):
     # 🚀 [스타일러 적용 구역] 요청하신 색상과 굵기를 열 단위로 매핑합니다.
     styled_df = final_df.style \
         .map(lambda _: "font-weight: bold;", subset=["가용예상재고"]) \
+        .map(lambda _: "font-weight: bold;", subset=[sel_emp]) \
         .map(lambda _: "color: #0275d8;", subset=["입력 총량"]) \
         .map(lambda _: "color: #D9534F;", subset=["수정량 입력✏️"]) \
         .map(lambda _: "color: #0275d8; font-weight: bold;", subset=["최종발주량"])
