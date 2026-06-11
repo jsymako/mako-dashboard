@@ -164,7 +164,7 @@ with st.sidebar:
         }
     )
 
-    st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.5); margin: 6px 6px 6px 6px !important;">', unsafe_allow_html=True)
+    st.sidebar.markdown('<hr style="border-top: 1px solid rgba(255, 255, 255, 0.5); margin: 6px 0px 6px 0px !important;">', unsafe_allow_html=True)
     
 # -----------------------------------------------------------------
 # 🚀 3. 메인 대시보드 화면 (1줄에 3개 나란히 배치)
