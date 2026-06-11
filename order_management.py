@@ -274,6 +274,10 @@ def run(load_data_func):
     
     emp_cols = allowed_input_emps
     
+    # 🚀 [오류 수정] 병합 과정에서 발생할 수 있는 소수점(float) 변환을 막기 위해 모든 직원 열을 int로 강제 변환
+    for c in emp_cols:
+        final_df[c] = final_df[c].fillna(0).astype(int)
+        
     final_df['수정량 입력✏️'] = final_df['수정량'].fillna(0).astype(int)
     final_df['입력 총량'] = final_df[emp_cols].sum(axis=1).fillna(0).astype(int)
     final_df['최종발주량'] = (final_df['입력 총량'] + final_df['수정량 입력✏️']).fillna(0).astype(int)
@@ -295,7 +299,6 @@ def run(load_data_func):
     
     col_config = {
         "품목명": st.column_config.TextColumn("품목명(브랜드)"),
-        sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
         "수정량 입력✏️": st.column_config.NumberColumn("(±)조정", step=1, format="%d"),
         "입력 총량": st.column_config.NumberColumn("입력총량", format="%d"),
         "최종발주량": st.column_config.NumberColumn("최종수량", format="%d"),
@@ -308,16 +311,24 @@ def run(load_data_func):
         "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.3f")
     }
 
-    # 🚀 [스타일러 적용 구역] 요청하신 색상과 굵기를 열 단위로 매핑합니다.
+    # 🚀 [오류 수정] 모든 직원에 대해 소수점을 없애는(format="%d") 설정 동적 추가
+    for emp in emp_cols:
+        if emp == sel_emp:
+            col_config[emp] = st.column_config.NumberColumn(f"{emp}✏️", min_value=0, step=1, format="%d")
+        else:
+            col_config[emp] = st.column_config.NumberColumn(emp, format="%d")
+
+    # 🚀 [스타일러 적용 구역] 
+    # 내 이름(sel_emp) 열을 에디터의 기본 세팅을 뚫고 나오도록 검은 글씨 + 연한 배경색 + 굵게 지정
     styled_df = final_df.style \
         .map(lambda _: "font-weight: bold;", subset=["가용예상재고"]) \
-        .map(lambda _: "font-weight: bold;", subset=[sel_emp]) \
+        .map(lambda _: "font-weight: bold; color: #000000; background-color: #E6F2FF;", subset=[sel_emp]) \
         .map(lambda _: "color: #0275d8;", subset=["입력 총량"]) \
         .map(lambda _: "color: #D9534F;", subset=["수정량 입력✏️"]) \
         .map(lambda _: "color: #0275d8; font-weight: bold;", subset=["최종발주량"])
 
     editable_config = st.data_editor(
-        styled_df, # 👈 스타일이 주입된 객체를 여기에 탑재!
+        styled_df, 
         disabled=disabled_list,
         hide_index=True,
         use_container_width=True,
