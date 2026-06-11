@@ -332,14 +332,14 @@ def run(load_data_func):
         disabled=disabled_list,
         hide_index=True,
         use_container_width=True,
-        height=500,
+        height=600,
         column_config=col_config
     )
 
     # ==========================================
     # 7. 통합 저장 엔진
     # ==========================================
-    st.markdown("<br>", unsafe_allow_html=True)
+    #st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
         with custom_fullscreen_spinner("데이터베이스에 실시간 업로드 및 동기화 중..."):
             try:
