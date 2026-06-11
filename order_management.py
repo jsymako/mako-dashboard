@@ -130,7 +130,6 @@ def run(load_data_func):
     all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
     next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
     
-    # 🚀 [핵심 수정] UI에 표시할 차수 리스트를 '최신순(내림차순)'으로 뒤집어 놓습니다.
     display_rounds = sorted(all_rounds, reverse=True)
     
     if st.sidebar.button("➕ 신규 발주 생성", type="primary", use_container_width=True):
@@ -145,7 +144,6 @@ def run(load_data_func):
 
     round_key = f"selected_round_{sel_m_id}"
     if round_key not in st.session_state or st.session_state[round_key] not in display_rounds:
-        # 내림차순 리스트이므로 [0]번째가 가장 최신 차수입니다.
         st.session_state[round_key] = display_rounds[0] 
 
     main_ctrl = st.container(border=True)
@@ -165,7 +163,6 @@ def run(load_data_func):
             return f"📦 {r}차"
 
         with c2:
-            # 🚀 뒤집힌 display_rounds를 사용하여 최신 차수가 맨 위로 올라옵니다.
             selected_round_val = st.selectbox(
                 "🎯 조회/수정 차수 선택", 
                 display_rounds, 
@@ -210,7 +207,6 @@ def run(load_data_func):
                         st.error(f"삭제 오류: {e}")
                         
         with c5:
-            # 🚀 입고 대기 다중 선택도 최신순(내림차순)으로 정렬됩니다.
             ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in display_rounds if r != selected_round_val], placeholder="과거 차수 선택")
         with c6:
             months_opt = st.slider("📊 평균판매량 (최근N달)", min_value=1, max_value=12, value=3)
@@ -312,8 +308,15 @@ def run(load_data_func):
         "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.3f")
     }
 
+    # 🚀 [스타일러 적용 구역] 요청하신 색상과 굵기를 열 단위로 매핑합니다.
+    styled_df = final_df.style \
+        .map(lambda _: "font-weight: bold;", subset=["가용예상재고"]) \
+        .map(lambda _: "color: #0275d8;", subset=["입력 총량"]) \
+        .map(lambda _: "color: #D9534F;", subset=["수정량 입력✏️"]) \
+        .map(lambda _: "color: #0275d8; font-weight: bold;", subset=["최종발주량"])
+
     editable_config = st.data_editor(
-        final_df,
+        styled_df, # 👈 스타일이 주입된 객체를 여기에 탑재!
         disabled=disabled_list,
         hide_index=True,
         use_container_width=True,
