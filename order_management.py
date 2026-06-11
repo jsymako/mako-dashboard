@@ -287,7 +287,7 @@ def run(load_data_func):
     # 🚀 표시 단위 소수점 8자리로 증가 (최대 정밀도 반영)
     st.markdown(f"""
         <div style="background-color: #2E86C1; padding: 12px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px; display: flex; justify-content: center; align-items: center;">
-            <span style="font-size: 1.2rem; font-weight: bold;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.8f} CBM</span>
+            <span style="font-size: 1.2rem; font-weight: bold;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.2f} CBM</span>
         </div>
     """, unsafe_allow_html=True)
 
@@ -306,8 +306,8 @@ def run(load_data_func):
         "가용예상재고": st.column_config.NumberColumn("📦가용재고", format="%d"),
         "전체평균": st.column_config.NumberColumn(f"전체 평균({months_opt}M)", format="%d"),
         "입력자평균": st.column_config.NumberColumn(f"내 평균({months_opt}M)", format="%d"),
-        "CBM": st.column_config.NumberColumn("단위CBM", format="%.8f"),
-        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.8f")
+        "CBM": st.column_config.NumberColumn("단위CBM", format="%.5f"),
+        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.5f")
     }
 
     editable_config = st.data_editor(
