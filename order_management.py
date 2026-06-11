@@ -217,6 +217,7 @@ def run(load_data_func):
         st.warning(f"💡 현재 '{sel_m_name}' 제조사로 등록된 마스터 품목이 없습니다.")
         return
 
+    # 🚀 파이썬의 최대 정밀도 연산 유지 (소수점 15자리 이상)
     target_items['CBM'] = pd.to_numeric(target_items.get('CBM', 0), errors='coerce').fillna(0.0)
     target_items['박스단위'] = pd.to_numeric(target_items['박스당개수'], errors='coerce').fillna(1).astype(int)
     target_items['품목명'] = "[" + target_items['브랜드'].fillna('미분류').astype(str) + "] " + target_items['이름'].astype(str)
@@ -273,114 +274,16 @@ def run(load_data_func):
     final_df['입력 총량'] = final_df[emp_cols].sum(axis=1).fillna(0).astype(int)
     final_df['최종발주량'] = (final_df['입력 총량'] + final_df['수정량 입력✏️']).fillna(0).astype(int)
 
+    # 합계 CBM 연산
     final_df['합계 CBM'] = (final_df['최종발주량'] * final_df['CBM']).fillna(0).astype(float)
     total_cbm = final_df['합계 CBM'].sum()
 
-    # 🚀 에러 원인이었던 Multi-Index 완전 제거!
     display_layout = ['품목코드', '품목명', 'CBM', '현재고', '입고대기분', '가용예상재고', '전체평균', '입력자평균'] + emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량', '합계 CBM']
     final_df = final_df[display_layout]
 
     # ==========================================
-    # 6. 총 CBM 표시 및 표 렌더링 
+    # 6. 총 CBM 표시 및 표 렌더링 (단층 구조 원복)
     # ==========================================
+    # 🚀 표시 단위 소수점 8자리로 증가 (최대 정밀도 반영)
     st.markdown(f"""
-        <div style="background-color: #2E86C1; padding: 12px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px; display: flex; justify-content: center; align-items: center;">
-            <span style="font-size: 1.2rem; font-weight: bold;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.2f} CBM</span>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # 수정 권한 열을 원래 1단 문자열로 설정 (에러 방지)
-    allowed_edit_cols = [sel_emp, '수정량 입력✏️']
-    disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
-    
-    # 🚀 2단(Multi-Index)이 아니어도 시각적으로 구역이 완벽히 분리되게 해주는 대괄호 그룹핑 마법!
-    col_config = {
-        "품목코드": st.column_config.TextColumn("[📋마스터] 품목코드"),
-        "품목명": st.column_config.TextColumn("[📋마스터] 품목명 (브랜드)"),
-        "CBM": st.column_config.NumberColumn("[📋마스터] 단위CBM", format="%.3f"),
-        
-        "현재고": st.column_config.NumberColumn("[📦물류] 현재고", format="%d"),
-        "입고대기분": st.column_config.NumberColumn("[📦물류] 입고대기", format="%d"),
-        "가용예상재고": st.column_config.NumberColumn("[📦물류] 가용재고", format="%d"),
-        
-        "전체평균": st.column_config.NumberColumn(f"[📊소진량] 전체 평균", format="%d"),
-        "입력자평균": st.column_config.NumberColumn(f"[📊소진량] 내 평균", format="%d"),
-        
-        sel_emp: st.column_config.NumberColumn(f"[👤발주] {sel_emp}✏️", min_value=0, step=1, format="%d"),
-        
-        "입력 총량": st.column_config.NumberColumn("[🎯정산] ➕입력총량", format="%d"),
-        "수정량 입력✏️": st.column_config.NumberColumn("[🎯정산] (±)조정✏️", step=1, format="%d"),
-        "최종발주량": st.column_config.NumberColumn("[🎯정산] 💠최종수량", format="%d"),
-        "합계 CBM": st.column_config.NumberColumn("[🎯정산] CBM합", format="%.3f")
-    }
-
-    editable_config = st.data_editor(
-        final_df,
-        disabled=disabled_list,
-        hide_index=True,
-        use_container_width=True,
-        height=500,
-        column_config=col_config
-    )
-
-    # ==========================================
-    # 7. 통합 저장 엔진 
-    # ==========================================
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
-        with custom_fullscreen_spinner("데이터베이스에 실시간 업로드 및 동기화 중..."):
-            try:
-                client = get_gspread_client()
-                doc = client.open("통합재고관리")
-                
-                sheet_s = doc.worksheet("Order_Status")
-                records_s = sheet_s.get_all_records()
-                df_st_save = pd.DataFrame(records_s)
-                
-                if not df_st_save.empty and '제조사ID' in df_st_save.columns and '차수' in df_st_save.columns:
-                    df_st_save = df_st_save[~((df_st_save['제조사ID'].astype(str) == str(sel_m_id)) & (df_st_save['차수'].astype(str) == str(selected_round_val)))]
-                elif df_st_save.empty or '제조사ID' not in df_st_save.columns:
-                    df_st_save = pd.DataFrame(columns=['제조사ID', '차수', '상태', '피트', '최종수정일'])
-                    
-                today_str = datetime.datetime.now().strftime("%Y-%m-%d")
-                new_status_row = pd.DataFrame([{"제조사ID": str(sel_m_id), "차수": str(selected_round_val), "상태": str(sel_status), "피트": db_feet, "최종수정일": today_str}])
-                df_st_save = pd.concat([df_st_save, new_status_row], ignore_index=True)
-                
-                sheet_s.clear()
-                sheet_s.update([df_st_save.columns.values.tolist()] + df_st_save.astype(str).values.tolist())
-
-                sheet_o = doc.worksheet("Order_Records")
-                records_o = sheet_o.get_all_records()
-                df_ord_save = pd.DataFrame(records_o)
-                
-                if not df_ord_save.empty and '제조사ID' in df_ord_save.columns:
-                    df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
-                                               (df_ord_save['차수'].astype(str) == str(selected_round_val)) & 
-                                               (df_ord_save['직원명'].isin([str(sel_emp), '수정량'])))]
-                elif df_ord_save.empty or '제조사ID' not in df_ord_save.columns:
-                    df_ord_save = pd.DataFrame(columns=['제조사ID', '차수', '품목코드', '직원명', '발주량'])
-                
-                my_rows = editable_config[editable_config[sel_emp] > 0][['품목코드', sel_emp]].copy()
-                my_rows['제조사ID'] = str(sel_m_id)
-                my_rows['차수'] = str(selected_round_val)
-                my_rows['직원명'] = str(sel_emp)
-                my_rows.rename(columns={sel_emp: '발주량'}, inplace=True)
-                my_rows = my_rows[['제조사ID', '차수', '품목코드', '직원명', '발주량']]
-                
-                adjust_rows = editable_config[editable_config['수정량 입력✏️'] != 0][['품목코드', '수정량 입력✏️']].copy()
-                adjust_rows['제조사ID'] = str(sel_m_id)
-                adjust_rows['차수'] = str(selected_round_val)
-                adjust_rows['직원명'] = '수정량' 
-                adjust_rows.rename(columns={'수정량 입력✏️': '발주량'}, inplace=True)
-                adjust_rows = adjust_rows[['제조사ID', '차수', '품목코드', '직원명', '발주량']]
-                
-                df_final_ord = pd.concat([df_ord_save, my_rows, adjust_rows], ignore_index=True)
-                
-                sheet_o.clear()
-                sheet_o.update([df_final_ord.columns.values.tolist()] + df_final_ord.astype(str).values.tolist())
-
-                st.cache_data.clear()
-                st.success(f"🎉 {selected_round_val}차 SCM 발주 계획안 및 수정 수량이 [{sel_status}] 상태로 완벽하게 동기화되었습니다!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"구글 시트 연동 중 에러 발생: {e}")
+        <div style="background-color: #2E86C1; padding: 12px; border-radius: 8px; text-align: center; color: white; margin-bottom: 10px; display: flex; justify-content: center; align-items: center
