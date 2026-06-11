@@ -134,7 +134,7 @@ def run(load_data_func):
         create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
     # ==========================================
-    # 3. 메인 제어반 (CBM 통합)
+    # 3. 메인 제어반 (CBM 가로 배열 통합)
     # ==========================================
     if not all_rounds:
         st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. [신규 발주 생성]을 진행해 주세요.")
@@ -146,10 +146,8 @@ def run(load_data_func):
 
     main_ctrl = st.container(border=True)
     with main_ctrl:
-        # 🚀 [요구사항] 제어반 박스 내부 최상단에 CBM이 들어갈 빈 전용 플레이스홀더 선언
-        cbm_placeholder = st.empty()
-        
-        c2, c3, c4, c1, c5, c6 = st.columns([3, 2, 2, 2, 3, 2])
+        # 🚀 컬럼을 7개로 쪼개어 다른 요소들과 동일한 크기로 수평 배치
+        c1, c2, c3, c4, c5, c6, c7 = st.columns([1.5, 2.0, 1.2, 1.4, 2.0, 1.5, 1.5])
         
         with c1:
             sel_emp = st.selectbox("👨‍💼 내 이름(입력자) 선택", allowed_input_emps)
@@ -182,7 +180,7 @@ def run(load_data_func):
             
         with c4:
             st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-            if st.button("🗑️ 현재 차수 삭제", type="secondary", use_container_width=True):
+            if st.button("🗑️ 차수 삭제", type="secondary", use_container_width=True):
                 with st.spinner("삭제 중..."):
                     try:
                         client = get_gspread_client()
@@ -210,7 +208,11 @@ def run(load_data_func):
         with c5:
             ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
         with c6:
-            months_opt = st.slider("📊 평균판매량 산출 (최근 N개월)", min_value=1, max_value=12, value=3)
+            months_opt = st.slider("📊 평균판매량 (최근N달)", min_value=1, max_value=12, value=3)
+            
+        with c7:
+            # 🚀 다른 컨트롤 요소들과 한 줄에 배치되도록 빈 공간 생성
+            cbm_placeholder = st.empty()
 
     # ==========================================
     # 4. SCM 수식 연산 및 CBM 로드 
@@ -285,13 +287,9 @@ def run(load_data_func):
     # ==========================================
     # 6. 상단 제어반에 CBM 주입 및 표 렌더링 
     # ==========================================
-    # 🚀 [핵심] 3번 구역에 선언해둔 상단 플레이스홀더 칸에 계산 완료된 총 CBM 값을 역으로 주입
+    # 🚀 다른 입력 폼(selectbox 등)과 똑같은 디자인의 '읽기 전용' 텍스트 인풋으로 CBM 주입!
     with cbm_placeholder:
-        st.markdown(f"""
-            <div style="background-color: #2E86C1; padding: 10px; border-radius: 6px; text-align: center; color: white; margin-bottom: 15px; display: flex; justify-content: center; align-items: center;">
-                <span style="font-size: 1.15rem; font-weight: bold;">🚢 현재 발주 컨테이너 총 CBM : {total_cbm:,.8f} CBM</span>
-            </div>
-        """, unsafe_allow_html=True)
+        st.text_input("🚢 총 CBM", value=f"{total_cbm:.8f}", disabled=True)
 
     allowed_edit_cols = [sel_emp, '수정량 입력✏️']
     disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
@@ -305,8 +303,8 @@ def run(load_data_func):
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
         "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
         "가용예상재고": st.column_config.NumberColumn("📦가용재고", format="%d"),
-        "전체평균": st.column_config.NumberColumn(f"전체 평균(최근 {months_opt}M)", format="%d"),
-        "입력자평균": st.column_config.NumberColumn(f"내 평균(최근 {months_opt}M)", format="%d"),
+        "전체평균": st.column_config.NumberColumn(f"전체 평균({months_opt}M)", format="%d"),
+        "입력자평균": st.column_config.NumberColumn(f"내 평균({months_opt}M)", format="%d"),
         "CBM": st.column_config.NumberColumn("단위CBM", format="%.8f"),
         "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.8f")
     }
@@ -321,7 +319,7 @@ def run(load_data_func):
     )
 
     # ==========================================
-    # 7. 통합 저장 엔진 
+    # 7. 통합 저장 엔진 (오류 수정 완료)
     # ==========================================
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
@@ -350,6 +348,7 @@ def run(load_data_func):
                 records_o = sheet_o.get_all_records()
                 df_ord_save = pd.DataFrame(records_o)
                 
+                # ✅ 불필요한 텍스트 오타 제거된 부분
                 if not df_ord_save.empty and '제조사ID' in df_ord_save.columns:
                     df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
                                                (df_ord_save['차수'].astype(str) == str(selected_round_val)) & 
