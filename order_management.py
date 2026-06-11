@@ -308,8 +308,8 @@ def run(load_data_func):
         "가용예상재고": st.column_config.NumberColumn("📦가용재고", format="%d"),
         "전체평균": st.column_config.NumberColumn(f"전체 평균({months_opt}M)", format="%d"),
         "입력자평균": st.column_config.NumberColumn(f"내 평균({months_opt}M)", format="%d"),
-        "CBM": st.column_config.NumberColumn("단위CBM", format="%.8f"),
-        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.8f")
+        "CBM": st.column_config.NumberColumn("단위CBM", format="%.3f"),
+        "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.3f")
     }
 
     editable_config = st.data_editor(
