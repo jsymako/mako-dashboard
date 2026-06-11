@@ -157,7 +157,7 @@ with st.sidebar:
             "nav-link-selected": {
                 "background-color": "#485068",    
                 "color": "#FFFFFF",               
-                "font-weight": "600",             
+                "font-weight": "500",             
                 "border": "none"
             },
         }
