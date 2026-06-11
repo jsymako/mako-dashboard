@@ -68,7 +68,6 @@ def run(load_data_func):
 
     st.title("📦 발주 관리")
 
-
     # ==========================================
     # 1. 데이터 마스터 로드 및 안전 장치
     # ==========================================
@@ -111,7 +110,6 @@ def run(load_data_func):
     except:
         stock_map = {}
 
-    # 🚀 [요구사항] "발주입력" 열의 값이 "Y"인 직원만 엄격하게 추출
     if df_emp is not None and '성명' in df_emp.columns and '발주입력' in df_emp.columns:
         allowed_input_emps = sorted(df_emp[df_emp['발주입력'].astype(str).str.strip().str.upper() == 'Y']['성명'].dropna().unique().tolist())
         if not allowed_input_emps:
@@ -120,9 +118,8 @@ def run(load_data_func):
         allowed_input_emps = ["권한자 없음"]
 
     # ==========================================
-    # 2. 사이드바 (제조사 및 신규생성만 남김)
+    # 2. 사이드바 (제조사 및 신규생성)
     # ==========================================
-    
     m_dict = {str(row['제조사명']): str(row['제조사ID']) for _, row in df_m.iterrows()}
     sel_m_name = st.sidebar.selectbox("제조사 필터", list(m_dict.keys()))
     sel_m_id = m_dict[sel_m_name]
@@ -152,7 +149,6 @@ def run(load_data_func):
         c2, c3, c4, c1, c5, c6 = st.columns([3, 2, 2, 2, 3, 2])
         
         with c1:
-            # 🚀 사이드바의 입력자 선택도 "Y" 권한자 목록만 표출되도록 강제
             sel_emp = st.selectbox("👨‍💼 내 이름(입력자) 선택", allowed_input_emps)
         
         def format_round_display(r):
@@ -211,10 +207,11 @@ def run(load_data_func):
         with c5:
             ref_rounds = st.multiselect("🚚 입고 대기 차수 추가", [r for r in all_rounds if r != selected_round_val], placeholder="비교할 과거 차수 다중 선택 가능")
         with c6:
-            weeks_opt = st.slider("📊 판매량 설정 (최근 N주)", min_value=1, max_value=12, value=4)
+            # 🚀 [요구사항] 주 단위에서 월 단위 평균 참조로 변경
+            months_opt = st.slider("📊 평균판매량 산출 (최근 N개월)", min_value=1, max_value=12, value=3)
 
     # ==========================================
-    # 4. SCM 수식 연산 및 CBM 로드
+    # 4. SCM 수식 연산 및 CBM 로드 (로직 완전 개편)
     # ==========================================
     target_items = df_item[df_item['제조사'].astype(str) == str(sel_m_id)].copy()
     if target_items.empty:
@@ -228,13 +225,26 @@ def run(load_data_func):
     target_items['현재고(낱개)'] = target_items['품목코드'].map(stock_map).fillna(0).astype(int)
     target_items['현재고'] = (target_items['현재고(낱개)'] / target_items['박스단위']).fillna(0).astype(int)
 
-    recent_limit = datetime.datetime.now() - datetime.timedelta(weeks=weeks_opt)
-    df_trade_recent = df_trade[(df_trade['일자'] >= recent_limit) & (df_trade['담당자'] == str(sel_emp))]
-    sales_units = df_trade_recent.groupby('품목코드')['수량'].sum()
+    # 🚀 최근 N개월의 데이터를 필터링하고 주(Week) 수 계산 (1개월 = 30일 가정)
+    days_to_subtract = months_opt * 30
+    weeks_in_period = days_to_subtract / 7.0
+    recent_limit = datetime.datetime.now() - datetime.timedelta(days=days_to_subtract)
     
-    target_items['기간총판매량(낱개)'] = target_items['품목코드'].map(sales_units).fillna(0)
-    target_items['기간총판매량'] = (target_items['기간총판매량(낱개)'] / target_items['박스단위']).fillna(0).astype(int)
+    df_trade_recent = df_trade[df_trade['일자'] >= recent_limit].copy()
+    df_trade_recent_emp = df_trade_recent[df_trade_recent['담당자'] == str(sel_emp)]
+    
+    # 누적 판매량 산출 (전체 & 입력자)
+    total_sales_units = df_trade_recent.groupby('품목코드')['수량'].sum()
+    emp_sales_units = df_trade_recent_emp.groupby('품목코드')['수량'].sum()
+    
+    # 1주일 평균 판매량 연산 (총합 / 박스단위 / N주) -> 반올림 후 정수형
+    target_items['전체평균(낱개)'] = target_items['품목코드'].map(total_sales_units).fillna(0)
+    target_items['입력자평균(낱개)'] = target_items['품목코드'].map(emp_sales_units).fillna(0)
+    
+    target_items['전체평균'] = ((target_items['전체평균(낱개)'] / target_items['박스단위']) / weeks_in_period).round(0).astype(int)
+    target_items['입력자평균'] = ((target_items['입력자평균(낱개)'] / target_items['박스단위']) / weeks_in_period).round(0).astype(int)
 
+    # 입고 대기분 연산
     if ref_rounds:
         df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
         ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum()
@@ -242,10 +252,11 @@ def run(load_data_func):
     else:
         target_items['입고대기분'] = 0
 
-    target_items['가용예상재고'] = (target_items['현재고'] + target_items['입고대기분'] - target_items['기간총판매량']).fillna(0).astype(int)
+    # 🚀 [요구사항] 가용예상재고 공식 수정 (현재재고 + 입고대기 = 가용재고)
+    target_items['가용예상재고'] = (target_items['현재고'] + target_items['입고대기분']).fillna(0).astype(int)
 
     # ==========================================
-    # 5. 피벗 연산
+    # 5. 피벗 연산 및 데이터 결합
     # ==========================================
     curr_orders = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(str) == str(selected_round_val))]
     
@@ -259,7 +270,8 @@ def run(load_data_func):
         if c not in order_pivot.columns: order_pivot[c] = 0
     order_pivot = order_pivot[pivot_cols].fillna(0).astype(int)
     
-    base_columns = target_items[['품목코드', '품목명', 'CBM', '현재고', '기간총판매량', '입고대기분', '가용예상재고']]
+    # 🚀 기본 컬럼 구조 재편성 (전체평균, 입력자평균 삽입)
+    base_columns = target_items[['품목코드', '품목명', 'CBM', '현재고', '입고대기분', '가용예상재고', '전체평균', '입력자평균']]
     final_df = pd.merge(base_columns, order_pivot.reset_index(), on='품목코드', how='left').fillna(0)
     
     emp_cols = allowed_input_emps
@@ -271,7 +283,8 @@ def run(load_data_func):
     final_df['합계 CBM'] = (final_df['최종발주량'] * final_df['CBM']).fillna(0).astype(float)
     total_cbm = final_df['합계 CBM'].sum()
 
-    display_layout = ['품목코드', '품목명', 'CBM', '현재고', '기간총판매량', '입고대기분', '가용예상재고'] + emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량', '합계 CBM']
+    # 🚀 화면에 표시될 최종 레이아웃 순서 확정
+    display_layout = ['품목코드', '품목명', 'CBM', '현재고', '입고대기분', '가용예상재고', '전체평균', '입력자평균'] + emp_cols + ['입력 총량', '수정량 입력✏️', '최종발주량', '합계 CBM']
     final_df = final_df[display_layout]
 
     # ==========================================
@@ -288,15 +301,17 @@ def run(load_data_func):
     allowed_edit_cols = [sel_emp, '수정량 입력✏️']
     disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
     
+    # 🚀 신규 열 포맷팅 적용
     col_config = {
         sel_emp: st.column_config.NumberColumn(f"{sel_emp}✏️", min_value=0, step=1, format="%d"),
         "수정량 입력✏️": st.column_config.NumberColumn("(±)조정✏️", step=1, format="%d"),
         "입력 총량": st.column_config.NumberColumn("➕입력총량", format="%d"),
         "최종발주량": st.column_config.NumberColumn("💠최종수량", format="%d"),
         "현재고": st.column_config.NumberColumn("현재재고", format="%d"),
-        "기간총판매량": st.column_config.NumberColumn(f"{weeks_opt}주 판매량", format="%d"),
         "입고대기분": st.column_config.NumberColumn("입고대기", format="%d"),
         "가용예상재고": st.column_config.NumberColumn("📦가용재고", format="%d"),
+        "전체평균": st.column_config.NumberColumn(f"전체 주평균({months_opt}개월)", format="%d"),
+        "입력자평균": st.column_config.NumberColumn(f"내 주평균({months_opt}개월)", format="%d"),
         "CBM": st.column_config.NumberColumn("CBM", format="%.3f"),
         "합계 CBM": st.column_config.NumberColumn("CBM합", format="%.3f")
     }
