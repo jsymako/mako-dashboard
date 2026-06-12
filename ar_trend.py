@@ -98,9 +98,9 @@ def run(load_data_func):
         if "cached_file_id" not in st.session_state or st.session_state.cached_file_id != file_id:
             with st.spinner("📊 대용량 데이터를 분석 중입니다..."):
                 if uploaded_file.name.endswith('.csv'):
-                    try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8')
-                    except: df_raw = pd.read_csv(uploaded_file, encoding='cp949')
-                else: df_raw = pd.read_excel(uploaded_file)
+                    try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8', dtype=str)
+                    except: df_raw = pd.read_csv(uploaded_file, encoding='cp949', dtype=str)
+                else: df_raw = pd.read_excel(uploaded_file, dtype=str)
 
                 header_idx = df_raw[df_raw.apply(lambda r: r.astype(str).str.contains('거래처명').any(), axis=1)].index[0]
                 df_raw.columns = df_raw.iloc[header_idx]
