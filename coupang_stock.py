@@ -151,7 +151,7 @@ def run(load_data_func):
         c1.metric("운영 품목", f"{item_count} 종")
         c2.metric("현재 총 재고", f"{int(total_stock):,} 개")
         c3.metric("평균 판매가", f"{int(avg_price):,} 원")
-        st.markdown("---")
+
 
         # ==========================================
         # 6. 메인 시각화 세팅
@@ -311,7 +311,7 @@ def run(load_data_func):
         # 7. 일자별 상세 모니터링 표 (기존 동일)
         # ==========================================
         if view_target != "판매량 추정":
-            st.markdown("---")
+
             st.subheader("일자별 모니터링 상세표")
             st.markdown("※ 🚨재고부족(빨강) | 🔺가격초과(녹색) | 🔻가격미달(파랑)")
 
