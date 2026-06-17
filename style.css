@@ -370,7 +370,7 @@ div[data-testid="stDialog"] .stDateInput input::placeholder {
 
 /* 1. 타이틀(글자)과 바로 아래 입력창(버튼, 박스) 사이는 찰싹 붙이기 */
 [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-    margin-bottom: 4px !important; /* 글자와 입력칸 사이를 아주 가깝게 밀착 */
+    margin-bottom: 2px !important; /* 글자와 입력칸 사이를 아주 가깝게 밀착 */
     padding-bottom: 0px !important;
 }
 [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
@@ -385,13 +385,13 @@ div[data-testid="stDialog"] .stDateInput input::placeholder {
 [data-testid="stSidebar"] .stDateInput,
 [data-testid="stSidebar"] .stSlider,
 [data-testid="stSidebar"] .stCheckbox {
-    margin-bottom: 24px !important; /* 🌟 핵심: 다음 요소와의 간격을 24px로 넓혀서 독립된 그룹으로 보이게 함 */
+    margin-bottom: 12px !important; /* 🌟 핵심: 다음 요소와의 간격을 24px로 넓혀서 독립된 그룹으로 보이게 함 */
     margin-top: 0px !important;     /* 체크박스 들썩임 방지 */
 }
 
 /* 3. 라디오 버튼 내부 선택지 간의 세로 간격은 살짝 좁혀서 한 덩어리처럼 보이게 */
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] {
-    gap: 8px !important; /* 라디오 버튼 사이 간격 (기본값보다 조밀하게) */
+    gap: 4px !important; /* 라디오 버튼 사이 간격 (기본값보다 조밀하게) */
 }
 
 /* 4. 체크박스 그룹 내부 정렬 (글자와 네모칸 높이 맞춤 보정) */
