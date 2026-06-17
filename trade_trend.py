@@ -207,8 +207,6 @@ def run(load_data_func):
             c3.metric(avg_label, f"{int(avg_amt_man):,}만 원", f"실제: {int(avg_amt):,} 원", delta_color="off")
             c4.metric("총 출고수량", f"{int(total_qty):,} 개")
             
-        st.markdown("---")
-
         # ==========================================
         # 5. 메인 시각화 분기 (현황 분석 vs 수요 예측)
         # ==========================================
@@ -248,7 +246,7 @@ def run(load_data_func):
             # ------------------------------------------
             # 관점 전환 교차 랭킹 차트
             # ------------------------------------------
-            st.markdown("---")
+
             
             rank_mode = st.radio("그래프 기준", ["품목", "거래처"], horizontal=True)
             
