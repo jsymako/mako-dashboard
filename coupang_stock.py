@@ -201,7 +201,7 @@ def run(load_data_func):
         # === 📦 6-3. 주간 실소진량 추정 차트 (🚀 스마트 하이브리드 보정 적용) ===
         if view_target == "판매량 추정":
             st.subheader(f"{title_prefix} 주간 실소진량 (판매량) 추이")
-            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ 막대는 당주 계산값이며, <b>황금색 꺾은선은 [입고가 있을 땐 3주 이동평균, 입고가 없을 땐 원본 데이터]를 사용하는 지능형 추세선</b>입니다.</span>", unsafe_allow_html=True)
+            st.markdown("<span style='color: #666; font-size: 0.95rem;'>※ 막대는 당주 계산값이며, 황금색 꺾은선은 [입고가 있을 땐 3주 이동평균, 입고가 없을 땐 원본 데이터]를 사용하는 추세선임</span>", unsafe_allow_html=True)
             
             calc_df = filtered_df.copy()
             calc_df['일자_dt'] = pd.to_datetime(calc_df['일자'])
@@ -302,7 +302,7 @@ def run(load_data_func):
             error_scan = weekly_sales[(weekly_sales['입고오류플래그'] == True) & (weekly_sales['주차_일요일'] >= start_date) & (weekly_sales['주차_일요일'] <= end_date)].copy()
             if not error_scan.empty:
                 st.markdown("<br>", unsafe_allow_html=True)
-                with st.expander("🚨 명백한 물류 딜레이 오류 감지 리스트 (보정 필요)", expanded=True):
+                with st.expander("🚨 물류 딜레이 오류 감지 리스트 (보정 필요)", expanded=True):
                     error_scan['오류주차'] = error_scan['주차_일요일'].apply(make_week_label)
                     error_display = error_scan.groupby(['오류주차', '품목명']).size().reset_index()[['오류주차', '품목명']]
                     st.dataframe(error_display, use_container_width=True, hide_index=True)
