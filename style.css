@@ -60,7 +60,7 @@ button[data-baseweb="tab"] p { font-weight: 700 !important; font-size: 1.3rem !i
    [3] 🚀 사이드바 (다크 모드 완벽 패치 - 최신 버전)
 ========================================= */
 /* 위젯 메인 타이틀 & 라디오 버튼 */
-[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { font-size: 0.9rem !important; font-weight: 400 !important; color: #FFFFFF !important; margin-bottom: 10px !important; margin-top: 2px !important; }
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { font-size: 0.9rem !important; font-weight: 400 !important; color: #FFFFFF !important; margin-bottom: 0px !important; margin-top: 8px !important; }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p { font-size: 0.9rem !important; font-weight: 400 !important; color: #A0AEC0 !important; }
 
 /* 사이드바 내부 H1 ~ H4 제목 */
