@@ -107,12 +107,9 @@ def run(load_data_func):
                     st.rerun()
 
         with c2:
-            st.markdown("#### 🔄 월별 실적 자동화 안내")
+            st.markdown("#### 🔄 월별 실적 자동화")
             st.info("""
-            **수동 입력 기능이 제거되었습니다!** 🎉
-            
-            현재 `trade_record` 탭의 **이카운트 판매 정보(담당자 열)**를 실시간으로 추적하여 실적이 자동으로 집계되고 있습니다. 
-            이제 이 창에서는 목표액만 관리해주시면 됩니다.
+            실적은 자동으로 집계 됩니다.
             """)
 
     if df_target.empty:
