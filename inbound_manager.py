@@ -214,6 +214,8 @@ def run(load_sheet_data):
     if st.sidebar.button("신규 컨테이너 추가", use_container_width=True):
         container_form_dialog(mode="add", df_m=df_m)
 
+    st.sidebar.markdown("---")
+    
     if st.sidebar.button("데이터 새로고침", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
