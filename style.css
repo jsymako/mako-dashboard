@@ -391,7 +391,7 @@ div[data-testid="stDialog"] .stDateInput input::placeholder {
 
 /* 3. 라디오 버튼 내부 선택지 간의 세로 간격은 살짝 좁혀서 한 덩어리처럼 보이게 */
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] {
-    gap: 4px !important; /* 라디오 버튼 사이 간격 (기본값보다 조밀하게) */
+    gap: 2px !important; /* 라디오 버튼 사이 간격 (기본값보다 조밀하게) */
 }
 
 /* 4. 체크박스 그룹 내부 정렬 (글자와 네모칸 높이 맞춤 보정) */
