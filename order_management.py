@@ -20,14 +20,14 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
     st.write(f"제조사: **{sel_m_name}**")
     
     with st.form("new_round_form", clear_on_submit=True):
-        new_r = st.number_input("생성할 신규 차수 번호를 입력하세요", min_value=1, value=int(default_next_round), step=1)
+        new_r = st.number_input("생성할 신규 차수를 입력하세요", min_value=1, value=int(default_next_round), step=1)
         sel_feet = st.selectbox("컨테이너 크기 (피트)", ["40피트", "20피트"])
         
         st.markdown("<p style='color:#7f8c8d; font-size:0.9rem;'>※ 생성 시 초기 상태는 '입력중'으로 지정되며, 생성된 차수만 메인 화면에서 조회 가능합니다.</p>", unsafe_allow_html=True)
-        submit_btn = st.form_submit_button("신규 발주 차수 생성", use_container_width=True)
+        submit_btn = st.form_submit_button("신규 차수 생성", use_container_width=True)
         
         if submit_btn:
-            with st.spinner("새로운 발주 차수를 저장 중..."):
+            with st.spinner("새로운 발주를 저장 중..."):
                 try:
                     client = get_client_func()
                     doc = client.open("통합재고관리")
@@ -139,7 +139,7 @@ def run(load_data_func):
     # 3. 메인 제어반 
     # ==========================================
     if not display_rounds:
-        st.info(f"💡 현재 '{sel_m_name}' 제조사에 생성된 발주 차수가 없습니다. [신규 발주 생성]을 진행해 주세요.")
+        st.info(f"'{sel_m_name}' 에 생성된 발주 차수가 없습니다. 신규 발주를 생성해 주세요.")
         return
 
     round_key = f"selected_round_{sel_m_id}"
