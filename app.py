@@ -179,7 +179,7 @@ def render_dashboard():
     except FileNotFoundError:
         pass
         
-    st.title("마코펫 통합조회시스템")
+    st.title("마코펫 통합조회 시스템")
     
     st.markdown("""
         <style>
