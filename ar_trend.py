@@ -138,153 +138,154 @@ def run(load_data_func):
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
-        cards_data = []
-        for trader, group in df_pivot.groupby('거래처명'):
-            def get_dso(off):
-                sub = group[group['기준월'].isin(month_list[off:off+12])]
-                s, b = sub['매출'].sum(), sub['잔액'].sum()
-                return 9999 if s < 1 else int(round((b/s)*30))
-            
-            d0 = get_dso(0)
-            curr = group[group['기준월'] == m0].iloc[0]
-            
-            if hide_zero and curr['잔액'] <= 0: continue
-            if d0 < min_dso: continue
-            if sel_m != "전체보기" and curr[manager_col] != sel_m: continue
-
-            p1 = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
-            p2 = group[group['기준월'] == m2].iloc[0] if m2 in group['기준월'].values else None
-            
-            trend_df = group[group['기준월'].isin(sorted(month_list[:12]))].sort_values('기준월')
-            trend_data = trend_df.set_index('기준월')[['잔액', '매출', '수금']]
-            
-            cards_data.append({
-                'name': trader, 'mgr': curr[manager_col], 'trend': trend_data,
-                'm0': curr['매출'], 's0': curr['수금'], 'j0': curr['잔액'], 'd0': d0,
-                'm1': p1['매출'] if p1 is not None else 0, 's1': p1['수금'] if p1 is not None else 0, 'j1': p1['잔액'] if p1 is not None else 0, 'd1': get_dso(1),
-                'm2': p2['매출'] if p2 is not None else 0, 's2': p2['수금'] if p2 is not None else 0, 'j2': p2['잔액'] if p2 is not None else 0, 'd2': get_dso(2)
-            })
-
-        final_df = pd.DataFrame(cards_data)
-        if not final_df.empty:
-            if sort_opt == "잔액순":
-                final_df = final_df.sort_values('j0', ascending=False)
-            elif sort_opt == "DSO 위험순":
-                final_df = final_df.sort_values('d0', ascending=False)
-            else:
-                final_df = final_df.sort_values('name')
-
-            c1, c2, c3 = st.columns(3)
-            c1.metric("총 미수잔액", f"{int(final_df['j0'].sum() / 10000):,}만")
-            c2.metric("당월 총 매출", f"{int(final_df['m0'].sum() / 10000):,}만")
-            c3.metric("대상 업체수", f"{len(final_df)}개")
-            st.markdown("---")
-
-            for _, row in final_df.iterrows():
-                st.markdown(f"""
-                    <div class="ar-container">
-                        <div class="header-row">
-                            <span class="title-txt">{row['name']}</span>
-                            <span class="mgr-txt">🙍‍♂️ {row['mgr']}</span>
-                        </div>
-                """, unsafe_allow_html=True)
-
-                col_data, col_graph = st.columns([2.5, 1.5])
+        with st.spinner("⏳ 채권 데이터를 분석하고 대시보드를 생성 중입니다..."):
+            cards_data = []
+            for trader, group in df_pivot.groupby('거래처명'):
+                def get_dso(off):
+                    sub = group[group['기준월'].isin(month_list[off:off+12])]
+                    s, b = sub['매출'].sum(), sub['잔액'].sum()
+                    return 9999 if s < 1 else int(round((b/s)*30))
                 
-                with col_data:
-                    c_m2, c_m1, c_m0 = st.columns(3)
+                d0 = get_dso(0)
+                curr = group[group['기준월'] == m0].iloc[0]
+                
+                if hide_zero and curr['잔액'] <= 0: continue
+                if d0 < min_dso: continue
+                if sel_m != "전체보기" and curr[manager_col] != sel_m: continue
+    
+                p1 = group[group['기준월'] == m1].iloc[0] if m1 in group['기준월'].values else None
+                p2 = group[group['기준월'] == m2].iloc[0] if m2 in group['기준월'].values else None
+                
+                trend_df = group[group['기준월'].isin(sorted(month_list[:12]))].sort_values('기준월')
+                trend_data = trend_df.set_index('기준월')[['잔액', '매출', '수금']]
+                
+                cards_data.append({
+                    'name': trader, 'mgr': curr[manager_col], 'trend': trend_data,
+                    'm0': curr['매출'], 's0': curr['수금'], 'j0': curr['잔액'], 'd0': d0,
+                    'm1': p1['매출'] if p1 is not None else 0, 's1': p1['수금'] if p1 is not None else 0, 'j1': p1['잔액'] if p1 is not None else 0, 'd1': get_dso(1),
+                    'm2': p2['매출'] if p2 is not None else 0, 's2': p2['수금'] if p2 is not None else 0, 'j2': p2['잔액'] if p2 is not None else 0, 'd2': get_dso(2)
+                })
+    
+            final_df = pd.DataFrame(cards_data)
+            if not final_df.empty:
+                if sort_opt == "잔액순":
+                    final_df = final_df.sort_values('j0', ascending=False)
+                elif sort_opt == "DSO 위험순":
+                    final_df = final_df.sort_values('d0', ascending=False)
+                else:
+                    final_df = final_df.sort_values('name')
+    
+                c1, c2, c3 = st.columns(3)
+                c1.metric("총 미수잔액", f"{int(final_df['j0'].sum() / 10000):,}만")
+                c2.metric("당월 총 매출", f"{int(final_df['m0'].sum() / 10000):,}만")
+                c3.metric("대상 업체수", f"{len(final_df)}개")
+                st.markdown("---")
+    
+                for _, row in final_df.iterrows():
+                    st.markdown(f"""
+                        <div class="ar-container">
+                            <div class="header-row">
+                                <span class="title-txt">{row['name']}</span>
+                                <span class="mgr-txt">🙍‍♂️ {row['mgr']}</span>
+                            </div>
+                    """, unsafe_allow_html=True)
+    
+                    col_data, col_graph = st.columns([2.5, 1.5])
                     
-                    def get_diff_text(c, p):
-                        diff = c - p
-                        if diff == 0: return ""
-                        return f"<span class='diff-up'>(🔺{int(diff):,})</span>" if diff > 0 else f"<span class='diff-down'>(🔻{abs(int(diff)):,})</span>"
-
-                    def get_dso_html(v):
-                        color = "🔴" if v > 90 or v == 9999 else ("🟡" if v > 45 else "🟢")
-                        txt = "장기(F)" if v == 9999 else f"{v}일"
-                        return f'<span class="traffic-light">{color}</span><b>{txt}</b>'
-
-                    month_data = [
-                        (c_m2, m2, row['m2'], row['s2'], row['j2'], row['d2'], ""),
-                        (c_m1, m1, row['m1'], row['s1'], row['j1'], row['d1'], get_diff_text(row['j1'], row['j2'])),
-                        (c_m0, f"{m0} (당월)", row['m0'], row['s0'], row['j0'], row['d0'], get_diff_text(row['j0'], row['j1']))
-                    ]
-
-                    for col, title, m, s, j, d, j_diff in month_data:
-                        with col:
-                            st.markdown(f"""
-                                <div class="data-column">
-                                    <div>
-                                        <div class="col-title">{title}</div>
-                                        <div class="row-item"><span class="label-xl">매출</span><span class="val-xl">{int(m):,}</span></div>
-                                        <div class="row-item"><span class="label-xl">수금</span><span class="val-xl">{int(s):,}</span></div>
-                                        <div class="row-item"><span class="label-xl">잔액</span><span class="val-xl">{int(j):,}</span></div>
-                                        <div style="text-align:right; font-size:0.9rem; min-height:22px;">{j_diff}</div>
+                    with col_data:
+                        c_m2, c_m1, c_m0 = st.columns(3)
+                        
+                        def get_diff_text(c, p):
+                            diff = c - p
+                            if diff == 0: return ""
+                            return f"<span class='diff-up'>(🔺{int(diff):,})</span>" if diff > 0 else f"<span class='diff-down'>(🔻{abs(int(diff)):,})</span>"
+    
+                        def get_dso_html(v):
+                            color = "🔴" if v > 90 or v == 9999 else ("🟡" if v > 45 else "🟢")
+                            txt = "장기(F)" if v == 9999 else f"{v}일"
+                            return f'<span class="traffic-light">{color}</span><b>{txt}</b>'
+    
+                        month_data = [
+                            (c_m2, m2, row['m2'], row['s2'], row['j2'], row['d2'], ""),
+                            (c_m1, m1, row['m1'], row['s1'], row['j1'], row['d1'], get_diff_text(row['j1'], row['j2'])),
+                            (c_m0, f"{m0} (당월)", row['m0'], row['s0'], row['j0'], row['d0'], get_diff_text(row['j0'], row['j1']))
+                        ]
+    
+                        for col, title, m, s, j, d, j_diff in month_data:
+                            with col:
+                                st.markdown(f"""
+                                    <div class="data-column">
+                                        <div>
+                                            <div class="col-title">{title}</div>
+                                            <div class="row-item"><span class="label-xl">매출</span><span class="val-xl">{int(m):,}</span></div>
+                                            <div class="row-item"><span class="label-xl">수금</span><span class="val-xl">{int(s):,}</span></div>
+                                            <div class="row-item"><span class="label-xl">잔액</span><span class="val-xl">{int(j):,}</span></div>
+                                            <div style="text-align:right; font-size:0.9rem; min-height:22px;">{j_diff}</div>
+                                        </div>
+                                        <div style="text-align:center; margin-top:10px; border-top:1px dashed #ccc; padding-top:12px;">
+                                            {get_dso_html(d)}
+                                        </div>
                                     </div>
-                                    <div style="text-align:center; margin-top:10px; border-top:1px dashed #ccc; padding-top:12px;">
-                                        {get_dso_html(d)}
-                                    </div>
+                                """, unsafe_allow_html=True)
+    
+                    with col_graph:
+                        st.markdown('<div class="graph-title">📈 12개월 추이</div>', unsafe_allow_html=True)
+                        
+                        plot_df = row['trend'].copy().reset_index(drop=True)
+                        plot_df.index = range(1, len(plot_df) + 1)
+                        plot_df.index.name = 'M'
+                        plot_df = plot_df.reset_index().melt('M', var_name='항목', value_name='금액')
+                        
+                        chart = alt.Chart(plot_df).mark_line(point=True, strokeWidth=2.5).encode(
+                            x=alt.X('M:O', title=None, axis=alt.Axis(labelAngle=0, labelColor='#555')),
+                            y=alt.Y('금액:Q', title=None, axis=alt.Axis(format=',.0f', labelColor='#555')),
+                            color=alt.Color(
+                                '항목:N', 
+                                scale=alt.Scale(domain=['잔액', '매출', '수금'], range=['#ff4b4b', '#007bff', '#28a745']),
+                                legend=alt.Legend(orient='top', title=None, direction='horizontal', padding=0)
+                            ),
+                            tooltip=[alt.Tooltip('M:O', title='개월차'), '항목', alt.Tooltip('금액:Q', format=',')]
+                        ).properties(
+                            height=280
+                        )
+                        
+                        st.altair_chart(chart, use_container_width=True, theme=None)
+    
+                    memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
+                    m_col, b_col = st.columns([6, 1])
+                    with m_col:
+                        memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
+                    with b_col:
+                        if st.button("💾 저장", key=f"save_{row['name']}", use_container_width=True):
+                            placeholder = st.empty()
+                            placeholder.markdown(f"""
+                                <div style='position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                            background-color: rgba(0, 0, 0, 0.9); color: #fff; padding: 40px; 
+                                            border-radius: 20px; font-size: 24px; font-weight: bold; z-index: 99999;
+                                            box-shadow: 0 0 20px rgba(0,0,0,0.5); text-align: center; width: 400px;'>
+                                    <div style='font-size: 40px; margin-bottom: 20px;'>💾</div>
+                                    {row['name']}<br><br>코멘트를 저장하고 있습니다...
                                 </div>
                             """, unsafe_allow_html=True)
-
-                with col_graph:
-                    st.markdown('<div class="graph-title">📈 12개월 추이</div>', unsafe_allow_html=True)
-                    
-                    plot_df = row['trend'].copy().reset_index(drop=True)
-                    plot_df.index = range(1, len(plot_df) + 1)
-                    plot_df.index.name = 'M'
-                    plot_df = plot_df.reset_index().melt('M', var_name='항목', value_name='금액')
-                    
-                    chart = alt.Chart(plot_df).mark_line(point=True, strokeWidth=2.5).encode(
-                        x=alt.X('M:O', title=None, axis=alt.Axis(labelAngle=0, labelColor='#555')),
-                        y=alt.Y('금액:Q', title=None, axis=alt.Axis(format=',.0f', labelColor='#555')),
-                        color=alt.Color(
-                            '항목:N', 
-                            scale=alt.Scale(domain=['잔액', '매출', '수금'], range=['#ff4b4b', '#007bff', '#28a745']),
-                            legend=alt.Legend(orient='top', title=None, direction='horizontal', padding=0)
-                        ),
-                        tooltip=[alt.Tooltip('M:O', title='개월차'), '항목', alt.Tooltip('금액:Q', format=',')]
-                    ).properties(
-                        height=280
-                    )
-                    
-                    st.altair_chart(chart, use_container_width=True, theme=None)
-
-                memo_v = df_memo_gs[df_memo_gs['거래처명'] == row['name']]['메모'].iloc[0] if row['name'] in df_memo_gs['거래처명'].values else ""
-                m_col, b_col = st.columns([6, 1])
-                with m_col:
-                    memo_input = st.text_input(f"메모 ({row['name']})", value=memo_v, key=f"input_{row['name']}", label_visibility="collapsed")
-                with b_col:
-                    if st.button("💾 저장", key=f"save_{row['name']}", use_container_width=True):
-                        placeholder = st.empty()
-                        placeholder.markdown(f"""
-                            <div style='position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                                        background-color: rgba(0, 0, 0, 0.9); color: #fff; padding: 40px; 
-                                        border-radius: 20px; font-size: 24px; font-weight: bold; z-index: 99999;
-                                        box-shadow: 0 0 20px rgba(0,0,0,0.5); text-align: center; width: 400px;'>
-                                <div style='font-size: 40px; margin-bottom: 20px;'>💾</div>
-                                {row['name']}<br><br>코멘트를 저장하고 있습니다...
-                            </div>
-                        """, unsafe_allow_html=True)
-
-                        try:
-                            client = get_gspread_client() 
-                            doc = client.open("통합재고관리")
-                            sheet = doc.worksheet("ar_memo")
+    
+                            try:
+                                client = get_gspread_client() 
+                                doc = client.open("통합재고관리")
+                                sheet = doc.worksheet("ar_memo")
+                                
+                                all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
+                                all_memos[row['name']] = memo_input
+                                sheet.clear()
+                                sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
+                                
+                                st.session_state.ar_memo_data = pd.DataFrame(list(all_memos.items()), columns=['거래처명', '메모'])
+                                st.toast("성공적으로 저장되었습니다!")
+                            except Exception as e:
+                                st.error(f"저장 실패: {e}")
                             
-                            all_memos = df_memo_gs.set_index('거래처명')['메모'].to_dict()
-                            all_memos[row['name']] = memo_input
-                            sheet.clear()
-                            sheet.update([['거래처명', '메모']] + [[k, v] for k, v in all_memos.items()])
-                            
-                            st.session_state.ar_memo_data = pd.DataFrame(list(all_memos.items()), columns=['거래처명', '메모'])
-                            st.toast("성공적으로 저장되었습니다!")
-                        except Exception as e:
-                            st.error(f"저장 실패: {e}")
-                        
-                        placeholder.empty()
-                        st.rerun()
-                st.markdown('</div></div>', unsafe_allow_html=True)
-
-    except Exception as e:
-        st.error(f"오류: {e}")
+                            placeholder.empty()
+                            st.rerun()
+                    st.markdown('</div></div>', unsafe_allow_html=True)
+    
+        except Exception as e:
+            st.error(f"오류: {e}")
