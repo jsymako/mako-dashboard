@@ -4,6 +4,7 @@ import gspread
 import json
 import altair as alt
 from oauth2client.service_account import ServiceAccountCredentials
+import utils
 
 # 🚀 [최적화 1] 구글 시트 접속(인증) 기능을 딱 한 번만 수행하도록 캐싱합니다.
 # 이 기능 덕분에 저장 버튼을 누를 때 로그인 과정 없이 즉시 저장이 시작됩니다.
