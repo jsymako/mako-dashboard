@@ -15,7 +15,7 @@ def run(load_data_func):
         pass
 
     try:
-        with custom_fullscreen_spinner("판매 데이터 로딩 중..."):
+        with custom_fullscreen_spinner("판매 데이터 로딩..."):
             
             # ==========================================
             # 1. 데이터 로드 및 마스터 결합
