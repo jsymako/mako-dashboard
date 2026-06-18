@@ -144,7 +144,7 @@ def run(load_sheet_data):
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except: pass
 
-    with custom_fullscreen_spinner("입고 데이터를 분석하고 화면을 생성 중입니다."):
+    with custom_fullscreen_spinner("입고 데이터 로딩 중..."):
 
         # 🚀 [수정 1] 컨테이너 표와 버튼 사이의 간격을 밀착시키는 CSS 추가
         st.markdown("""
