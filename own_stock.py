@@ -17,7 +17,7 @@ def run(load_data_func):
         pass
 
     try:
-        with custom_fullscreen_spinner("채권 데이터를 분석하고 화면을 생성 중입니다."):
+        with custom_fullscreen_spinner("재고 데이터 로드 중..."):
             # 1. 데이터 로드
             df_own = load_data_func("ecount_stock")
             df_sales = load_data_func("sales_record")
