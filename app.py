@@ -235,7 +235,7 @@ def render_dashboard():
                                     <div style="margin-bottom: 8px;">연동 상태: <span class="status-ok">🟢 정상 수신중</span></div>
                                 </div>
                                 <div class="sub-text">
-                                    <b>최신 데이터 갱신 일시:</b><br>
+                                    최신 데이터 갱신 일시<br>
                                     <span style="font-size:1.1rem; color:#0275d8;">{latest_str}</span>
                                 </div>
                             </div>
@@ -284,7 +284,7 @@ def render_dashboard():
                                             <div>최신 데이터: <span class="dash-stat">{latest_date_str}</span></div>
                                         </div>
                                         <div class="sub-text">
-                                            <b>🔍 30일 내 누락 (기준: {target_label}):</b><br>{missing_str}
+                                            30일 내 누락 (기준: {target_label})<br>{missing_str}
                                         </div>
                                     </div>
                                 """, unsafe_allow_html=True)
