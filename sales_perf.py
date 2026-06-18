@@ -33,7 +33,9 @@ def run(load_data_func):
         </style>
     """, unsafe_allow_html=True)
 
-    with custom_fullscreen_spinner("채권 데이터를 분석하고 화면을 생성 중입니다."):
+    # 🚀 [로딩 팝업 적용] 데이터 로드부터 차트 렌더링까지 전체를 감싸줍니다.
+    with custom_fullscreen_spinner("📈 전사 및 직원별 실적 데이터를 집계 중입니다..."):
+        
         # ==========================================
         # 1. 데이터 로드 (연간목표 & trade_record 자동 연동)
         # ==========================================
@@ -46,7 +48,7 @@ def run(load_data_func):
             df_target = pd.DataFrame(columns=["직원명", "연간목표액"])
         
         df_target['연간목표액'] = pd.to_numeric(df_target['연간목표액'].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-    
+
         # 🚀 [핵심] 수동 입력 파일 대신 trade_record에서 자동 로드
         try:
             df_trade_raw = load_data_func("trade_record")
@@ -65,7 +67,7 @@ def run(load_data_func):
         except:
             # 파일이 없을 경우 빈 껍데기 생성
             df_trade_raw = pd.DataFrame(columns=['일자', '공급가액', '담당자', '연도', '월', '분기'])
-    
+
         # ==========================================
         # 2. 데이터 입력 패널 (연간 목표 수정만 남김)
         # ==========================================
@@ -76,14 +78,14 @@ def run(load_data_func):
                 st.markdown("#### 🎯 연간 목표 설정/수정")
                 existing_emps = df_target['직원명'].tolist()
                 mode = st.radio("작업 선택", ["기존 직원 수정", "신규 직원 추가"], horizontal=True)
-    
+
                 if mode == "기존 직원 수정" and existing_emps:
                     t_emp = st.selectbox("수정할 직원 선택", existing_emps)
                     current_target = df_target.loc[df_target['직원명'] == t_emp, '연간목표액'].values[0]
                 else:
                     t_emp = st.text_input("새 직원 직원명")
                     current_target = 0
-    
+
                 t_amt = st.number_input("연간 목표액 (원)", min_value=0, step=1000000, value=int(current_target), format="%d")
                 
                 if st.button("목표 저장", use_container_width=True):
@@ -107,17 +109,17 @@ def run(load_data_func):
                         st.cache_data.clear()
                         st.success(f"✅ {t_emp}님의 연간 목표액이 업데이트 되었습니다.")
                         st.rerun()
-    
+
             with c2:
                 st.markdown("#### 🔄 월별 실적 자동화")
                 st.info("""
                 실적은 자동으로 집계 됩니다.
                 """)
-    
+
         if df_target.empty:
             st.info("👆 위 패널을 열어 직원별 [연간 목표액]을 먼저 설정해 주세요.")
             return
-    
+
         # ==========================================
         # 3. 날짜 기준 세팅 (이동 버튼용 세션 스테이트 적용)
         # ==========================================
@@ -129,31 +131,31 @@ def run(load_data_func):
         if "v_year_q" not in st.session_state:
             st.session_state.v_year_q = today.year
             st.session_state.v_quarter = (today.month - 1) // 3 + 1
-    
+
         def go_prev_m():
             if st.session_state.v_month == 1:
                 st.session_state.v_month = 12
                 st.session_state.v_year_m -= 1
             else: st.session_state.v_month -= 1
-    
+
         def go_next_m():
             if st.session_state.v_month == 12:
                 st.session_state.v_month = 1
                 st.session_state.v_year_m += 1
             else: st.session_state.v_month += 1
-    
+
         def go_prev_q():
             if st.session_state.v_quarter == 1:
                 st.session_state.v_quarter = 4
                 st.session_state.v_year_q -= 1
             else: st.session_state.v_quarter -= 1
-    
+
         def go_next_q():
             if st.session_state.v_quarter == 4:
                 st.session_state.v_quarter = 1
                 st.session_state.v_year_q += 1
             else: st.session_state.v_quarter += 1
-    
+
         view_y_m = str(st.session_state.v_year_m)
         view_y_q = str(st.session_state.v_year_q)
         
@@ -161,19 +163,19 @@ def run(load_data_func):
         df_y = df_trade_raw[df_trade_raw['연도'] == view_y_m] 
         df_q = df_trade_raw[(df_trade_raw['연도'] == view_y_q) & (df_trade_raw['분기'] == st.session_state.v_quarter)]
         df_m = df_trade_raw[(df_trade_raw['연도'] == view_y_m) & (df_trade_raw['월'] == st.session_state.v_month)]
-    
+
         y_target_total = df_target['연간목표액'].sum()
         q_target_total = y_target_total / 4
         m_target_total = y_target_total / 12
-    
+
         y_actual_total = df_y['공급가액'].sum()
         q_actual_total = df_q['공급가액'].sum()
         m_actual_total = df_m['공급가액'].sum()
-    
+
         y_rate = (y_actual_total / y_target_total * 100) if y_target_total > 0 else 0
         q_rate = (q_actual_total / q_target_total * 100) if q_target_total > 0 else 0
         m_rate = (m_actual_total / m_target_total * 100) if m_target_total > 0 else 0
-    
+
         # ==========================================
         # 4. 전사 KPI 상단 바
         # ==========================================
@@ -198,7 +200,7 @@ def run(load_data_func):
                 </div>
             </div>
             """
-    
+
         with kpi_cols[0]:
             with st.container(border=True):
                 st.markdown(make_kpi_html(f"{view_y_m}년 연간 누적", y_target_total, y_actual_total, y_rate), unsafe_allow_html=True)
@@ -208,7 +210,7 @@ def run(load_data_func):
         with kpi_cols[2]:
             with st.container(border=True):
                 st.markdown(make_kpi_html(f"{view_y_m}년 {st.session_state.v_month}월", m_target_total, m_actual_total, m_rate), unsafe_allow_html=True)
-    
+
         # ==========================================
         # 4.5 전사 월별 추이 (접을 수 있는 패널)
         # ==========================================
@@ -242,7 +244,7 @@ def run(load_data_func):
             
             company_chart = (bar + rule + text).properties(height=350)
             st.altair_chart(company_chart, use_container_width=True)
-    
+
         # ==========================================
         # 🚀 5. 직원별 실적 자동 계산 및 매핑
         # ==========================================
@@ -262,7 +264,7 @@ def run(load_data_func):
         
         emp_df['월간부족액'] = np.where(emp_df['월간목표액'] > emp_df['월간실적액'], emp_df['월간목표액'] - emp_df['월간실적액'], 0)
         emp_df['분기부족액'] = np.where(emp_df['분기목표액'] > emp_df['분기실적액'], emp_df['분기목표액'] - emp_df['분기실적액'], 0)
-    
+
         # ==========================================
         # 6. 시각화 및 상세 데이터 표
         # ==========================================
@@ -276,7 +278,7 @@ def run(load_data_func):
             bar = base.mark_bar(size=40, cornerRadiusEnd=5, color=bar_color, opacity=0.8)
             text = base.mark_text(align='center', baseline='bottom', dy=-5, fontSize=16, fontWeight='bold', color='#333').encode(text=alt.Text(f'{y_col}:Q', format='.1f'))
             return (bar + text + rule).properties(height=350)
-    
+
         col_chart1, col_chart2 = st.columns(2)
         
         with col_chart1:
@@ -303,7 +305,7 @@ def run(load_data_func):
                                    {'selector': 'table', 'props': [('width', '100% !important'), ('table-layout', 'fixed'), ('border-collapse', 'collapse')]}]) \
                 .to_html()
             st.markdown(html_m, unsafe_allow_html=True)
-    
+
         with col_chart2:
             hq1, hq2, hq3 = st.columns([1, 5, 1])
             hq1.button("◀", on_click=go_prev_q, key="btn_pq", use_container_width=True)
