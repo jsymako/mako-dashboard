@@ -212,108 +212,107 @@ def render_dashboard():
     # 🚀 [핵심 수정] 2줄씩 나누던 코드를 지우고, 화면을 3등분(3열)하여 한 줄로 나란히 배치합니다.
     cols = st.columns(3)
 
-    with custom_fullscreen_spinner("채권 데이터 로딩 중..."):
-    
-        for i, (m_name, m_info) in enumerate(module_items):
-            with cols[i]:
-                try: 
-                    df = load_sheet_data(m_info["sheet_name"])
+
+    for i, (m_name, m_info) in enumerate(module_items):
+        with cols[i]:
+            try: 
+                df = load_sheet_data(m_info["sheet_name"])
+                
+                if df is not None and not df.empty:
+                    date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일', '시간', '일시', '업데이트'])), None)
                     
-                    if df is not None and not df.empty:
-                        date_col = next((c for c in df.columns if any(kw in str(c) for kw in ['일자', '날짜', '등록일', '기준일', '수집일', '시간', '일시', '업데이트'])), None)
-                        
-                        if m_info["type"] == "latest_only":
-                            latest_str = "확인 불가"
-                            if date_col:
-                                parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
-                                if not parsed_dates.empty:
-                                    latest_str = parsed_dates.max().strftime('%Y-%m-%d %H:%M')
-                                    
-                            st.markdown(f"""
-                                <div class="dash-card">
-                                    <div>
-                                        <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                        <div style="margin-bottom: 8px;">연동 상태: <span class="status-ok">🟢 정상 수신중</span></div>
-                                    </div>
-                                    <div class="sub-text">
-                                        <b>최신 데이터 갱신 일시:</b><br>
-                                        <span style="font-size:1.1rem; color:#0275d8; font-weight:bold;">{latest_str}</span>
-                                    </div>
-                                </div>
-                            """, unsafe_allow_html=True)
-    
-                        elif m_info["type"] == "missing_check":
-                            if date_col:
-                                parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
+                    if m_info["type"] == "latest_only":
+                        latest_str = "확인 불가"
+                        if date_col:
+                            parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
+                            if not parsed_dates.empty:
+                                latest_str = parsed_dates.max().strftime('%Y-%m-%d %H:%M')
                                 
-                                if not parsed_dates.empty:
-                                    latest_date_str = parsed_dates.max().strftime('%Y-%m-%d')
-                                    unique_dates_set = set(parsed_dates.dt.strftime('%Y-%m-%d'))
-                                    
-                                    target_date = today - pd.Timedelta(days=m_info["offset"])
-                                    past_month = pd.date_range(end=target_date, periods=30, freq='D')
-                                    
-                                    valid_business_days = [bd for bd in past_month if bd.weekday() < 5 and bd.date() not in kr_holidays]
-                                    
-                                    missing_days = []
-                                    for bd in valid_business_days:
-                                        bd_str = bd.strftime('%Y-%m-%d')
-                                        if bd_str not in unique_dates_set:
-                                            missing_days.append(bd.strftime('%m/%d(%a)'))
-                                    
-                                    if missing_days:
-                                        if len(missing_days) > 5:
-                                            display_missing = ', '.join(missing_days[:5]) + f" ...외 {len(missing_days)-5}일"
-                                        else:
-                                            display_missing = ', '.join(missing_days)
-                                            
-                                        missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{display_missing}</span>"
-                                        icon_status = "⚠️ 누락 확인"
-                                        icon_class = "status-warn"
-                                    else:
-                                        missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음</span>"
-                                        icon_status = "🟢 정상 수신중"
-                                        icon_class = "status-ok"
-    
-                                    target_label = f"D-{m_info['offset']}"
-    
-                                    st.markdown(f"""
-                                        <div class="dash-card">
-                                            <div>
-                                                <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                                <div style="margin-bottom: 8px;">연동 상태: <span class="{icon_class}">{icon_status}</span></div>
-                                                <div>최신 데이터: <span class="dash-stat">{latest_date_str}</span></div>
-                                            </div>
-                                            <div class="sub-text">
-                                                <b>🔍 30일 내 누락 (기준: {target_label}):</b><br>{missing_str}
-                                            </div>
-                                        </div>
-                                    """, unsafe_allow_html=True)
-                                else:
-                                    st.markdown(f"<div class='dash-card'><div><div class='dash-title'>{m_info['icon']} {m_name}</div><div>연동 상태: <span class='status-warn'>⚠️ 날짜 파싱 오류</span></div></div></div>", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                                <div class="dash-card">
-                                    <div>
-                                        <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                        <div>연동 상태: <span class="status-err">🔴 점검 필요</span></div>
-                                    </div>
-                                    <div class="sub-text">시트명 불일치 또는 데이터가 없습니다.</div>
+                        st.markdown(f"""
+                            <div class="dash-card">
+                                <div>
+                                    <div class="dash-title">{m_info['icon']} {m_name}</div>
+                                    <div style="margin-bottom: 8px;">연동 상태: <span class="status-ok">🟢 정상 수신중</span></div>
                                 </div>
-                            """, unsafe_allow_html=True)
-                            
-                except Exception as e:
-                    st.markdown(f"""
-                        <div class="dash-card">
-                            <div>
-                                <div class="dash-title">{m_info['icon']} {m_name}</div>
-                                <div>연동 상태: <span class="status-err">🔴 분석 중단</span></div>
+                                <div class="sub-text">
+                                    <b>최신 데이터 갱신 일시:</b><br>
+                                    <span style="font-size:1.1rem; color:#0275d8; font-weight:bold;">{latest_str}</span>
+                                </div>
                             </div>
-                            <div class="sub-text" style="color:red; font-size:0.8rem;">데이터 구조 오류가 발생했습니다.</div>
+                        """, unsafe_allow_html=True)
+
+                    elif m_info["type"] == "missing_check":
+                        if date_col:
+                            parsed_dates = pd.to_datetime(df[date_col].astype(str).str.strip(), errors='coerce').dropna()
+                            
+                            if not parsed_dates.empty:
+                                latest_date_str = parsed_dates.max().strftime('%Y-%m-%d')
+                                unique_dates_set = set(parsed_dates.dt.strftime('%Y-%m-%d'))
+                                
+                                target_date = today - pd.Timedelta(days=m_info["offset"])
+                                past_month = pd.date_range(end=target_date, periods=30, freq='D')
+                                
+                                valid_business_days = [bd for bd in past_month if bd.weekday() < 5 and bd.date() not in kr_holidays]
+                                
+                                missing_days = []
+                                for bd in valid_business_days:
+                                    bd_str = bd.strftime('%Y-%m-%d')
+                                    if bd_str not in unique_dates_set:
+                                        missing_days.append(bd.strftime('%m/%d(%a)'))
+                                
+                                if missing_days:
+                                    if len(missing_days) > 5:
+                                        display_missing = ', '.join(missing_days[:5]) + f" ...외 {len(missing_days)-5}일"
+                                    else:
+                                        display_missing = ', '.join(missing_days)
+                                        
+                                    missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{display_missing}</span>"
+                                    icon_status = "⚠️ 누락 확인"
+                                    icon_class = "status-warn"
+                                else:
+                                    missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음</span>"
+                                    icon_status = "🟢 정상 수신중"
+                                    icon_class = "status-ok"
+
+                                target_label = f"D-{m_info['offset']}"
+
+                                st.markdown(f"""
+                                    <div class="dash-card">
+                                        <div>
+                                            <div class="dash-title">{m_info['icon']} {m_name}</div>
+                                            <div style="margin-bottom: 8px;">연동 상태: <span class="{icon_class}">{icon_status}</span></div>
+                                            <div>최신 데이터: <span class="dash-stat">{latest_date_str}</span></div>
+                                        </div>
+                                        <div class="sub-text">
+                                            <b>🔍 30일 내 누락 (기준: {target_label}):</b><br>{missing_str}
+                                        </div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"<div class='dash-card'><div><div class='dash-title'>{m_info['icon']} {m_name}</div><div>연동 상태: <span class='status-warn'>⚠️ 날짜 파싱 오류</span></div></div></div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                            <div class="dash-card">
+                                <div>
+                                    <div class="dash-title">{m_info['icon']} {m_name}</div>
+                                    <div>연동 상태: <span class="status-err">🔴 점검 필요</span></div>
+                                </div>
+                                <div class="sub-text">시트명 불일치 또는 데이터가 없습니다.</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+            except Exception as e:
+                st.markdown(f"""
+                    <div class="dash-card">
+                        <div>
+                            <div class="dash-title">{m_info['icon']} {m_name}</div>
+                            <div>연동 상태: <span class="status-err">🔴 분석 중단</span></div>
                         </div>
-                    """, unsafe_allow_html=True)
-        
-        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+                        <div class="sub-text" style="color:red; font-size:0.8rem;">데이터 구조 오류가 발생했습니다.</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------
 # 🚀 4. 메뉴 선택에 따른 화면 전환 (다시 복구!)
