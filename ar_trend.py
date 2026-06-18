@@ -96,7 +96,7 @@ def run(load_data_func):
     try:
         file_id = uploaded_file.name + str(uploaded_file.size)
         if "cached_file_id" not in st.session_state or st.session_state.cached_file_id != file_id:
-            with st.spinner("📊 대용량 데이터를 분석 중입니다..."):
+            with st.spinner("엑셀 데이터를 불러오고 있습니다..."):
                 if uploaded_file.name.endswith('.csv'):
                     try: df_raw = pd.read_csv(uploaded_file, encoding='utf-8', dtype=str)
                     except: df_raw = pd.read_csv(uploaded_file, encoding='cp949', dtype=str)
@@ -138,7 +138,7 @@ def run(load_data_func):
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
-        with st.spinner("⏳ 채권 데이터를 분석하고 대시보드를 생성 중입니다..."):
+        with custom_fullscreen_spinner("채권 데이터를 분석하고 대시보드를 생성 중입니다. 잠시만 기다려주세요."):
             cards_data = []
             for trader, group in df_pivot.groupby('거래처명'):
                 def get_dso(off):
