@@ -10,31 +10,33 @@ def custom_fullscreen_spinner(text="로딩 중입니다..."):
     <style>
     .fullscreen-overlay {{
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        background-color: rgba(15, 23, 42, 0.75); /* 세련된 딥 다크 블루 배경 */
-        backdrop-filter: blur(6px); /* 🚀 [핵심] 뒤쪽 화면을 뿌옇게 만들어주는 고급 블러 효과 */
-        -webkit-backdrop-filter: blur(6px);
-        z-index: 999999;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        background-color: rgba(15, 23, 42, 0.75) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        z-index: 999999 !important;
+        display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important;
     }}
     
     .modern-spinner {{
-        width: 75px; 
-        height: 75px;
-        border-radius: 50%;
-        border: 5px solid rgba(255, 255, 255, 0.1); /* 투명한 바탕 링 */
-        border-top-color: #3B82F6; /* 🚀 [포인트] 빛나는 블루 링 */
-        animation: smoothSpin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite; /* 부드러운 회전 */
-        margin-bottom: 30px;
-        box-shadow: 0 0 25px rgba(59, 130, 246, 0.5); /* 은은한 야광 글로우 효과 */
+        width: 75px !important; 
+        height: 75px !important;
+        border-radius: 50% !important;
+        border: 6px solid rgba(255, 255, 255, 0.1) !important;
+        border-top: 6px solid #3B82F6 !important;
+        animation: smoothSpin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite !important;
+        margin-bottom: 30px !important;
+        box-shadow: 0 0 25px rgba(59, 130, 246, 0.5) !important;
+        display: flex !important;
+        color: transparent !important; /* 🚀 안의 투명 글자가 보이지 않게 처리 */
     }}
     
     .loading-text {{
-        font-family: 'Pretendard', sans-serif;
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #F8FAFC;
-        text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        animation: textPulse 1.5s ease-in-out infinite; /* 🚀 숨 쉬는 듯한 텍스트 깜빡임 */
+        font-family: 'Pretendard', sans-serif !important;
+        font-size: 1.6rem !important;
+        font-weight: 700 !important;
+        color: #F8FAFC !important;
+        text-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+        animation: textPulse 1.5s ease-in-out infinite !important;
     }}
     
     @keyframes smoothSpin {{
@@ -51,7 +53,8 @@ def custom_fullscreen_spinner(text="로딩 중입니다..."):
     <div class="fullscreen-overlay">
         <table style="display: none;"><tr><td>백신</td></tr></table>
         
-        <div class="modern-spinner"></div>
+        <div class="modern-spinner">&nbsp;</div>
+        
         <div class="loading-text">{text}</div>
     </div>
     """
@@ -59,7 +62,7 @@ def custom_fullscreen_spinner(text="로딩 중입니다..."):
     placeholder = st.empty()
     placeholder.markdown(html_code, unsafe_allow_html=True)
     
-    # 브라우저가 예쁜 팝업을 그릴 수 있도록 0.1초의 틈을 줍니다.
+    # 🚀 브라우저가 화면을 그릴 수 있는 시간을 확실하게 보장
     time.sleep(0.1)
     
     try:
