@@ -42,7 +42,7 @@ def run(load_sheet_data):
     st.markdown("<h1>업무 보고</h1>", unsafe_allow_html=True)
     
     # 🚀 [추가 2] 화면에 진입하거나 날짜/직원을 바꿀 때 데이터 로딩 팝업 실행
-    with custom_fullscreen_spinner("📊 직원별 업무 보고 데이터를 불러오고 있습니다..."):
+    with custom_fullscreen_spinner("보고 데이터 로딩 중..."):
         df_emp = load_sheet_data("Employees")
         df_report = load_sheet_data("WorkReports")
         
@@ -166,7 +166,7 @@ def run(load_sheet_data):
             # -----------------------------------------------------------------
             if st.button("💾 변경사항 저장", key=f"save_btn_{emp_name}", use_container_width=True):
                 # 🚀 [추가 3] 저장 버튼을 누를 때 기존 st.spinner를 지우고 고급 팝업으로 교체!
-                with custom_fullscreen_spinner("💾 업무 보고 내역을 안전하게 저장 중입니다..."):
+                with custom_fullscreen_spinner("저장 중..."):
                     try:
                         sheet_r = get_worksheet_for_write("WorkReports")
                         all_values = sheet_r.get_all_values()
