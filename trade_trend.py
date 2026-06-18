@@ -15,7 +15,7 @@ def run(load_data_func):
         pass
 
     try:
-        with custom_fullscreen_spinner("판매 데이터를 분석하고 화면을 생성 중입니다."):
+        with custom_fullscreen_spinner("판매 데이터 로딩 중..."):
             
             # ==========================================
             # 1. 데이터 로드 및 마스터 결합
