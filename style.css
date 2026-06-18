@@ -28,7 +28,7 @@ html, body, .stApp, h1, h2, h3, h4, h5, h6, p, label, li, table, button, input {
 /* 화면 상단 메인 대제목 디자인 */
 .block-container h1 {
     font-size: 2.2rem !important;        
-    font-weight: 400 !important;         
+    font-weight: 500 !important;         
     color: #111111 !important;           
     padding-bottom: 12px !important;     
     border-bottom: 4px solid #2E86C1 !important; 
