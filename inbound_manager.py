@@ -144,227 +144,229 @@ def run(load_sheet_data):
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except: pass
 
-    # 🚀 [수정 1] 컨테이너 표와 버튼 사이의 간격을 밀착시키는 CSS 추가
-    st.markdown("""
-        <style>
-        /* 1. 각 칸의 글자를 감싸는 p 태그 마진 제거 및 라인하이트 조정 */
-        div[data-testid="stHorizontalBlock"] div[data-testid="stMarkdownContainer"] p {
-            margin-bottom: 0px !important;
-            margin-top: 0px !important;
-            line-height: 36px !important; 
-        }
-        
-        /* 2. 관리 버튼(✏️) 크기 및 위치 미세 조정 */
-        div[data-testid="stHorizontalBlock"] button {
-            min-height: 34px !important;
-            height: 34px !important;
-            padding-top: 0px !important;
-            padding-bottom: 0px !important;
-            margin-top: 2px !important; 
-        }
+    with custom_fullscreen_spinner("채권 데이터를 분석하고 화면을 생성 중입니다."):
 
-        /* 3. 구분선(hr) 겹침 현상 해결 */
-        div.element-container:has(hr.row-divider) {
-            margin-top: -10px !important;  
-            margin-bottom: -5px !important; 
-        }
-        
-        /* 🚀 4. 컨테이너 표 하단 여백 제거 및 수정 버튼 밀착 */
-        div.element-container:has(.container-card) {
-            margin-bottom: -15px !important;
-        }
-        .container-card p {
-            margin-bottom: 0px !important; /* 파이썬 마크다운 변환 시 생기는 빈 줄 방지 */
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # -----------------------------------------------------------------
-    # 파트 A: 컨테이너 입고 현황 
-    # -----------------------------------------------------------------
-    st.markdown("<h1>입고 현황</h1>", unsafe_allow_html=True)
-    
-    df_m = load_sheet_data("Manufacturers")
-    df_c = load_sheet_data("Containers")
-    df_i = load_sheet_data("Inspection") 
-
-    if df_m is None or df_c is None:
-        st.error("🚨 구글 시트 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
-        return
-
-    if not df_m.empty:
-        df_m.columns = df_m.columns.astype(str).str.strip()
-        for col in df_m.columns: df_m[col] = df_m[col].astype(str).str.strip()
-    if not df_c.empty:
-        df_c.columns = df_c.columns.astype(str).str.strip()
-        for col in df_c.columns: df_c[col] = df_c[col].astype(str).str.strip()
-    if df_i is not None and not df_i.empty:
-        df_i.columns = df_i.columns.astype(str).str.strip()
-        for col in df_i.columns: df_i[col] = df_i[col].astype(str).str.strip()
-
-    m_order = []
-    if not df_m.empty:
-        for m in df_m['제조사명'].tolist():
-            if m not in m_order: m_order.append(m)
-
-    m_list = ["전체보기"] + m_order
-    selected_m = st.sidebar.selectbox("제조사별 분류", m_list)
-    view_all_history = st.sidebar.checkbox("모든 기록 보기", value=False)
-    
-    if st.sidebar.button("신규 컨테이너 추가", use_container_width=True):
-        container_form_dialog(mode="add", df_m=df_m)
-
-    st.sidebar.markdown("---")
-    
-    if st.sidebar.button("데이터 새로고침", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
-
-    if not df_c.empty:
-        df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
-        m_id_order = [mid for mid in df_m['제조사ID'].tolist()]
-        df_c['제조사ID'] = pd.Categorical(df_c['제조사ID'], categories=m_id_order, ordered=True)
-        df_c = df_c.sort_values(by=['제조사ID', '차수'], ascending=[True, True])
-        
-        today_str = datetime.today().strftime("%Y-%m-%d")
-        filtered_df = df_c.copy()
-        if selected_m != "전체보기":
-            target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
-            filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
-        if not view_all_history:
-            filtered_df = filtered_df[(filtered_df['입고일'] == "") | (filtered_df['입고일'] >= today_str)]
-
-        if filtered_df.empty:
-            st.warning("💡 진행 중인 컨테이너 수입 일정이 없습니다.")
-        else:
-            display_df = pd.merge(filtered_df, df_m, on='제조사ID', how='left')
-            for m_name in m_order:
-                group = display_df[display_df['제조사명'] == m_name]
-                if not group.empty:
-                    st.markdown(f"## 🚢 {m_name}")
-                    for _, row in group.iterrows():
-                        ord_dt = str(row.get('발주일', '')).strip()
-                        dep_dt = str(row.get('출항일', '')).strip()
-                        arr_dt = str(row.get('입항일', '')).strip()
-                        inb_dt = str(row.get('입고일', '')).strip()
-
-                        if inb_dt:
-                            if inb_dt < today_str: status_html = f"<span style='color:#2ECC71; font-weight:bold;'>[✅ 입고 완료]</span>"
-                            else: status_html = f"<span style='color:#E67E22; font-weight:bold;'>[입고 대기중]</span>"
-                        elif arr_dt: status_html = f"<span style='color:#3498DB; font-weight:bold;'>[입항 대기중]</span>"
-                        elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[출항 대기중]</span>"
-                        else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[준비 중]</span>"
-                        
-                        # 🚀 [수정 2] 적요 하단의 불필요한 패딩(여백) 제거 및 클래스 추가
-                        container_html = f"""
-                        <div class="container-card" style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 0px;">
-                            <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
-                                <tr style="font-size: 1.6rem; color:#444;">
-                                    <td rowspan="2" style="padding: 0px 10px; text-align: center; vertical-align: middle; width: 12%; font-size: 2.0rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
-                                    
-                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 8%;"><b></b> {row.get('피트', '40FT')}</td>
-                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입고:</b> {inb_dt if inb_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입항:</b> {arr_dt if arr_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>출항:</b> {dep_dt if dep_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                    <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
-                                </tr>
-                                <tr style="font-size: 1.4rem;">
-                                    <td colspan="5" style="padding: 6px 10px 8px 10px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        """
-                        
-                        with st.container():
-                            st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
-                            if st.button("이 컨테이너 정보 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
-                                container_form_dialog(mode="edit", container_data=row, df_m=df_m)
-                            st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
-
-    # -----------------------------------------------------------------
-    # 파트 B: 현물검정 예정일 현황 표 (기존과 동일)
-    # -----------------------------------------------------------------
-    st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
-    
-    col_title, col_add_btn = st.columns([5, 1])
-    with col_title:
-        st.markdown("<h2>현물검정 현황</h2>", unsafe_allow_html=True)
-    with col_add_btn:
-        st.markdown("<div style='padding-top:10px;'></div>", unsafe_allow_html=True)
-        if st.button("신규 검정 등록", key="add_new_inspection", use_container_width=True):
-            inspection_form_dialog(mode="add")
-
-    if df_i is None or df_i.empty:
-        st.warning("📅 현물검정 현황 데이터가 시트에 존재하지 않습니다. 우측 버튼을 눌러 첫 데이터를 등록해 주십시오.")
-        return
-
-    calc_rows = []
-    today = datetime.today().date()
-    
-    for _, row in df_i.iterrows():
-        next_dt = safe_date_parse(row.get('검정예정일', ''))
-        
-        if next_dt:
-            rem_days = (next_dt - today).days
-            if rem_days < 0:
-                status_txt = "초과"
-                status_style = "color:#D9534F; font-weight:bold;" 
-            elif rem_days < 50:
-                status_txt = "임박"
-                status_style = "color:#E67E22; font-weight:bold;" 
-            elif rem_days < 100:
-                status_txt = "준비"
-                status_style = "color:#9B59B6; font-weight:bold;" 
-            else:
-                status_txt = "정상"
-                status_style = "color:#2ECC71;" 
-                
-            rem_days_str = f"{rem_days}일"
-            sort_val = rem_days 
-        else:
-            rem_days_str = "미정"
-            status_txt = "미정"
-            status_style = "color:#A0AEC0;"
-            sort_val = 999999 
+        # 🚀 [수정 1] 컨테이너 표와 버튼 사이의 간격을 밀착시키는 CSS 추가
+        st.markdown("""
+            <style>
+            /* 1. 각 칸의 글자를 감싸는 p 태그 마진 제거 및 라인하이트 조정 */
+            div[data-testid="stHorizontalBlock"] div[data-testid="stMarkdownContainer"] p {
+                margin-bottom: 0px !important;
+                margin-top: 0px !important;
+                line-height: 36px !important; 
+            }
             
-        row_dict = dict(row)
-        row_dict['잔존일'] = rem_days_str
-        row_dict['상태'] = status_txt
-        row_dict['상태스타일'] = status_style
-        row_dict['sort_key'] = sort_val
-        calc_rows.append(row_dict)
-
-    df_calc = pd.DataFrame(calc_rows).sort_values(by='sort_key', ascending=True)
-
-    col_ratios = [1.4, 1.7, 1.7, 1.0, 1.1, 1.1, 0.6, 0.6, 0.6]
-
-    st.markdown("<div style='border-top: 3px solid #2E86C1; background-color: #F8F9FA; border-radius: 4px 4px 0 0;'>", unsafe_allow_html=True)
-    hcols = st.columns(col_ratios)
-    headers = ["사료의 명칭", "제품 종류", "현물검정제품", "관련제품", "현물검정완료일", "검정예정일", "잔존일", "상태", "관리"]
-    for i, h in enumerate(headers):
-        align = "center" if h in ["상태", "관리"] else "left"
-        hcols[i].markdown(f"<div style='font-size: {TABLE_HEADER_SIZE}; font-weight: bold; color: #2C3E50; padding: 5px 5px; border-bottom: 2px solid #E2E8F0; text-align: {align};'>{h}</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    for _, row in df_calc.iterrows():
-        done_str = row.get('현물검정완료일', '') if str(row.get('현물검정완료일', '')).strip() else "미정"
-        next_str = row.get('검정예정일', '') if str(row.get('검정예정일', '')).strip() else "미정"
-
-        with st.container():
-            bcols = st.columns(col_ratios)
-            cell_style = f"font-size: {TABLE_BODY_SIZE}; color: #333; padding-top: 0px; padding-bottom: 0px;"
-
-            bcols[0].markdown(f"<div style='{cell_style}'><b>{row.get('사료명칭', '')}</b></div>", unsafe_allow_html=True)
-            bcols[1].markdown(f"<div style='{cell_style}'>{row.get('제품종류', '')}</div>", unsafe_allow_html=True)
-            bcols[2].markdown(f"<div style='{cell_style}'>{row.get('현물검정제품', '')}</div>", unsafe_allow_html=True)
-            bcols[3].markdown(f"<div style='{cell_style}'>{row.get('관련제품', '')}</div>", unsafe_allow_html=True)
-            bcols[4].markdown(f"<div style='{cell_style} color:#555;'>{done_str}</div>", unsafe_allow_html=True)
-            bcols[5].markdown(f"<div style='{cell_style} font-weight:600;'>{next_str}</div>", unsafe_allow_html=True)
-            bcols[6].markdown(f"<div style='{cell_style} font-weight:bold;'>{row['잔존일']}</div>", unsafe_allow_html=True)
-            bcols[7].markdown(f"<div style='{cell_style} text-align:center;'><span style='{row['상태스타일']}'>{row['상태']}</span></div>", unsafe_allow_html=True)
-
-            with bcols[8]:
-                if st.button("✏️", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
-                    inspection_form_dialog(mode="edit", insp_data=row)
-
-            st.markdown("<hr class='row-divider' style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+            /* 2. 관리 버튼(✏️) 크기 및 위치 미세 조정 */
+            div[data-testid="stHorizontalBlock"] button {
+                min-height: 34px !important;
+                height: 34px !important;
+                padding-top: 0px !important;
+                padding-bottom: 0px !important;
+                margin-top: 2px !important; 
+            }
+    
+            /* 3. 구분선(hr) 겹침 현상 해결 */
+            div.element-container:has(hr.row-divider) {
+                margin-top: -10px !important;  
+                margin-bottom: -5px !important; 
+            }
+            
+            /* 🚀 4. 컨테이너 표 하단 여백 제거 및 수정 버튼 밀착 */
+            div.element-container:has(.container-card) {
+                margin-bottom: -15px !important;
+            }
+            .container-card p {
+                margin-bottom: 0px !important; /* 파이썬 마크다운 변환 시 생기는 빈 줄 방지 */
+            }
+            </style>
+        """, unsafe_allow_html=True)
+    
+        # -----------------------------------------------------------------
+        # 파트 A: 컨테이너 입고 현황 
+        # -----------------------------------------------------------------
+        st.markdown("<h1>입고 현황</h1>", unsafe_allow_html=True)
+        
+        df_m = load_sheet_data("Manufacturers")
+        df_c = load_sheet_data("Containers")
+        df_i = load_sheet_data("Inspection") 
+    
+        if df_m is None or df_c is None:
+            st.error("🚨 구글 시트 데이터를 불러올 수 없습니다. 탭 이름을 확인해 주세요.")
+            return
+    
+        if not df_m.empty:
+            df_m.columns = df_m.columns.astype(str).str.strip()
+            for col in df_m.columns: df_m[col] = df_m[col].astype(str).str.strip()
+        if not df_c.empty:
+            df_c.columns = df_c.columns.astype(str).str.strip()
+            for col in df_c.columns: df_c[col] = df_c[col].astype(str).str.strip()
+        if df_i is not None and not df_i.empty:
+            df_i.columns = df_i.columns.astype(str).str.strip()
+            for col in df_i.columns: df_i[col] = df_i[col].astype(str).str.strip()
+    
+        m_order = []
+        if not df_m.empty:
+            for m in df_m['제조사명'].tolist():
+                if m not in m_order: m_order.append(m)
+    
+        m_list = ["전체보기"] + m_order
+        selected_m = st.sidebar.selectbox("제조사별 분류", m_list)
+        view_all_history = st.sidebar.checkbox("모든 기록 보기", value=False)
+        
+        if st.sidebar.button("신규 컨테이너 추가", use_container_width=True):
+            container_form_dialog(mode="add", df_m=df_m)
+    
+        st.sidebar.markdown("---")
+        
+        if st.sidebar.button("데이터 새로고침", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+    
+        if not df_c.empty:
+            df_c['차수'] = pd.to_numeric(df_c['차수'], errors='coerce').fillna(0).astype(int)
+            m_id_order = [mid for mid in df_m['제조사ID'].tolist()]
+            df_c['제조사ID'] = pd.Categorical(df_c['제조사ID'], categories=m_id_order, ordered=True)
+            df_c = df_c.sort_values(by=['제조사ID', '차수'], ascending=[True, True])
+            
+            today_str = datetime.today().strftime("%Y-%m-%d")
+            filtered_df = df_c.copy()
+            if selected_m != "전체보기":
+                target_m_id = df_m[df_m['제조사명'] == selected_m]['제조사ID'].values[0]
+                filtered_df = filtered_df[filtered_df['제조사ID'] == target_m_id]
+            if not view_all_history:
+                filtered_df = filtered_df[(filtered_df['입고일'] == "") | (filtered_df['입고일'] >= today_str)]
+    
+            if filtered_df.empty:
+                st.warning("💡 진행 중인 컨테이너 수입 일정이 없습니다.")
+            else:
+                display_df = pd.merge(filtered_df, df_m, on='제조사ID', how='left')
+                for m_name in m_order:
+                    group = display_df[display_df['제조사명'] == m_name]
+                    if not group.empty:
+                        st.markdown(f"## 🚢 {m_name}")
+                        for _, row in group.iterrows():
+                            ord_dt = str(row.get('발주일', '')).strip()
+                            dep_dt = str(row.get('출항일', '')).strip()
+                            arr_dt = str(row.get('입항일', '')).strip()
+                            inb_dt = str(row.get('입고일', '')).strip()
+    
+                            if inb_dt:
+                                if inb_dt < today_str: status_html = f"<span style='color:#2ECC71; font-weight:bold;'>[✅ 입고 완료]</span>"
+                                else: status_html = f"<span style='color:#E67E22; font-weight:bold;'>[입고 대기중]</span>"
+                            elif arr_dt: status_html = f"<span style='color:#3498DB; font-weight:bold;'>[입항 대기중]</span>"
+                            elif dep_dt: status_html = f"<span style='color:#9B59B6; font-weight:bold;'>[출항 대기중]</span>"
+                            else: status_html = f"<span style='color:#95A5A6; font-weight:bold;'>[준비 중]</span>"
+                            
+                            # 🚀 [수정 2] 적요 하단의 불필요한 패딩(여백) 제거 및 클래스 추가
+                            container_html = f"""
+                            <div class="container-card" style="border: 1px solid #E2E8F0; border-left: 5px solid #2E86C1; border-radius: 6px; overflow: hidden; background-color: #FFFFFF; margin-bottom: 0px;">
+                                <table style="width:100%; border-collapse: collapse; text-align: left; margin: 0px !important; padding: 0px !important;">
+                                    <tr style="font-size: 1.6rem; color:#444;">
+                                        <td rowspan="2" style="padding: 0px 10px; text-align: center; vertical-align: middle; width: 12%; font-size: 2.0rem; color:#111; border-right: 1px solid #E2E8F0; border-bottom: none;"><b>{row['차수']}차</b></td>
+                                        
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 8%;"><b></b> {row.get('피트', '40FT')}</td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입고:</b> {inb_dt if inb_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>입항:</b> {arr_dt if arr_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>출항:</b> {dep_dt if dep_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                        <td style="padding: 8px 10px; border-bottom: 1px solid #E2E8F0; width: 20%;"><b>발주:</b> {ord_dt if ord_dt else "<span style='color:#f14f6e;'>미정</span>"}</td>
+                                    </tr>
+                                    <tr style="font-size: 1.4rem;">
+                                        <td colspan="5" style="padding: 6px 10px 8px 10px; color:#2C3E50; border-bottom: none;">{row.get('적요','') if str(row.get('적요','')).strip() != "" else "<span style='color:#A0AEC0;'>없음</span>"}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            """
+                            
+                            with st.container():
+                                st.markdown(container_html.replace('\n', ''), unsafe_allow_html=True)
+                                if st.button("이 컨테이너 정보 수정", key=f"edit_cnt_{row['컨테이너ID']}", use_container_width=True):
+                                    container_form_dialog(mode="edit", container_data=row, df_m=df_m)
+                                st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
+    
+        # -----------------------------------------------------------------
+        # 파트 B: 현물검정 예정일 현황 표 (기존과 동일)
+        # -----------------------------------------------------------------
+        st.markdown("<hr style='border-top: 2px dashed #BDC3C7; margin: 40px 0px;'>", unsafe_allow_html=True)
+        
+        col_title, col_add_btn = st.columns([5, 1])
+        with col_title:
+            st.markdown("<h2>현물검정 현황</h2>", unsafe_allow_html=True)
+        with col_add_btn:
+            st.markdown("<div style='padding-top:10px;'></div>", unsafe_allow_html=True)
+            if st.button("신규 검정 등록", key="add_new_inspection", use_container_width=True):
+                inspection_form_dialog(mode="add")
+    
+        if df_i is None or df_i.empty:
+            st.warning("📅 현물검정 현황 데이터가 시트에 존재하지 않습니다. 우측 버튼을 눌러 첫 데이터를 등록해 주십시오.")
+            return
+    
+        calc_rows = []
+        today = datetime.today().date()
+        
+        for _, row in df_i.iterrows():
+            next_dt = safe_date_parse(row.get('검정예정일', ''))
+            
+            if next_dt:
+                rem_days = (next_dt - today).days
+                if rem_days < 0:
+                    status_txt = "초과"
+                    status_style = "color:#D9534F; font-weight:bold;" 
+                elif rem_days < 50:
+                    status_txt = "임박"
+                    status_style = "color:#E67E22; font-weight:bold;" 
+                elif rem_days < 100:
+                    status_txt = "준비"
+                    status_style = "color:#9B59B6; font-weight:bold;" 
+                else:
+                    status_txt = "정상"
+                    status_style = "color:#2ECC71;" 
+                    
+                rem_days_str = f"{rem_days}일"
+                sort_val = rem_days 
+            else:
+                rem_days_str = "미정"
+                status_txt = "미정"
+                status_style = "color:#A0AEC0;"
+                sort_val = 999999 
+                
+            row_dict = dict(row)
+            row_dict['잔존일'] = rem_days_str
+            row_dict['상태'] = status_txt
+            row_dict['상태스타일'] = status_style
+            row_dict['sort_key'] = sort_val
+            calc_rows.append(row_dict)
+    
+        df_calc = pd.DataFrame(calc_rows).sort_values(by='sort_key', ascending=True)
+    
+        col_ratios = [1.4, 1.7, 1.7, 1.0, 1.1, 1.1, 0.6, 0.6, 0.6]
+    
+        st.markdown("<div style='border-top: 3px solid #2E86C1; background-color: #F8F9FA; border-radius: 4px 4px 0 0;'>", unsafe_allow_html=True)
+        hcols = st.columns(col_ratios)
+        headers = ["사료의 명칭", "제품 종류", "현물검정제품", "관련제품", "현물검정완료일", "검정예정일", "잔존일", "상태", "관리"]
+        for i, h in enumerate(headers):
+            align = "center" if h in ["상태", "관리"] else "left"
+            hcols[i].markdown(f"<div style='font-size: {TABLE_HEADER_SIZE}; font-weight: bold; color: #2C3E50; padding: 5px 5px; border-bottom: 2px solid #E2E8F0; text-align: {align};'>{h}</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+        for _, row in df_calc.iterrows():
+            done_str = row.get('현물검정완료일', '') if str(row.get('현물검정완료일', '')).strip() else "미정"
+            next_str = row.get('검정예정일', '') if str(row.get('검정예정일', '')).strip() else "미정"
+    
+            with st.container():
+                bcols = st.columns(col_ratios)
+                cell_style = f"font-size: {TABLE_BODY_SIZE}; color: #333; padding-top: 0px; padding-bottom: 0px;"
+    
+                bcols[0].markdown(f"<div style='{cell_style}'><b>{row.get('사료명칭', '')}</b></div>", unsafe_allow_html=True)
+                bcols[1].markdown(f"<div style='{cell_style}'>{row.get('제품종류', '')}</div>", unsafe_allow_html=True)
+                bcols[2].markdown(f"<div style='{cell_style}'>{row.get('현물검정제품', '')}</div>", unsafe_allow_html=True)
+                bcols[3].markdown(f"<div style='{cell_style}'>{row.get('관련제품', '')}</div>", unsafe_allow_html=True)
+                bcols[4].markdown(f"<div style='{cell_style} color:#555;'>{done_str}</div>", unsafe_allow_html=True)
+                bcols[5].markdown(f"<div style='{cell_style} font-weight:600;'>{next_str}</div>", unsafe_allow_html=True)
+                bcols[6].markdown(f"<div style='{cell_style} font-weight:bold;'>{row['잔존일']}</div>", unsafe_allow_html=True)
+                bcols[7].markdown(f"<div style='{cell_style} text-align:center;'><span style='{row['상태스타일']}'>{row['상태']}</span></div>", unsafe_allow_html=True)
+    
+                with bcols[8]:
+                    if st.button("✏️", key=f"btn_insp_edit_{row['검정ID']}", use_container_width=True):
+                        inspection_form_dialog(mode="edit", insp_data=row)
+    
+                st.markdown("<hr class='row-divider' style='margin: 0; border: none; border-bottom: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
