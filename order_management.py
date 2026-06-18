@@ -14,6 +14,10 @@ def get_gspread_client():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     return gspread.authorize(creds)
 
+# 🚀 [핵심 추가] 판다스의 소수점(.0) 및 공백 찌꺼기를 완벽 제거하는 클리너 함수
+def clean_str(series):
+    return series.astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+
 # 🚀 신규 차수 생성을 위한 팝업 다이얼로그
 @st.dialog("➕ 신규 발주 생성")
 def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client_func):
@@ -27,7 +31,6 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
         submit_btn = st.form_submit_button("신규 차수 생성", use_container_width=True)
         
         if submit_btn:
-            # 🚀 [추가 1] 신규 차수 생성 시 고급 로딩 팝업 적용
             with custom_fullscreen_spinner("✨ 새로운 발주 차수를 생성 중입니다..."):
                 try:
                     client = get_client_func()
@@ -43,7 +46,8 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                     
                     is_duplicate = False
                     if not df_st.empty and '제조사ID' in df_st.columns and '차수' in df_st.columns:
-                        is_duplicate = ((df_st['제조사ID'].astype(str) == str(sel_m_id)) & (df_st['차수'].astype(str) == str(new_r))).any()
+                        # 🚀 안전한 텍스트 변환 적용
+                        is_duplicate = ((clean_str(df_st['제조사ID']) == str(sel_m_id)) & (clean_str(df_st['차수']) == str(new_r))).any()
                     
                     if is_duplicate:
                         st.error(f"❌ 이미 존재하는 차수입니다. ({new_r}차)")
@@ -69,7 +73,6 @@ def run(load_data_func):
 
     st.title("발주 입력")
 
-    # 🚀 [추가 2] 화면 진입 시 데이터 연산 전체를 고급 팝업으로 감싸기
     with custom_fullscreen_spinner("📦 발주 마스터 데이터 및 SCM 현황을 로딩 중입니다..."):
         # ==========================================
         # 1. 데이터 마스터 로드 및 안전 장치
@@ -127,8 +130,9 @@ def run(load_data_func):
         sel_m_name = st.sidebar.selectbox("제조사 필터", list(m_dict.keys()))
         sel_m_id = m_dict[sel_m_name]
 
-        all_rounds = df_status[df_status['제조사ID'].astype(str) == str(sel_m_id)]['차수'].astype(str).tolist()
-        all_rounds = sorted(list(set([int(r) for r in all_rounds if r.isdigit()])))
+        # 🚀 안전한 텍스트 변환 적용
+        all_rounds_raw = clean_str(df_status[clean_str(df_status['제조사ID']) == str(sel_m_id)]['차수']).tolist()
+        all_rounds = sorted(list(set([int(r) for r in all_rounds_raw if r.isdigit()])))
         next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
         
         display_rounds = sorted(all_rounds, reverse=True)
@@ -155,7 +159,7 @@ def run(load_data_func):
                 sel_emp = st.selectbox("👨‍💼 입력자 선택", allowed_input_emps)
             
             def format_round_display(r):
-                row = df_status[(df_status['제조사ID'].astype(str) == str(sel_m_id)) & (df_status['차수'].astype(str) == str(r))]
+                row = df_status[(clean_str(df_status['제조사ID']) == str(sel_m_id)) & (clean_str(df_status['차수']) == str(r))]
                 if not row.empty:
                     st_val = row['상태'].iloc[0]
                     ft_val = row['피트'].iloc[0] if '피트' in row.columns and pd.notna(row['피트'].iloc[0]) and str(row['피트'].iloc[0]).strip() != "" else ""
@@ -172,7 +176,7 @@ def run(load_data_func):
                 )
                 st.session_state[round_key] = selected_round_val
                 
-                status_filter = (df_status['제조사ID'].astype(str) == str(sel_m_id)) & (df_status['차수'].astype(str) == str(selected_round_val))
+                status_filter = (clean_str(df_status['제조사ID']) == str(sel_m_id)) & (clean_str(df_status['차수']) == str(selected_round_val))
                 db_status = df_status[status_filter]['상태'].iloc[0] if not df_status[status_filter].empty else "입력중"
                 db_feet = df_status[status_filter]['피트'].iloc[0] if '피트' in df_status.columns and not df_status[status_filter].empty else ""
             
@@ -183,22 +187,26 @@ def run(load_data_func):
             with c4:
                 st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
                 if st.button("🗑️ 현재 차수 삭제", type="secondary", use_container_width=True):
-                    # 🚀 [추가 3] 삭제 시에도 고급 팝업 적용
                     with custom_fullscreen_spinner("🗑️ 현재 차수 데이터를 완전히 삭제 중입니다..."):
                         try:
                             client = get_gspread_client()
                             doc = client.open("통합재고관리")
+                            
+                            # 🚀 Order_Status 완벽 삭제 패치 (찌꺼기 방지)
                             s_sheet = doc.worksheet("Order_Status")
                             s_df = pd.DataFrame(s_sheet.get_all_records())
                             if not s_df.empty:
-                                s_df = s_df[~((s_df['제조사ID'].astype(str) == str(sel_m_id)) & (s_df['차수'].astype(str) == str(selected_round_val)))]
+                                s_filter = (clean_str(s_df['제조사ID']) == str(sel_m_id)) & (clean_str(s_df['차수']) == str(selected_round_val))
+                                s_df = s_df[~s_filter].fillna('')
                                 s_sheet.clear()
                                 s_sheet.update([s_df.columns.values.tolist()] + s_df.astype(str).values.tolist() if not s_df.empty else [['제조사ID', '차수', '상태', '피트', '최종수정일']])
 
+                            # 🚀 Order_Records 완벽 삭제 패치 (찌꺼기 방지)
                             o_sheet = doc.worksheet("Order_Records")
                             o_df = pd.DataFrame(o_sheet.get_all_records())
                             if not o_df.empty:
-                                o_df = o_df[~((o_df['제조사ID'].astype(str) == str(sel_m_id)) & (o_df['차수'].astype(str) == str(selected_round_val)))]
+                                o_filter = (clean_str(o_df['제조사ID']) == str(sel_m_id)) & (clean_str(o_df['차수']) == str(selected_round_val))
+                                o_df = o_df[~o_filter].fillna('')
                                 o_sheet.clear()
                                 o_sheet.update([o_df.columns.values.tolist()] + o_df.astype(str).values.tolist() if not o_df.empty else [['제조사ID', '차수', '품목코드', '직원명', '발주량']])
 
@@ -248,7 +256,7 @@ def run(load_data_func):
         target_items['입력자평균'] = ((target_items['입력자평균(낱개)'] / target_items['박스단위']) / weeks_in_period).astype(float)
         
         if ref_rounds:
-            df_ref_filtered = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(int).isin([int(r) for r in ref_rounds]))]
+            df_ref_filtered = df_order[(clean_str(df_order['제조사ID']) == str(sel_m_id)) & (clean_str(df_order['차수']).isin([str(r) for r in ref_rounds]))]
             ref_series = df_ref_filtered.groupby('품목코드')['발주량'].sum()
             target_items['입고대기분'] = target_items['품목코드'].map(ref_series).fillna(0).astype(int)
         else:
@@ -259,7 +267,7 @@ def run(load_data_func):
         # ==========================================
         # 5. 피벗 연산 및 데이터 결합
         # ==========================================
-        curr_orders = df_order[(df_order['제조사ID'].astype(str) == str(sel_m_id)) & (df_order['차수'].astype(str) == str(selected_round_val))]
+        curr_orders = df_order[(clean_str(df_order['제조사ID']) == str(sel_m_id)) & (clean_str(df_order['차수']) == str(selected_round_val))]
         
         pivot_cols = allowed_input_emps + ['수정량']
         if not curr_orders.empty:
@@ -340,7 +348,6 @@ def run(load_data_func):
         # 7. 통합 저장 엔진
         # ==========================================
         if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
-            # 🚀 이미 적용되어 있던 저장 버튼용 스피너 (수정 없음)
             with custom_fullscreen_spinner("데이터베이스에 실시간 업로드 및 동기화 중..."):
                 try:
                     client = get_gspread_client()
@@ -351,7 +358,8 @@ def run(load_data_func):
                     df_st_save = pd.DataFrame(records_s)
                     
                     if not df_st_save.empty and '제조사ID' in df_st_save.columns and '차수' in df_st_save.columns:
-                        df_st_save = df_st_save[~((df_st_save['제조사ID'].astype(str) == str(sel_m_id)) & (df_st_save['차수'].astype(str) == str(selected_round_val)))]
+                        s_filter = (clean_str(df_st_save['제조사ID']) == str(sel_m_id)) & (clean_str(df_st_save['차수']) == str(selected_round_val))
+                        df_st_save = df_st_save[~s_filter]
                     elif df_st_save.empty or '제조사ID' not in df_st_save.columns:
                         df_st_save = pd.DataFrame(columns=['제조사ID', '차수', '상태', '피트', '최종수정일'])
                         
@@ -359,6 +367,7 @@ def run(load_data_func):
                     new_status_row = pd.DataFrame([{"제조사ID": str(sel_m_id), "차수": str(selected_round_val), "상태": str(sel_status), "피트": db_feet, "최종수정일": today_str}])
                     df_st_save = pd.concat([df_st_save, new_status_row], ignore_index=True)
                     
+                    df_st_save = df_st_save.fillna('')
                     sheet_s.clear()
                     sheet_s.update([df_st_save.columns.values.tolist()] + df_st_save.astype(str).values.tolist())
 
@@ -367,9 +376,10 @@ def run(load_data_func):
                     df_ord_save = pd.DataFrame(records_o)
                     
                     if not df_ord_save.empty and '제조사ID' in df_ord_save.columns:
-                        df_ord_save = df_ord_save[~((df_ord_save['제조사ID'].astype(str) == str(sel_m_id)) & 
-                                                   (df_ord_save['차수'].astype(str) == str(selected_round_val)) & 
-                                                   (df_ord_save['직원명'].isin([str(sel_emp), '수정량'])))]
+                        o_filter = (clean_str(df_ord_save['제조사ID']) == str(sel_m_id)) & \
+                                   (clean_str(df_ord_save['차수']) == str(selected_round_val)) & \
+                                   (clean_str(df_ord_save['직원명']).isin([str(sel_emp), '수정량']))
+                        df_ord_save = df_ord_save[~o_filter]
                     elif df_ord_save.empty or '제조사ID' not in df_ord_save.columns:
                         df_ord_save = pd.DataFrame(columns=['제조사ID', '차수', '품목코드', '직원명', '발주량'])
                     
@@ -389,6 +399,7 @@ def run(load_data_func):
                     
                     df_final_ord = pd.concat([df_ord_save, my_rows, adjust_rows], ignore_index=True)
                     
+                    df_final_ord = df_final_ord.fillna('')
                     sheet_o.clear()
                     sheet_o.update([df_final_ord.columns.values.tolist()] + df_final_ord.astype(str).values.tolist())
 
