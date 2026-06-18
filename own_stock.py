@@ -17,7 +17,7 @@ def run(load_data_func):
         pass
 
     try:
-        with custom_fullscreen_spinner("재고 데이터 로드 중..."):
+        with custom_fullscreen_spinner("재고 데이터 로딩 중..."):
             # 1. 데이터 로드
             df_own = load_data_func("ecount_stock")
             df_sales = load_data_func("sales_record")
