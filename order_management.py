@@ -41,9 +41,9 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                     sheet_s = doc.add_worksheet(title="Order_Status", rows="500", cols="5")
                     sheet_s.append_row(['제조사ID', '차수', '상태', '피트', '최종수정일'])
 
-                with custom_fullscreen_spinner("✨ 새로운 발주 차수를 생성 중입니다..."):
-                    records = sheet_s.get_all_records()
-                    df_st = pd.DataFrame(records)
+
+                records = sheet_s.get_all_records()
+                df_st = pd.DataFrame(records)
                 
                 is_duplicate = False
                 if not df_st.empty and '제조사ID' in df_st.columns and '차수' in df_st.columns:
@@ -74,7 +74,7 @@ def run(load_data_func):
 
     st.title("발주 입력")
 
-    with custom_fullscreen_spinner("📦 발주 마스터 데이터 및 SCM 현황을 로딩 중입니다..."):
+    with custom_fullscreen_spinner("발주 데이터 로딩 중..."):
         # ==========================================
         # 1. 데이터 마스터 로드 및 안전 장치
         # ==========================================
@@ -188,7 +188,7 @@ def run(load_data_func):
             with c4:
                 st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
                 if st.button("🗑️ 현재 차수 삭제", type="secondary", use_container_width=True):
-                    with custom_fullscreen_spinner("🗑️ 현재 차수 데이터를 완전히 삭제 중입니다..."):
+                    with custom_fullscreen_spinner("차수 데이터 삭제 중..."):
                         try:
                             client = get_gspread_client()
                             doc = client.open("통합재고관리")
@@ -349,7 +349,7 @@ def run(load_data_func):
         # 7. 통합 저장 엔진
         # ==========================================
         if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
-            with custom_fullscreen_spinner("데이터베이스에 실시간 업로드 및 동기화 중..."):
+            with custom_fullscreen_spinner("데이터베이스에 저장 중..."):
                 try:
                     client = get_gspread_client()
                     doc = client.open("통합재고관리")
