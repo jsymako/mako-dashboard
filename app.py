@@ -173,6 +173,12 @@ with st.sidebar:
 # 🚀 3. 메인 대시보드 화면 (1줄에 3개 나란히 배치)
 # -----------------------------------------------------------------
 def render_dashboard():
+    try:
+        with open("style.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+        
     st.title("마코펫 통합조회시스템")
     
     st.markdown("""
