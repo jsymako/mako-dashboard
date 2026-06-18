@@ -38,7 +38,7 @@ def run(load_data_func):
         pass
 
     try:
-        with custom_fullscreen_spinner("쿠팡 데이터를 분석하고 화면을 생성 중입니다."):
+        with custom_fullscreen_spinner("쿠팡 데이터 로딩 중..."):
             
             # ==========================================
             # 1. 마스터 데이터(coupang_item_data) 로드
