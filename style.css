@@ -36,6 +36,16 @@ html, body, .stApp, h1, h2, h3, h4, h5, h6, p, label, li, table, button, input {
     letter-spacing: -1px !important;     
 }
 
+.block-container h2 {
+    font-size: 2.0rem !important;        
+    font-weight: 400 !important;         
+    color: #111111 !important;           
+    padding-bottom: 12px !important;     
+    border-bottom: 4px solid #2E86C1 !important; 
+    margin-bottom: 30px !important;      
+    letter-spacing: -1px !important;     
+}
+
 /* KPI 지표 (Metric) 공통 스타일 */
 [data-testid="stMetricLabel"] > div { font-weight: 800 !important; font-size: 1.2rem !important; color: #1E1E1E !important; }
 [data-testid="stMetricValue"] > div { font-weight: 400 !important; font-size: 2.0rem !important; }
