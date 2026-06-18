@@ -139,7 +139,7 @@ def run(load_data_func):
         min_dso = st.sidebar.slider("DSO 필터 (최소 일수)", 0, 120, 45, 15)
         sort_opt = st.sidebar.radio("목록 정렬 기준", ["잔액순", "DSO 위험순", "가나다순"])
 
-        with custom_fullscreen_spinner("채권 데이터를 분석하고 화면을 생성 중입니다."):
+        with custom_fullscreen_spinner("채권 데이터 로딩 중..."):
             cards_data = []
             for trader, group in df_pivot.groupby('거래처명'):
                 def get_dso(off):
