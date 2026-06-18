@@ -189,11 +189,11 @@ def render_dashboard():
             flex-direction: column;
             justify-content: space-between;
         }
-        .dash-title { font-size: 1.4rem; font-weight: 600; color: #111; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .dash-stat { font-size: 1.4rem; font-weight: 600; color: #0275d8; }
-        .status-ok { color: #5cb85c; font-weight: normal; font-size: 1.2rem; }
-        .status-err { color: #d9534f; font-weight: bold; font-size: 1.2rem; }
-        .status-warn { color: #f0ad4e; font-weight: bold; font-size: 1.2rem; }
+        .dash-title { font-size: 1.4rem; font-weight: 400; color: #111; margin-bottom: 5px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .dash-stat { font-size: 1.4rem; font-weight: 400; color: #0275d8; }
+        .status-ok { color: #5cb85c; font-weight: 200; font-size: 1.2rem; }
+        .status-err { color: #d9534f; font-weight: 400; font-size: 1.2rem; }
+        .status-warn { color: #f0ad4e; font-weight: 400; font-size: 1.2rem; }
         .sub-text { font-size: 1.1rem; margin-top: 5px; background: #f8f9fa; padding: 12px; border-radius: 6px; }
         </style>
     """, unsafe_allow_html=True)
@@ -236,7 +236,7 @@ def render_dashboard():
                                 </div>
                                 <div class="sub-text">
                                     <b>최신 데이터 갱신 일시:</b><br>
-                                    <span style="font-size:1.1rem; color:#0275d8; font-weight:bold;">{latest_str}</span>
+                                    <span style="font-size:1.1rem; color:#0275d8;">{latest_str}</span>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
@@ -266,11 +266,11 @@ def render_dashboard():
                                     else:
                                         display_missing = ', '.join(missing_days)
                                         
-                                    missing_str = f"<span style='color:#d9534f; font-weight:bold;'>{display_missing}</span>"
+                                    missing_str = f"<span style='color:#d9534f;'>{display_missing}</span>"
                                     icon_status = "⚠️ 누락 확인"
                                     icon_class = "status-warn"
                                 else:
-                                    missing_str = "<span style='color:#5cb85c; font-weight:bold;'>누락 없음</span>"
+                                    missing_str = "<span style='color:#5cb85c;'>누락 없음</span>"
                                     icon_status = "🟢 정상 수신중"
                                     icon_class = "status-ok"
 
