@@ -32,34 +32,35 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
         
         if submit_btn:
             try:
-                client = get_client_func()
-                doc = client.open("통합재고관리")
-                try: 
-                    sheet_s = doc.worksheet("Order_Status")
-                except: 
-                    sheet_s = doc.add_worksheet(title="Order_Status", rows="500", cols="5")
-                    sheet_s.append_row(['제조사ID', '차수', '상태', '피트', '최종수정일'])
-                
-                records = sheet_s.get_all_records()
-                df_st = pd.DataFrame(records)
-                
-                is_duplicate = False
-                if not df_st.empty and '제조사ID' in df_st.columns and '차수' in df_st.columns:
-                    # 🚀 안전한 텍스트 변환 적용
-                    is_duplicate = ((clean_str(df_st['제조사ID']) == str(sel_m_id)) & (clean_str(df_st['차수']) == str(new_r))).any()
-                
-                if is_duplicate:
-                    st.error(f"❌ 이미 존재하는 차수입니다. ({new_r}차)")
-                else:
-                    if not sheet_s.row_values(1):
+                with custom_fullscreen_spinner("✨ 새로운 발주 차수를 생성 중입니다..."):
+                    client = get_client_func()
+                    doc = client.open("통합재고관리")
+                    try: 
+                        sheet_s = doc.worksheet("Order_Status")
+                    except: 
+                        sheet_s = doc.add_worksheet(title="Order_Status", rows="500", cols="5")
                         sheet_s.append_row(['제조사ID', '차수', '상태', '피트', '최종수정일'])
-                        
-                    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
-                    sheet_s.append_row([str(sel_m_id), str(new_r), "입력중", str(sel_feet), today_str])
-                    st.session_state[f"selected_round_{sel_m_id}"] = int(new_r)
-                    st.success("새로운 차수가 생성되었습니다!")
-                    st.cache_data.clear()
-                    st.rerun()
+                    
+                    records = sheet_s.get_all_records()
+                    df_st = pd.DataFrame(records)
+                    
+                    is_duplicate = False
+                    if not df_st.empty and '제조사ID' in df_st.columns and '차수' in df_st.columns:
+                        # 🚀 안전한 텍스트 변환 적용
+                        is_duplicate = ((clean_str(df_st['제조사ID']) == str(sel_m_id)) & (clean_str(df_st['차수']) == str(new_r))).any()
+                    
+                    if is_duplicate:
+                        st.error(f"❌ 이미 존재하는 차수입니다. ({new_r}차)")
+                    else:
+                        if not sheet_s.row_values(1):
+                            sheet_s.append_row(['제조사ID', '차수', '상태', '피트', '최종수정일'])
+                            
+                        today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+                        sheet_s.append_row([str(sel_m_id), str(new_r), "입력중", str(sel_feet), today_str])
+                        st.session_state[f"selected_round_{sel_m_id}"] = int(new_r)
+                        st.success("새로운 차수가 생성되었습니다!")
+                        st.cache_data.clear()
+                        st.rerun()
             except Exception as e:
                 st.error(f"차수 생성 중 오류 발생: {e}")
 
