@@ -287,5 +287,5 @@ def run(load_data_func):
                             st.rerun()
                     st.markdown('</div></div>', unsafe_allow_html=True)
     
-        except Exception as e:
-            st.error(f"오류: {e}")
+    except Exception as e:
+        st.error(f"오류: {e}")
