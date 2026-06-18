@@ -34,7 +34,7 @@ def run(load_data_func):
     """, unsafe_allow_html=True)
 
     # 🚀 [로딩 팝업 적용] 데이터 로드부터 차트 렌더링까지 전체를 감싸줍니다.
-    with custom_fullscreen_spinner("실적 데이터 로딩 중..."):
+    with custom_fullscreen_spinner("실적 데이터 로딩..."):
         
         # ==========================================
         # 1. 데이터 로드 (연간목표 & trade_record 자동 연동)
