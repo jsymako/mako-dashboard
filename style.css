@@ -402,3 +402,11 @@ div[data-testid="stDialog"] .stDateInput input::placeholder {
     margin-top: 0px !important;
 }
 
+/* =====================================================================
+   [12] 🚀 스트림릿 기본 우측 상단 'Running...' 스피너 영구 숨김
+   (커스텀 전체화면 로딩창과 중복되는 현상 방지)
+===================================================================== */
+[data-testid="stStatusWidget"] {
+    display: none !important;
+    visibility: hidden !important;
+}
