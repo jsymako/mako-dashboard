@@ -74,7 +74,7 @@ def run(load_data_func):
 
     st.title("발주 입력")
 
-    with custom_fullscreen_spinner("발주 데이터 로딩 중..."):
+    with custom_fullscreen_spinner("발주 데이터 로딩..."):
         # ==========================================
         # 1. 데이터 마스터 로드 및 안전 장치
         # ==========================================
@@ -188,7 +188,7 @@ def run(load_data_func):
             with c4:
                 st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
                 if st.button("🗑️ 현재 차수 삭제", type="secondary", use_container_width=True):
-                    with custom_fullscreen_spinner("차수 데이터 삭제 중..."):
+                    with custom_fullscreen_spinner("차수 데이터 삭제..."):
                         try:
                             client = get_gspread_client()
                             doc = client.open("통합재고관리")
@@ -349,7 +349,7 @@ def run(load_data_func):
         # 7. 통합 저장 엔진
         # ==========================================
         if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
-            with custom_fullscreen_spinner("데이터베이스에 저장 중..."):
+            with custom_fullscreen_spinner("데이터베이스에 저장..."):
                 try:
                     client = get_gspread_client()
                     doc = client.open("통합재고관리")
