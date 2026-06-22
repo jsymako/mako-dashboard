@@ -298,7 +298,7 @@ def run(load_data_func):
     # 6. 상단 제어반에 CBM 주입 및 표 렌더링 
     # ==========================================
     with cbm_placeholder:
-        st.text_input("🚢 총 CBM", value=f"{total_cbm:.8f}", disabled=True)
+        st.text_input("🚢 총 CBM", value=f"{total_cbm:.2f}", disabled=True)
 
     allowed_edit_cols = [sel_emp, '수정량 입력✏️']
     disabled_list = [c for c in display_layout if c not in allowed_edit_cols]
