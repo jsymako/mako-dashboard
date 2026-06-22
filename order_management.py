@@ -139,6 +139,12 @@ def run(load_data_func):
     if st.sidebar.button("➕ 신규 발주 생성", type="primary", use_container_width=True):
         create_new_round_dialog(sel_m_id, sel_m_name, next_suggest, get_gspread_client)
 
+    st.sidebar.markdown("---")
+        
+    if st.sidebar.button("데이터 새로고침", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
     # ==========================================
     # 3. 메인 제어반 
     # ==========================================
