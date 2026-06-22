@@ -14,7 +14,7 @@ def get_gspread_client():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     return gspread.authorize(creds)
 
-# 🚀 [핵심 추가] 판다스의 소수점(.0) 및 공백 찌꺼기를 완벽 제거하는 클리너 함수
+# 🚀 판다스의 소수점(.0) 및 공백 찌꺼기를 완벽 제거하는 클리너 함수
 def clean_str(series):
     return series.astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
 
@@ -72,9 +72,8 @@ def run(load_data_func):
 
     st.title("발주 입력")
 
-    # 🚀 [수정] 화면 전체를 감싸던 스피너 제거 (타이핑 시 번쩍거림 방지)
     # ==========================================
-    # 1. 데이터 마스터 로드 및 안전 장치
+    # 1. 무적의 데이터 마스터 로드 (NoneType 에러 원천 차단)
     # ==========================================
     try:
         df_m = load_data_func("Manufacturers")
@@ -84,6 +83,25 @@ def run(load_data_func):
         df_stock = load_data_func("ecount_stock")
         df_order = load_data_func("Order_Records")
         df_status = load_data_func("Order_Status")
+        
+        # 🚀 [방어 코드] 구글 API 지연으로 데이터가 비어있을 경우, 뻗지 않고 안내 팝업을 띄웁니다.
+        if df_m is None or df_m.empty or df_item is None or df_item.empty:
+            st.warning("⚠️ 구글 시트와 일시적으로 통신이 지연되었습니다. 아래 버튼을 눌러 다시 연결해 주세요.")
+            if st.button("🔄 데이터 다시 불러오기", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+            return
+
+        # 🚀 [방어 코드] 판매 데이터가 None이거나 깨졌을 경우를 대비한 안전 장치
+        if df_trade is None or df_trade.empty or len(df_trade.columns) < 7:
+            df_trade = pd.DataFrame(columns=['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자'])
+        else:
+            df_trade = df_trade.iloc[:, :7]
+            df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
+
+        # 🚀 [방어 코드] 기타 테이블도 None일 경우 빈 껍데기를 씌워 에러를 막습니다.
+        if df_emp is None: df_emp = pd.DataFrame(columns=['성명', '발주입력'])
+        if df_stock is None: df_stock = pd.DataFrame(columns=['품목코드', '현재재고'])
         
         expected_order_cols = ['제조사ID', '차수', '품목코드', '직원명', '발주량']
         if df_order is None or df_order.empty:
@@ -103,7 +121,6 @@ def run(load_data_func):
         st.error(f"구글 시트 데이터 마스터 동기화 실패: {e}")
         return
 
-    df_trade.columns = ['일자', '거래처명', '품목코드', '품목명', '수량', '공급가액', '담당자']
     df_trade['일자'] = pd.to_datetime(df_trade['일자'], errors='coerce')
     df_trade['수량'] = pd.to_numeric(df_trade['수량'].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(int)
     df_order['발주량'] = pd.to_numeric(df_order['발주량'], errors='coerce').fillna(0).astype(int)
@@ -129,7 +146,6 @@ def run(load_data_func):
     sel_m_name = st.sidebar.selectbox("제조사 필터", list(m_dict.keys()))
     sel_m_id = m_dict[sel_m_name]
 
-    # 🚀 안전한 텍스트 변환 적용
     all_rounds_raw = clean_str(df_status[clean_str(df_status['제조사ID']) == str(sel_m_id)]['차수']).tolist()
     all_rounds = sorted(list(set([int(r) for r in all_rounds_raw if r.isdigit()])))
     next_suggest = (all_rounds[-1] + 1) if all_rounds else 1
@@ -141,7 +157,7 @@ def run(load_data_func):
 
     st.sidebar.markdown("---")
         
-    if st.sidebar.button("데이터 새로고침", use_container_width=True):
+    if st.sidebar.button("🔄 데이터 새로고침", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
@@ -192,7 +208,7 @@ def run(load_data_func):
         with c4:
             st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
             if st.button("🗑️ 현재 차수 삭제", type="secondary", use_container_width=True):
-                with custom_fullscreen_spinner("차수 데이터 삭제..."):
+                with custom_fullscreen_spinner("🗑️ 차수 데이터를 안전하게 삭제 중입니다..."):
                     try:
                         client = get_gspread_client()
                         doc = client.open("통합재고관리")
@@ -351,7 +367,7 @@ def run(load_data_func):
     # 7. 통합 저장 엔진
     # ==========================================
     if st.button("💾 내 발주량 및 수정량/진행 상태 통합 저장", use_container_width=True, type="primary"):
-        with custom_fullscreen_spinner("데이터베이스에 실시간 업로드 및 동기화 중..."):
+        with custom_fullscreen_spinner("데이터베이스에 실시간 동기화 중입니다. (통신 상태에 따라 약 5~10초 소요)"):
             try:
                 client = get_gspread_client()
                 doc = client.open("통합재고관리")
