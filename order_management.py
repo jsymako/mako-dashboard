@@ -49,7 +49,7 @@ def create_new_round_dialog(sel_m_id, sel_m_name, default_next_round, get_client
                     is_duplicate = ((clean_str(df_st['제조사ID']) == str(sel_m_id)) & (clean_str(df_st['차수']) == str(new_r))).any()
             
                 if is_duplicate:
-                    st.error(f"❌ 이미 존재하는 차수입니다. ({new_r}차)")
+                    st.error(f"이미 존재하는 차수입니다. ({new_r}차)")
                 else:
                     if not sheet_s.row_values(1):
                         sheet_s.append_row(['제조사ID', '차수', '상태', '피트', '최종수정일'])
@@ -423,7 +423,7 @@ def run(load_data_func):
                 sheet_o.update([df_final_ord.columns.values.tolist()] + df_final_ord.astype(str).values.tolist())
 
                 st.cache_data.clear()
-                st.success(f"🎉 {selected_round_val}차 SCM 발주 계획안 및 수정 수량이 [{sel_status}] 상태로 저장되었습니다!")
+                st.success(f"{selected_round_val}차 발주 계획이 [{sel_status}] 상태로 저장되었습니다!")
                 st.rerun()
             except Exception as e:
                 st.error(f"구글 시트 연동 중 에러 발생: {e}")
