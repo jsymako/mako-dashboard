@@ -174,7 +174,7 @@ def run(load_data_func):
 
     main_ctrl = st.container(border=True)
     with main_ctrl:
-        c2, c3, c4, c1, c5, c6, c7 = st.columns([2.0, 1.8, 1.8, 1.8, 4.0, 1.8, 1.8])
+        c2, c3, c4, c1, c5, c6, c7 = st.columns([2.5, 1.4, 1.8, 1.8, 4.0, 1.8, 1.4])
         
         with c1:
             sel_emp = st.selectbox("👨‍💼 입력자 선택", allowed_input_emps)
